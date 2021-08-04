@@ -1,0 +1,62 @@
+## Purpose of script: BoundaryCalculations
+##
+## Author: Anne Lyngholm Sørensen
+##
+## Date Created: 2020-11-17
+##
+## Copyright (c) Anne Lyngholm Soerensen, 2020
+## Email: lynganne@gmail.com
+
+
+# Read libraries and Source functions  ------------------------------------
+# source functions 
+source("~/Documents/PhD/TSA/code/TSAjava/ProcLanDeMets.R")
+
+# Data clean and preparation ----------------------------------------------
+# read the data
+count <- c(500, 160, 148+143, 19+19, 997+1015, 69+74, 694+706)
+timing <- c(cumsum(count)/7224,1)
+
+# create incr in information
+timingincr <- timing - c(0,timing[-length(timing)])
+trials <- cbind(timing, timingincr)
+
+# select trials
+trials <- trials[c(1,3,4,5,7,8),]
+
+
+# Start BoundaryCalculations programme ------------------------------------
+# set thresholds:
+IFincrementThreshold <- 0.01
+IFtotalThreshold <- 0.05
+
+trials <- trials[trials[,2] > IFincrementThreshold,]
+
+# TODO - Heterogeneity
+# TODO - Optimal Information Size
+# TODO - FisherOIS
+
+# (newgraph - getInnerWedgeGraph)
+boundaries <- standardBoundary(informationFractions = trials[-1,1],
+                 side = 2, alpha = 0.05, zninf = -8, tol = 1e-13)
+boundaries
+fakeIFY <- boundaries$ret2[length(boundaries$ret2)]
+innerboundaries <- getInnerWedge(informationFractions = trials[-1,1], beta = 0.2,
+              delta = 0, side = 1, fakeIFY = fakeIFY, zninf = -8, tol = 1e-13)
+
+innerboundaries$ret2
+
+
+# compare to other 
+library(gsDesign)
+plot(gsDesign(k = 5, timing = c(0.06921373, 0.13164452, 0.41542082, 0.62901440, 1), test.type = 4,
+              alpha = 0.025, beta = 0.2, sfu = sfLDOF, sfl = sfLDOF))
+standardBoundary(informationFractions = c(0.06921373, 0.13164452, 0.41542082, 0.62901440, 1),
+                 side = 2, alpha = 0.05, zninf = -8, tol = 1e-9)
+boundaries <- standardBoundary(informationFractions = c(0.13164452, 0.41542082, 0.62901440,1),
+                               side = 2, alpha = 0.05, zninf = -8, tol = 1e-9)
+fakeIFY <- boundaries$ret2[length(boundaries$ret2)]
+innerboundaries <- getInnerWedge(informationFractions = c(0.13164452, 0.41542082, 0.62901440,1), beta = 0.2,
+                                 delta = 0, side = 1, fakeIFY = fakeIFY, zninf = -2.9, tol = 1e-13)
+
+innerboundaries$ret2

@@ -1,0 +1,3 @@
+exportPattern("^[[:alpha:]]+")
+importFrom("stats", "qnorm", "qt", "binomial", "coef", "glm", "pchisq", "pnorm", "pt",
+               "vcov")
