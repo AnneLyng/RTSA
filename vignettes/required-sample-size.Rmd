@@ -1,0 +1,189 @@
+---
+title: "Calculating required sample size and the required number of trials"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{required-sample-size}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+# Introduction
+
+RTSA is intended as a tool for sequential meta-analysis using Trial Sequential Analysis (TSA) in statistical software R. This vignette will explore the different methods for calculating the required sample size and the required number of trials to achieve a specific power in a meta-analysis. All methods are implemented in the RTSA package. 
+
+# Setup 
+
+```{r setup}
+library(RTSA)
+library(ggplot2)
+```
+
+# Methods
+
+We will consider different methods depending on whether we have heterogeneity. 
+
+## Fixed-effect model
+
+For a fixed-effect model we will use the formula for a fixed sample trial with a normally distributed outcome.  
+
+\begin{align}
+RIS = 4 \cdot (Z_{1-\alpha/2} + Z_\beta)^2 \cdot \frac{\nu}{\theta^2}.
+\end{align}
+
+For binary data is $\nu = p_0 = (p_I + p_C)/2$ and $\theta = p_C - p_I$ where $p_I$ is the proportion of events in the intervention group and $p_C$ is the proportion of events in the control group. For continuous data $\theta$ is an a priori estimate of the difference in means between the two treatment groups and $\nu$ is the assumed variance.
+
+Notice that the formula provides the total number of required participants. Hence the number of participants in each treatment is $RIS/2$. 
+
+Suppose we assume an effect of intervention compared to control resulting in a risk ratio of $RR = 0.9$ with a common probability of event being $p_0 = 0.1$. We can then calculate $p_I$ to $p_I = \exp(\log(p_0)+\log(RR)/2)$ and $p_C = \exp(\log(p_0)-\log(RR)/2)$. To calculate the number of required participants, we use the RTSA function nFixed.
+
+```{r}
+log.RR = log(0.9)
+p0 = 0.1
+pI = exp(log(p0)+log.RR/2)
+pC = exp(log(p0)-log.RR/2)
+nFixed(alpha = 0.05, beta = 0.2, pI = pI, pC = pC, binary = TRUE)
+```
+
+Assuming a non-sequential meta-analysis, we see that the total number of participants in fact provide the correct power 
+
+```{r fig3, fig.width = 7, fig.asp = 0.75}
+outl = matrix(NA, ncol = 3, nrow = 10)
+
+for(l in 1:10){
+
+  RR <- 0.9
+  p0 <- 0.1
+  pI <- round(exp(log(p0)+log(RR)/2),4)
+  pC <- round(exp(log(p0)-log(RR)/2),4)
+  theta = round(pC - pI,4)
+  n = ceiling(l/10*4*(qnorm(1-0.05/2)+qnorm(1-0.2))^2*(p0*(1-p0))/theta^2/10/2)
+  K = 10
+  nsim = 10000
+
+  outpvalue = matrix(NA, ncol = 3, nrow = nsim)
+  for(h in 1:nsim){
+    outmat = matrix(NA, ncol = 9, nrow = K)
+    zvalues = NULL
+    for(i in 1:K){
+      eA <- apply(cbind(n, pI), 1,
+                  function(x) rbinom(1, size = x[1], prob = x[2]))
+      eB <- apply(cbind(n, pC), 1,
+                  function(x) rbinom(1, size = x[1], prob = x[2]))
+      outmat[i,1:4] = c(eA, n, eB, n)
+    }
+    synout = metaPrepare(outcome = "RR", eI = outmat[,1], nI = outmat[,2],
+                          eC = outmat[,3], nC = outmat[,2],
+                          method = "MH")
+    out1 = synthesize(synout, hakn = FALSE)
+    out2 = synthesize(synout, hakn = TRUE)
+    outpvalue[h, c(1,2,3)] = c(round(out1$peF[5],4), round(out1$peR[5],4), out2$peR[5])
+  }
+  outl[l,1] = sum(outpvalue[,1] < 0.05)/nsim
+  outl[l,2] = sum(outpvalue[,2] < 0.05)/nsim
+  outl[l,3] = sum(outpvalue[,3] < 0.05)/nsim
+}
+
+x1 = ceiling(c(1:10)/10*4*(qnorm(1-0.05/2)+qnorm(1-0.2))^2*(p0*(1-p0))/theta^2)
+dat1 = data.frame(outl, x1)
+library(reshape2)
+dat2 = melt(dat1,id.vars = c("x1"))
+dat2$method = rep(c("Fixed-effect", "Random-effects - DL", "Random-effects - HKSJ"), each = 10)
+
+ggplot(data=dat2, aes(x=x1, y=value, group = method, color = method)) +
+  geom_hline(yintercept = 0.8, col = "gray", cex = 1.5)  +
+  geom_line()+ scale_y_continuous(labels = scales::percent) +
+  scale_x_continuous(labels = scales::comma)  +
+  labs(x = "Total number of participants", y = "Power")+
+  geom_point() +
+  theme_bw() + theme(legend.position="bottom") +
+  scale_color_brewer(palette="Set1")
+```
+
+
+## Random-effects model
+
+In the original TSA software is the required sample size for models with heterogeneity based on the estimate of heterogeneity $\tau^2$. Here the fixed sample trial size is scaled based on a formula depending on $\tau^2$ which increases the number of required participants. The original TSA formulas do not give an estimate of the required number of trials. Recent papers have shown a need for a minimum number of trials to achieve a specific power when heterogeneity is present. We will show a simulation of this using the RTSA package. 
+
+We start with presenting the different methods.
+
+### Current methods in TSA (java)
+
+For the required sample size calculation, TSA uses the following formulas depending on the choice of using either diversity $D^2$ or inconsistency $I^2$. 
+
+\begin{align}
+RIS_{D^2} = \frac{1}{1-D^2}\cdot 4 \cdot (Z_{1-\alpha/2} + Z_\beta)^2 \cdot \frac{\nu}{\theta^2}.
+\end{align}
+
+\begin{align}
+RIS_{I^2} = \frac{1}{1-I^2}\cdot 4 \cdot (Z_{1-\alpha/2} + Z_\beta)^2 \cdot \frac{\nu}{\theta^2}.
+\end{align}
+
+where $D^2$ is the diversity, $I^2$ is the inconsistency. Diversity and Inconsistency are calculated as:
+\begin{align*}
+D^2 = \frac{\tau^2}{\tau^2 + \sigma^2_D}, \quad I^2 = \frac{\tau^2}{\tau^2 + \sigma^2_M}.
+\end{align*}
+
+### Added methods to RTSA
+
+We have looked at the power of non-sequential meta-analyses given different values of the heterogeneity $\tau^2$, the true effect size (risk ratios) and common probability of event. It was clear that to achieve the wanted level of power, there is an required minimum of trials needed. We will now give the formula for calculating the minimum number of required trials. Let $\tilde{\theta}$ be the intervention effect, which will be the $\log(RR)$ in our case, $\alpha$ and $\beta$ are respectively the type-1 and type 2 error rates and $z_{x}$ is the quantile from the normal distribution at $x$. Then we will need to fulfill the following equation, to ensure that we have the right error rates.
+
+$$\frac{\tilde{\theta}}{\sqrt{\text{Var}(\tilde{\theta})}} =
+z_{1-\alpha/2}+z_{1-\beta}, \quad \text{where} \quad
+\text{Var}(\tilde{\theta}) = \left( \sum_k \frac{1}{2\cdot \sigma_k^2/
+n_k + \tau^2} \right)^{-1}$$
+
+Then, we will have the defined power, $1-\beta$ when the following
+in-equality holds. Notice that in the simulation studies we know the
+true values of $\tau^2$ and $\theta$. Hence $K$ will be the variable
+which will vary.
+
+\begin{align}
+\tau^2 < \frac{\theta \cdot K}{\left(z_{1-\alpha/2}+z_{1-\beta}\right)^2}
+\end{align}
+
+Under simplifying assumptions, such as assuming all trials have the same variation of the estimated treatment effect and they are all of the same size, we can then calculate the number of participants to:
+
+\begin{align}
+RIS_{New} = \frac{2\cdot \sigma^2}{\frac{\tilde{\theta}\cdot
+K}{\left(z_{1-\alpha/2}+z_{1-\beta}\right)^2} - \tau^2}.
+\end{align}
+
+
+We wish to compare the methods originally implemented in the TSA software with the new methods for calculating both the required number of participants and the required number of trials. 
+
+We set $RR = 0.9$, $p_0 = 0.1$ and $\tau^2 = 0.05$. With these values we get the following minimum number of required trials:
+
+```{r}
+log.RR = log(0.9)
+alpha = 0.05
+beta = 0.2
+tau2 = 0.05
+
+ntrial.func = function(log.RR, trial, alpha, beta, tau2){
+  log.RR^2*trial/((qnorm(1-alpha/2)+qnorm(1-beta))^2)-tau2
+}
+
+ceiling(uniroot(function(trial) ntrial.func(log.RR, trial, alpha, beta, tau2),
+        interval = c(0, 1000))$root)
+```
+
+With this number of trials and under some simplifying assumptions the number of participants per trial can be calculated as: 
+
+
+```{r}
+trials = 36
+var.k = 1/(pC)+1/(pI)-2
+
+ceiling(2*var.k/(log.RR^2*trials/((qnorm(1-alpha/2)+qnorm(1-beta))^2)-tau2))
+trials = 37
+ceiling(2*var.k/(log.RR^2*trials/((qnorm(1-alpha/2)+qnorm(1-beta))^2)-tau2))
+```
+
+

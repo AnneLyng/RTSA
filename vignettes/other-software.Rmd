@@ -1,0 +1,37 @@
+---
+title: "Sequential boundaries in RTSA and other packages in R"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{other-software}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+# Introduction
+
+RTSA is intended as a tool for sequential meta-analysis using Trial Sequential Analysis (TSA) in statistical software R. To ensure the correctness and quality of the code in RTSA, we will be comparing the output of RTSA to other packages. Unfortunately, no package in R offer sequential stopping boundaries for meta-analysis. This is one reason for creating the RTSA package.
+
+The methods for calculating the sequential stopping boundaries in TSA are almost identical to the methods for calculating sequential stopping boundaries in clinical trials. Hence we can compare the RTSA code with the existing packages in R for calculating stopping boundaries. We will specifically be comparing our stopping boundaries to the gsDesign package in R although gsDesign is created for clinical trials and RTSA is created for meta-analysis. 
+
+# Setup
+
+We will be using the RTSA and gsDesign packages in this vignette. 
+
+```{r setup}
+library(RTSA)
+#library(gsDesign)
+```
+
+The data will consist of different 
+
+```{r}
+data("perioOxy")
+```
+
