@@ -14,7 +14,7 @@
 #' \item{rwR}{Weights for the random-effects model}
 #' \item{peR}{Vector containing random-effects model results - pooled effect size, lower 95\% confidence limit, upper 95\% confidence limit, z-value (DL) or t-value (HKSJ), p-value, variance of estimate}
 #' \item{Q}{vector containing Q-measure, degrees of freedom (df) and p-value for Q}
-#' \item{}{vector containing tau2 (random effect variance estimate), H-measure, I2 (inconsistency) and D2 (diversity)}
+#' \item{U}{vector containing tau2 (random effect variance estimate), H-measure, I2 (inconsistency) and D2 (diversity)}
 #'
 #' @export
 #'
