@@ -1,6 +1,8 @@
 ---
 title: "Sequential boundaries in RTSA and other packages in R"
-output: rmarkdown::html_vignette
+output: 
+  bookdown::html_document2:
+    fig_caption: yes
 vignette: >
   %\VignetteIndexEntry{other-software}
   %\VignetteEngine{knitr::rmarkdown}
@@ -16,22 +18,121 @@ knitr::opts_chunk$set(
 
 # Introduction
 
-RTSA is intended as a tool for sequential meta-analysis using Trial Sequential Analysis (TSA) in statistical software R. To ensure the correctness and quality of the code in RTSA, we will be comparing the output of RTSA to other packages. Unfortunately, no package in R offer sequential stopping boundaries for meta-analysis. This is one reason for creating the RTSA package.
+RTSA is intended as a tool for sequential meta-analysis using Trial Sequential Analysis (TSA) in statistical software R. To ensure the correctness and quality of the code in RTSA, we will be comparing the output of RTSA to other packages. Unfortunately, no package in R offer sequential stopping boundaries for meta-analysis. This is one of the reasons for creating the RTSA package. For this reason we will sometimes be comparing results to the original TSA software coded in java and sometimes to packages on CRAN not intended for sequential meta-analysis. 
 
-The methods for calculating the sequential stopping boundaries in TSA are almost identical to the methods for calculating sequential stopping boundaries in clinical trials. Hence we can compare the RTSA code with the existing packages in R for calculating stopping boundaries. We will specifically be comparing our stopping boundaries to the gsDesign package in R although gsDesign is created for clinical trials and RTSA is created for meta-analysis. 
+The methods for calculating the sequential stopping boundaries in TSA are almost identical to the methods for calculating sequential stopping boundaries in clinical trials. Hence we can compare the RTSA code with the existing packages in R for calculating stopping boundaries. We will specifically be comparing our stopping boundaries to the gsDesign package in R although gsDesign is created for sequential methods in clinical trials and RTSA is created for sequential methods in meta-analysis. 
+
+Besides doing sequential meta-analysis, RTSA can also perform traditional meta-analysis. As the package is not created mainly for this purpose, we recommend using the metafor package in R for traditional meta-analysis as this package has an extensive selection of methods and documentation. The metafor package function also worked as an inspiration for some of the functions implemented in RTSA. We will in this vignette be comparing to the metafor package when conducting traditional meta-analyses.
 
 # Setup
 
-We will be using the RTSA and gsDesign packages in this vignette. 
+We will be using the RTSA, metafor and gsDesign packages in this vignette. 
 
-```{r setup}
+```{r message=FALSE}
 library(RTSA)
-#library(gsDesign)
+library(gsDesign)
+library(metafor)
 ```
 
-The data will consist of different 
+```{r}
+library(dplyr)
+library(kableExtra)
+```
+
+
+We will use a data example which is included in the RTSA package called perioOxy.
 
 ```{r}
 data("perioOxy")
+head(perioOxy)
+```
+
+# Traditional meta-analysis
+A traditional meta-analysis (non-sequential meta-analysis) can be computed in RTSA. 
+
+In R TSA we will be using the functions metaPrepare and synthesize to create a traditional meta-analysis. The function metaPrepare takes binary summary data (events and number of participants) as input and returns a list of trial specific treatment effects, confidence intervals and more. See Table \@ref(tab:trameta) for a presentation of some of the results from the metaPrepare function fit. 
+
+```{r}
+mp = metaPrepare(outcome = "RR", eI = perioOxy$eI, nI = perioOxy$nI,
+                 eC = perioOxy$eC, nC = perioOxy$nC, method = "IV")
+```
+
+The escalc function in the metafor package does essentially does the same as the metaPrepare function. To compute confidence intervals per trial, the summary function can be used. The results from the escalc function see Table \@ref(tab:trameta).
+
+```{r}
+me = escalc(measure="RR", n1i=nI, n2i=nC, ai=eI, ci=eC, data=perioOxy)
+sum.me = summary(me)
+```
+
+
+```{r trameta, echo = FALSE}
+out.mat = cbind(perioOxy$trial, round(mp$te, 2), paste0("(", round(mp$lower,2), "; ", round(mp$upper,2),")"), round(exp(me$yi),2), paste0("(", round(exp(sum.me$ci.lb),2), "; ", round(exp(sum.me$ci.ub),2),")"))
+colnames(out.mat) = c("Trial", "Effect estimate ", "95% CI", "Effect estimate ", "95% CI")
+knitr::kable(out.mat, caption = "Results from the metaPrepare and escalc function") %>% kable_paper() %>% add_header_above(c("", "RTSA::metaPrepare" = 2, "metafor::escalc and summary" = 2))
+```
+
+The saved object from metaPrepare can then be used to compute a meta-analysis made by the function synthesize in RTSA. The function returns a list containing information about a fixed-, and/or random-effects meta-analysis and more. We will specifically be fitting a fixed-effect model (always fitted) and a random-effects model (fitted per default) using the DerSimonian-Laird estimator for the heterogeneity. We will be comparing the output of the synthesize function with the metafor package function rma. See Table \@ref(tab:trametaout). 
+
+```{r}
+sm = synthesize(mp)
+out.mtFE = rma(yi, vi, data = me, method = "FE")
+out.mtRE = rma(yi, vi, data = me, method = "DL")
+```
+
+```{r trametaout, echo = FALSE}
+out.mat = rbind(c(round(sm$peF[c(1,2,3)],2),round(sm$peF[5],4),
+                  c(round(exp(c(out.mtFE$beta, out.mtFE$ci.lb, out.mtFE$ci.ub)),2),
+                    round(out.mtFE$pval,4))),
+                c(round(sm$peR[c(1,2,3)],2),round(sm$peR[5],4),
+                  round(exp(c(out.mtRE$beta, out.mtRE$ci.lb, out.mtRE$ci.ub)),2),
+                  round(out.mtRE$pval,4)))
+out.mat[,c(2,6)] = c(paste0("(", out.mat[,2], "; ", out.mat[,3],")"),
+                    paste0("(", out.mat[,6], "; ", out.mat[,7],")"))
+out.mat = out.mat[,-c(3,7)]
+colnames(out.mat) = c("Effect estimate ", "95% CI", "p-value", "Effect estimate ",
+                      "95% CI", "p-value")
+rownames(out.mat) = c("Fixed-effect", "Random-effects")
+knitr::kable(out.mat, caption = "Results from the synthesize and rma function") %>% kable_paper() %>% add_header_above(c("", "RTSA::synthesize" = 3, "metafor::rma" = 3))
+```
+
+# Sequential meta-analysis
+
+The RTSA package is mainly created for sequential meta-analysis. We will 
+
+```{r}
+# of the available studies
+count <- cumsum(perioOxy$nI+perioOxy$nC)
+
+# RIS 
+RR = 0.9
+p0 = sum(perioOxy$eC+perioOxy$eI)/sum(perioOxy$nC+perioOxy$nI)
+pI = exp(log(p0)+log(RR))
+pC = exp(log(p0)-log(RR))
+#nRandom(alpha = 0.05, beta = 0.2, pI = pI, pC = pC, diversity = 0.2)
+timing <- c(count/5673,1)
+
+# create incr in information
+timingincr <- timing - c(0,timing[-length(timing)])
+trials <- cbind(timing, timingincr, c(count,5673))
+
+# Start BoundaryCalculations programme ------------------------------------
+# set thresholds:
+IFincrementThreshold <- 0.01
+IFtotalThreshold <- 0.05
+
+trials <- trials[trials[,2] > IFincrementThreshold,]
+
+boundaries <- boundary(informationFractions = trials[,1],
+                 side = 2, alpha = 0.05, zninf = -8, tol = 1e-24)
+boundaries
+```
+
+```{r}
+gs = gsDesign(k = 7,
+         n.I = trials[,3],
+         test.type = 2,
+         alpha = 0.025, sfu = sfLDOF, sfl = sfLDOF)
+gs$upper$bound
+gs$lower$bound
 ```
 

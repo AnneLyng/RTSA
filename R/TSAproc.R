@@ -64,7 +64,7 @@ first <- function(ya, yb, h, stdv, nints, delta, lnn){
 }
 
 
-alphas <- function(alpha, side, ti, tol = 1e-13){
+alphas <- function(alpha, side, ti, tol){
   alphaSpendCum <- numeric(length(ti))
   alphaSpendDelta <- numeric(length(ti))
 
@@ -100,7 +100,7 @@ betas_Obf <- function( nn, beta, informationFractions, tol = 1e-13){
   return(list(betaValuesCumulated = pn_betaSpend, betaValuesDelta = pn_betaSpendDelta))
 }
 
-betas_An <- function( nn, beta, informationFractions, tol = 1e-13){
+betas_An <- function( nn, beta, informationFractions, tol = tol){
   pn_betaSpend <- numeric(length(informationFractions))
   pn_betaSpendDelta <- numeric(length(informationFractions))
 
@@ -176,7 +176,7 @@ searchfunc <- function(last, nints, i, valSF, stdv, ya, yb){
 }
 
 getInnerWedge <- function(informationFractions, beta, bsInf, delta, side, fakeIFY,
-                          zninf = -8, tol = 1e-13){
+                          zninf = -8, tol = tol){
   maxnn <- 50; lnn <- 5000; h <- 0.05
   nints <- numeric(length = maxnn)
 
@@ -283,9 +283,9 @@ getInnerWedge <- function(informationFractions, beta, bsInf, delta, side, fakeIF
 #'
 #' @return A list of two elements
 #' \item{InformationFractions}{The information fractions. On a scale from 0 to 1.}
-#' \item{alpha.boundaries}{The alpha spending boundaries. For 2-sided testing,
-#'  the values are the upper boundaries. The lower boundaries are
-#'  created by (-1)*alpha.boundaries}
+#' \item{alpha.boundaries.upper}{The alpha spending boundaries. For 2-sided testing,
+#'  the values are the upper boundaries.}
+#' \item{alpha.boundaries.lower}{The lower boundaries.}
 #'
 #' @export boundary
 #'
@@ -306,7 +306,7 @@ boundary <- function(informationFractions, side, alpha,
   ya <- numeric(length = maxnn); yb <- numeric(length = maxnn)
   nints <- numeric(length = maxnn)
 
-  outalpha <- alphas(alpha = alpha, side = side, ti = informationFractions)
+  outalpha <- alphas(alpha = alpha, side = side, ti = informationFractions, tol = tol)
   outsd <- sdfunc(ti = informationFractions)
 
   if(outalpha$alphaValuesDelta[1] <= 0 || outalpha$alphaValuesDelta[1] > alpha){
@@ -371,7 +371,9 @@ boundary <- function(informationFractions, side, alpha,
     }
   }
 
-  alpha.boundaries <- zb
+  alpha.boundaries.upper <- zb
+  alpha.boundaries.lower <- -zb
   return(list(informationFractions = informationFractions,
-              alpha.boundaries = alpha.boundaries))
+              alpha.boundaries.upper = alpha.boundaries.upper,
+              alpha.boundaries.lower = alpha.boundaries.lower))
 }

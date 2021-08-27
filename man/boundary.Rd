@@ -24,9 +24,9 @@ boundaries. Defaults to 1e-13.}
 \value{
 A list of two elements
 \item{InformationFractions}{The information fractions. On a scale from 0 to 1.}
-\item{alpha.boundaries}{The alpha spending boundaries. For 2-sided testing,
- the values are the upper boundaries. The lower boundaries are
- created by (-1)*alpha.boundaries}
+\item{alpha.boundaries.upper}{The alpha spending boundaries. For 2-sided testing,
+ the values are the upper boundaries.}
+\item{alpha.boundaries.lower}{The lower boundaries.}
 }
 \description{
 Calculate boundaries for sequential meta-analysis. The functions are based
