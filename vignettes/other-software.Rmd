@@ -34,7 +34,7 @@ library(gsDesign)
 library(metafor)
 ```
 
-```{r}
+```{r, include=FALSE}
 library(dplyr)
 library(kableExtra)
 ```
@@ -50,20 +50,19 @@ head(perioOxy)
 # Traditional meta-analysis
 A traditional meta-analysis (non-sequential meta-analysis) can be computed in RTSA. 
 
-In R TSA we will be using the functions metaPrepare and synthesize to create a traditional meta-analysis. The function metaPrepare takes binary summary data (events and number of participants) as input and returns a list of trial specific treatment effects, confidence intervals and more. See Table \@ref(tab:trameta) for a presentation of some of the results from the metaPrepare function fit. 
+In RTSA, we will be using the functions metaPrepare and synthesize to create a traditional meta-analysis. The function metaPrepare takes binary summary data (events and number of participants) as input and returns a list of trial specific treatment effects, confidence intervals and more. See Table \@ref(tab:trameta) for a presentation of some of the results from the metaPrepare function fit. 
 
 ```{r}
 mp = metaPrepare(outcome = "RR", eI = perioOxy$eI, nI = perioOxy$nI,
                  eC = perioOxy$eC, nC = perioOxy$nC, method = "IV")
 ```
 
-The escalc function in the metafor package does essentially does the same as the metaPrepare function. To compute confidence intervals per trial, the summary function can be used. The results from the escalc function see Table \@ref(tab:trameta).
+The escalc function in the metafor package does essentially the same as the metaPrepare function. To compute confidence intervals per trial, the summary function can be used. The results from the escalc function can be seen in Table \@ref(tab:trameta).
 
 ```{r}
 me = escalc(measure="RR", n1i=nI, n2i=nC, ai=eI, ci=eC, data=perioOxy)
 sum.me = summary(me)
 ```
-
 
 ```{r trameta, echo = FALSE}
 out.mat = cbind(perioOxy$trial, round(mp$te, 2), paste0("(", round(mp$lower,2), "; ", round(mp$upper,2),")"), round(exp(me$yi),2), paste0("(", round(exp(sum.me$ci.lb),2), "; ", round(exp(sum.me$ci.ub),2),")"))
@@ -71,12 +70,12 @@ colnames(out.mat) = c("Trial", "Effect estimate ", "95% CI", "Effect estimate ",
 knitr::kable(out.mat, caption = "Results from the metaPrepare and escalc function") %>% kable_paper() %>% add_header_above(c("", "RTSA::metaPrepare" = 2, "metafor::escalc and summary" = 2))
 ```
 
-The saved object from metaPrepare can then be used to compute a meta-analysis made by the function synthesize in RTSA. The function returns a list containing information about a fixed-, and/or random-effects meta-analysis and more. We will specifically be fitting a fixed-effect model (always fitted) and a random-effects model (fitted per default) using the DerSimonian-Laird estimator for the heterogeneity. We will be comparing the output of the synthesize function with the metafor package function rma. See Table \@ref(tab:trametaout). 
+The saved object from metaPrepare can then be used to compute a meta-analysis made by the function synthesize in RTSA. The function returns a list containing information about a fixed-effect meta-analysis, a random-effects meta-analysis and more. We will specifically be fitting a fixed-effect model (always fitted) and a random-effects model (fitted per default) using the DerSimonian-Laird estimator for the heterogeneity. We will be comparing the output of the synthesize function with the metafor package function rma. See Table \@ref(tab:trametaout). 
 
 ```{r}
-sm = synthesize(mp)
-out.mtFE = rma(yi, vi, data = me, method = "FE")
-out.mtRE = rma(yi, vi, data = me, method = "DL")
+sm = synthesize(mp) # RTSA function
+out.mtFE = rma(yi, vi, data = me, method = "FE") # metafor function
+out.mtRE = rma(yi, vi, data = me, method = "DL") # metafor function
 ```
 
 ```{r trametaout, echo = FALSE}
@@ -97,35 +96,40 @@ knitr::kable(out.mat, caption = "Results from the synthesize and rma function") 
 
 # Sequential meta-analysis
 
-The RTSA package is mainly created for sequential meta-analysis. We will 
+The RTSA package is mainly created for sequential meta-analysis. We will first focus on the boundary calculation before looking at the main RTSA function in our package. 
 
 ```{r}
-# of the available studies
+# Calculate the cumulative number of participants
 count <- cumsum(perioOxy$nI+perioOxy$nC)
 
-# RIS 
+# Calculate the RIS 
 RR = 0.9
 p0 = sum(perioOxy$eC+perioOxy$eI)/sum(perioOxy$nC+perioOxy$nI)
 pI = exp(log(p0)+log(RR))
 pC = exp(log(p0)-log(RR))
-#nRandom(alpha = 0.05, beta = 0.2, pI = pI, pC = pC, diversity = 0.2)
-timing <- c(count/5673,1)
+RIS = nRandom(alpha = 0.05, beta = 0.2, pI = pI, pC = pC, diversity = 0.2)
 
-# create incr in information
+# Set the timings of the studies relative to the RIS
+timing <- c(count/RIS,1)
+
+# create increment in the information
 timingincr <- timing - c(0,timing[-length(timing)])
-trials <- cbind(timing, timingincr, c(count,5673))
+trials <- cbind(timing, timingincr, c(count,RIS))
 
 # Start BoundaryCalculations programme ------------------------------------
-# set thresholds:
+# do not analyse after too small an increment in information
 IFincrementThreshold <- 0.01
 IFtotalThreshold <- 0.05
 
 trials <- trials[trials[,2] > IFincrementThreshold,]
 
+# calculate the boundaries
 boundaries <- boundary(informationFractions = trials[,1],
                  side = 2, alpha = 0.05, zninf = -8, tol = 1e-24)
 boundaries
 ```
+
+We can compare our boundaries to the gsDesign package.
 
 ```{r}
 gs = gsDesign(k = 7,
@@ -136,3 +140,54 @@ gs$upper$bound
 gs$lower$bound
 ```
 
+While the boundaries are not completely identical, they are very similar. It is also worth noting that the methods for calculating the boundaries are different. The method in gsDesign are largely based on the methods described in Jennison, Christopher and Turnbull, Bruce W., 2000, "Group Sequential Methods with Applications to Clinical Trials" ISBN: 0-8493-0316-8. See especially chapter 19 for a description of the numerical methods. The method for the RTSA boundary function is based on the java implementation different from the method in gsDesign. See Section "The history of the boundary calculation in RTSA" for more information.
+
+To get an output with more informatin and less steps, we can use the RTSA function which provides different kinds of information. The information could be used for e.g. plotting as is done in the original TSA software. The function e.g. can set a number of analysis times (anaTimes) if we want to do a meta-analysis after the first 4, 5, 7 and 8 studies. 
+
+```{r}
+RTSA(timing = timing, synth = mp, anaTimes = c(4,5,7,8),
+     side = 2, alpha = 0.05)
+```
+# Plotting in RTSA
+
+The RTSA function can be used as an input for plotting the traditional TSA plot. We might consider making a plot function for RTSA objects. 
+
+```{r}
+RTSAout = RTSA(timing = timing, synth = mp, anaTimes = c(4,5,7,8),
+     side = 2, alpha = 0.05)
+plot(x = c(0,RTSAout$boundout$informationFractions), y =
+       c(8, RTSAout$boundout$alpha.boundaries.upper), xlim = c(0,1),
+     ylim = c(-8,8), type = "l", col = "red",
+     xlab = "Information fraction",
+     ylab = "Z-value")
+points(x = c(0,RTSAout$boundout$informationFractions), y =
+       c(8, RTSAout$boundout$alpha.boundaries.upper), pch = 20)
+lines(x = c(0,RTSAout$boundout$informationFractions), y =
+       c(-8, RTSAout$boundout$alpha.boundaries.lower), col = "red")
+points(x = c(0,RTSAout$boundout$informationFractions), y =
+       c(-8, RTSAout$boundout$alpha.boundaries.lower), pch = 20)
+abline(h = 0)
+abline(h = 1.96, col = "red")
+abline(h = -1.96, col = "red")
+lines(x = c(0,RTSAout$boundout$informationFractions[-4]), y =
+       c(0, RTSAout$zvalues[2,]), col = "blue")
+points(x = c(0,RTSAout$boundout$informationFractions[-4]), y =
+       c(0, RTSAout$zvalues[2,]), pch = 20)
+```
+
+# Extra examples just for the heck of it (TODO)
+
+We show some more examples on other data sets. The next example shows that when the heterogeneity is estimated to 0, then the synout function will only print fixed-effect model results. 
+
+```{r}
+data("coronary")
+mp = metaPrepare(outcome = "OR", eI = coronary$eI, nI = coronary$nI,
+                 eC = coronary$eC, nC = coronary$nC, method = "MH")
+synout = synthesize(mp, hakn = TRUE)
+synout
+```
+
+
+# The history of the boundary calculation in RTSA
+
+Originally the implementation of the boundary calculation method started with following chapter 19 in Jennison, Christopher and Turnbull, Bruce W., 2000, "Group Sequential Methods with Applications to Clinical Trials" ISBN: 0-8493-0316-8. This implementation was then tested against the gsDesign package, where the results were identical. For now, we are sticking with the TSA implementation to calculate boundaries, but we might do a larger investigation on which implementation is preferable. 

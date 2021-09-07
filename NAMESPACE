@@ -1,3 +1,9 @@
-exportPattern("^[[:alpha:]]+")
+export(metaPrepare)
+export(minTrial)
+export(nFixed)
+export(nRandom)
+export(RTSA)
+export(synthesize)
+export(boundary)
 importFrom("stats", "qnorm", "qt", "binomial", "coef", "glm", "pchisq", "pnorm", "pt",
                "vcov", "uniroot")

@@ -1,3 +1,119 @@
+#' boundary
+#'
+#' Calculate boundaries for sequential meta-analysis. The functions are based
+#' on the TSA software
+#'
+#' @param informationFractions Vector of information levels out of the required
+#'  information. Must be in cronological order and between 0 and 1.
+#' @param side 2 or 1, for 2-sided or 1-sided testing. For now is only 2-sided
+#'  possible
+#' @param alpha alpha level e.g. 0.05
+#' @param zninf First boundary on z-scale when the first alpha spending is too
+#' small based on the variable tol. Defaults to -8.
+#' @param tol The tolerance level on probabilities when defining the stopping
+#' boundaries. Defaults to 1e-13.
+#'
+#' @return A list of two elements
+#' \item{InformationFractions}{The information fractions. On a scale from 0 to 1.}
+#' \item{alpha.boundaries.upper}{The alpha spending boundaries. For 2-sided testing,
+#'  the values are the upper boundaries.}
+#' \item{alpha.boundaries.lower}{The lower boundaries.}
+#'
+#' @export
+#'
+#' @examples
+#' timing = c(0.19, 0.5, 1)
+#' boundary(informationFractions = timing, side = 2, alpha = 0.05)
+#'
+boundary <- function(informationFractions, side, alpha,
+                     zninf = -8, tol = 1e-7){
+  # set variables
+  nn <- length(informationFractions); lnn <- 5000; h <- 0.05
+  maxnn <- max(c(length(informationFractions), 50))
+
+  # create variables (to be filled)
+  za <- numeric(length = nn); zb <- numeric(length = nn)
+
+  ya <- numeric(length = maxnn); yb <- numeric(length = maxnn)
+  nints <- numeric(length = maxnn)
+
+  outalpha <- alphas(alpha = alpha, side = side, ti = informationFractions, tol = tol)
+  outsd <- sdfunc(ti = informationFractions)
+
+  if(outalpha$alphaValuesDelta[1] <= 0 || outalpha$alphaValuesDelta[1] > alpha){
+    outalpha$alphaValuesDelta[1] <- pmin(alpha, outalpha$alphaValuesDelta[1])
+    outalpha$alphaValuesDelta[1] <- pmax(0, outalpha$alphaValuesDelta[1])
+  }
+
+  if(outalpha$alphaValuesDelta[1] == 0){
+    zb[1] <- -zninf
+    yb[1] <- zb[1]*outsd$sdincr[1]
+  } else if(outalpha$alphaValuesDelta[1] == alpha){ # should this not be alpha?
+    zb[1] <- 0
+    yb[1] <- zb[1]*outsd$sdincr[1]
+  } else{
+    zb[1] <- qnorm(1-outalpha$alphaValuesDelta[1]/side)
+    yb[1] <- zb[1] * outsd$sdincr[1]
+  }
+
+  if(side == 1){
+    za[1] <- zninf
+    ya[1] <- za[1]* outsd$sdincr[1]
+  } else {
+    za[1] <- -zb[1]
+    ya[1] <- -yb[1]
+  }
+
+  nints[1] <- round((abs(yb[1] - ya[1])/h*outsd$sdincr[1])) + 1
+
+  for(i in 2:nn){
+    if(i == 2){
+      last <- first(ya = ya[1], yb = yb[1], h = h, stdv = outsd$sdincr[1],
+                    nints = nints, delta = 0, lnn = lnn)
+    }
+    if(outalpha$alphaValuesDelta[i] <= 0 || outalpha$alphaValuesDelta[i] >= 1){
+      outalpha$alphaValuesDelta[i] <- min(c(1, outalpha$alphaValuesDelta[i]))
+      outalpha$alphaValuesDelta[i] <- max(c(0, outalpha$alphaValuesDelta[i]))
+    }
+    if(outalpha$alphaValuesDelta[i] < tol){
+      zb[i] <- -zninf
+      yb[i] <- zb[i]*outsd$sdincr[i]
+    } else if(outalpha$alphaValuesDelta[i] == 1){
+      zb[i] <- 0
+      yb[i] <- zb[i]*outsd$sdincr[i]
+    } else {
+      yb <- searchfunc(last = last, nints = nints, i = i,
+                       valSF = outalpha$alphaValuesDelta[i]/side,
+                       stdv = outsd$sdincr[i], ya = ya, yb = yb)
+      zb[i] <- yb[i]/outsd$sdproc[i]
+      if(side == 1){
+        ya[i] = zninf*outsd$sdproc[i] # should this be incr?
+        za[i] = zninf
+      } else {
+        ya[i] = -yb[i]
+        za[i] = -zb[i]
+      }
+    }
+    nints[i] <- round((yb[i]-ya[i])/h*outsd$sdincr[i])+1
+
+    if(i != nn){
+      last <- other(ya = ya, yb = yb, i = i, stdv = outsd$sdincr[i], h = h,
+                    last = last, nints = nints)
+    }
+  }
+
+  alpha.boundaries.upper <- zb
+  alpha.boundaries.lower <- -zb
+  return(list(informationFractions = informationFractions,
+              alpha.boundaries.upper = alpha.boundaries.upper,
+              alpha.boundaries.lower = alpha.boundaries.lower))
+}
+#' @export
+
+#' fcab
+#'
+#' Test
+#'
 fcab <- function(last, nint, yam1, ybm1, h, x,
                  stdv, delta){
   nlim <- 5000
@@ -264,116 +380,4 @@ getInnerWedge <- function(informationFractions, beta, bsInf, delta, side, fakeIF
   ret2 <- za + outsd$sdproc*testDrift
   return(list(ret1 = ret1, ret2 = ret2, betaValuesDelta = outbeta$betaValuesDelta, za = za, zb = zb,
               ya = ya, yb = yb, drift = testDrift))
-}
-
-#' boundary
-#'
-#' Calculate boundaries for sequential meta-analysis. The functions are based
-#' on the TSA software
-#'
-#' @param informationFractions Vector of information levels out of the required
-#'  information. Must be in cronological order and between 0 and 1.
-#' @param side 2 or 1, for 2-sided or 1-sided testing. For now is only 2-sided
-#'  possible
-#' @param alpha alpha level e.g. 0.05
-#' @param zninf First boundary on z-scale when the first alpha spending is too
-#' small based on the variable tol. Defaults to -8.
-#' @param tol The tolerance level on probabilities when defining the stopping
-#' boundaries. Defaults to 1e-13.
-#'
-#' @return A list of two elements
-#' \item{InformationFractions}{The information fractions. On a scale from 0 to 1.}
-#' \item{alpha.boundaries.upper}{The alpha spending boundaries. For 2-sided testing,
-#'  the values are the upper boundaries.}
-#' \item{alpha.boundaries.lower}{The lower boundaries.}
-#'
-#' @export boundary
-#'
-#' @examples
-#' timing = c(0.19, 0.5, 1)
-#' boundary(informationFractions = timing, side = 2, alpha = 0.05)
-#'
-boundary <- function(informationFractions, side, alpha,
-                             zninf = -8, tol = 1e-7){
-  # set variables
-  nn <- length(informationFractions); lnn <- 5000; h <- 0.05
-  maxnn <- max(c(length(informationFractions), 50))
-
-  # create variables (to be filled)
-  za <- numeric(length = nn); zb <- numeric(length = nn)
-  #alphaValuesCum <- numeric(length = maxnn); alphaValuesDelta <- numeric(length = maxnn)
-
-  ya <- numeric(length = maxnn); yb <- numeric(length = maxnn)
-  nints <- numeric(length = maxnn)
-
-  outalpha <- alphas(alpha = alpha, side = side, ti = informationFractions, tol = tol)
-  outsd <- sdfunc(ti = informationFractions)
-
-  if(outalpha$alphaValuesDelta[1] <= 0 || outalpha$alphaValuesDelta[1] > alpha){
-    outalpha$alphaValuesDelta[1] <- pmin(alpha, outalpha$alphaValuesDelta[1])
-    outalpha$alphaValuesDelta[1] <- pmax(0, outalpha$alphaValuesDelta[1])
-  }
-
-  if(outalpha$alphaValuesDelta[1] == 0){
-    zb[1] <- -zninf
-    yb[1] <- zb[1]*outsd$sdincr[1]
-  } else if(outalpha$alphaValuesDelta[1] == alpha){ # should this not be alpha?
-    zb[1] <- 0
-    yb[1] <- zb[1]*outsd$sdincr[1]
-  } else{
-    zb[1] <- qnorm(1-outalpha$alphaValuesDelta[1]/side)
-    yb[1] <- zb[1] * outsd$sdincr[1]
-  }
-
-  if(side == 1){
-    za[1] <- zninf
-    ya[1] <- za[1]* outsd$sdincr[1]
-  } else {
-    za[1] <- -zb[1]
-    ya[1] <- -yb[1]
-  }
-
-  nints[1] <- round((abs(yb[1] - ya[1])/h*outsd$sdincr[1])) + 1
-
-  for(i in 2:nn){
-    if(i == 2){
-      last <- first(ya = ya[1], yb = yb[1], h = h, stdv = outsd$sdincr[1],
-                    nints = nints, delta = 0, lnn = lnn)
-    }
-    if(outalpha$alphaValuesDelta[i] <= 0 || outalpha$alphaValuesDelta[i] >= 1){
-      outalpha$alphaValuesDelta[i] <- min(c(1, outalpha$alphaValuesDelta[i]))
-      outalpha$alphaValuesDelta[i] <- max(c(0, outalpha$alphaValuesDelta[i]))
-    }
-    if(outalpha$alphaValuesDelta[i] < tol){
-      zb[i] <- -zninf
-      yb[i] <- zb[i]*outsd$sdincr[i]
-    } else if(outalpha$alphaValuesDelta[i] == 1){
-      zb[i] <- 0
-      yb[i] <- zb[i]*outsd$sdincr[i]
-    } else {
-      yb <- searchfunc(last = last, nints = nints, i = i,
-                       valSF = outalpha$alphaValuesDelta[i]/side,
-                       stdv = outsd$sdincr[i], ya = ya, yb = yb)
-      zb[i] <- yb[i]/outsd$sdproc[i]
-      if(side == 1){
-        ya[i] = zninf*outsd$sdproc[i] # should this be incr?
-        za[i] = zninf
-      } else {
-        ya[i] = -yb[i]
-        za[i] = -zb[i]
-      }
-    }
-    nints[i] <- round((yb[i]-ya[i])/h*outsd$sdincr[i])+1
-
-    if(i != nn){
-      last <- other(ya = ya, yb = yb, i = i, stdv = outsd$sdincr[i], h = h,
-                    last = last, nints = nints)
-    }
-  }
-
-  alpha.boundaries.upper <- zb
-  alpha.boundaries.lower <- -zb
-  return(list(informationFractions = informationFractions,
-              alpha.boundaries.upper = alpha.boundaries.upper,
-              alpha.boundaries.lower = alpha.boundaries.lower))
 }

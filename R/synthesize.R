@@ -161,7 +161,7 @@ synthesize <- function(y, sign = NULL, random = TRUE, fixedStudy = TRUE, hakn = 
         I2 <- ifelse((Q-df)/Q >= 0, (Q-df)/Q, 0)
 
         # random effect
-        if(random == TRUE){ # cal. random effect weights and belonging pooled estimate
+        if(random == TRUE & tau2 != 0){ # cal. random effect weights and belonging pooled estimate
           wR <- 1/(sig^2+tau2)
           vwR <- 1/sum(wR) # variance of pooled effect (random)
           rwR <- wR*vwR
