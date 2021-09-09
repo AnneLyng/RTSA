@@ -17,7 +17,7 @@
 #' \item{InformationFractions}{The information fractions. On a scale from 0 to 1.}
 #' \item{alpha.boundaries.upper}{The alpha spending boundaries. For 2-sided testing,
 #'  the values are the upper boundaries.}
-#' \item{alpha.boundaries.lower}{The lower boundaries.}
+#' \item{alpha.boundaries.lower}{The lower boundaries. Only computed if side = 2.}
 #'
 #' @export
 #'
@@ -103,7 +103,11 @@ boundary <- function(informationFractions, side, alpha,
   }
 
   alpha.boundaries.upper <- zb
-  alpha.boundaries.lower <- -zb
+  if(side == 2){
+    alpha.boundaries.lower <- -zb
+  } else {
+    alpha.boundaries.lower <-NULL
+  }
   return(list(informationFractions = informationFractions,
               alpha.boundaries.upper = alpha.boundaries.upper,
               alpha.boundaries.lower = alpha.boundaries.lower))
