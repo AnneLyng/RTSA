@@ -155,24 +155,7 @@ The RTSA function can be used as an input for plotting the traditional TSA plot.
 ```{r}
 RTSAout = RTSA(timing = timing, synth = mp, anaTimes = c(4,5,7,8),
      side = 2, alpha = 0.05)
-plot(x = c(0,RTSAout$boundout$informationFractions), y =
-       c(8, RTSAout$boundout$alpha.boundaries.upper), xlim = c(0,1),
-     ylim = c(-8,8), type = "l", col = "red",
-     xlab = "Information fraction",
-     ylab = "Z-value")
-points(x = c(0,RTSAout$boundout$informationFractions), y =
-       c(8, RTSAout$boundout$alpha.boundaries.upper), pch = 20)
-lines(x = c(0,RTSAout$boundout$informationFractions), y =
-       c(-8, RTSAout$boundout$alpha.boundaries.lower), col = "red")
-points(x = c(0,RTSAout$boundout$informationFractions), y =
-       c(-8, RTSAout$boundout$alpha.boundaries.lower), pch = 20)
-abline(h = 0)
-abline(h = 1.96, col = "red")
-abline(h = -1.96, col = "red")
-lines(x = c(0,RTSAout$boundout$informationFractions[-4]), y =
-       c(0, RTSAout$zvalues[2,]), col = "blue")
-points(x = c(0,RTSAout$boundout$informationFractions[-4]), y =
-       c(0, RTSAout$zvalues[2,]), pch = 20)
+plot(RTSAout)
 ```
 
 # Extra examples just for the heck of it (TODO)

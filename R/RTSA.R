@@ -106,17 +106,23 @@ RTSA = function(timing,
     )
   }
 
-  return(
-    list(
-      boundout = boundout,
-      zout = zout[stopTime],
-      zvalues = zvalues,
-      anaTimes = anaTimes,
-      stopTime = stopTime,
-      naiveCI = naiveCI,
-      adjCI = adjCI
-    )
+  RTSAout =     list(
+    side = side,
+    boundout = boundout,
+    zout = zout[stopTime],
+    zvalues = zvalues,
+    anaTimes = anaTimes,
+    stopTime = stopTime,
+    naiveCI = naiveCI,
+    adjCI = adjCI
   )
+
+  class(RTSAout) <- c("list", "RTSA")
+
+  return(
+    RTSAout
+  )
+
 }
 
 

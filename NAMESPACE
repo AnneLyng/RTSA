@@ -5,5 +5,7 @@ export(nRandom)
 export(RTSA)
 export(synthesize)
 export(boundary)
+S3method(plot, RTSA)
 importFrom("stats", "qnorm", "qt", "binomial", "coef", "glm", "pchisq", "pnorm", "pt",
                "vcov", "uniroot")
+importFrom("graphics", "abline", "lines", "points", "plot")
