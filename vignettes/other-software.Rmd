@@ -174,3 +174,15 @@ synout
 # The history of the boundary calculation in RTSA
 
 Originally the implementation of the boundary calculation method started with following chapter 19 in Jennison, Christopher and Turnbull, Bruce W., 2000, "Group Sequential Methods with Applications to Clinical Trials" ISBN: 0-8493-0316-8. This implementation was then tested against the gsDesign package, where the results were identical. For now, we are sticking with the TSA implementation to calculate boundaries, but we might do a larger investigation on which implementation is preferable. 
+
+## Alpha-spending functions
+
+The TSA software uses the Lan and DeMets version of the O'Brien-Fleming boundaries. 
+
+```{r}
+ti = seq(0.1,1,0.1)
+alpha = 0.05
+side = 2
+2*(1 - pnorm(qnorm(1-alpha/side/2)/sqrt(ti), mean = 0, sd = 1))
+```
+

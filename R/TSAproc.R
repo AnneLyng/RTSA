@@ -114,10 +114,6 @@ boundary <- function(informationFractions, side, alpha,
 }
 #' @export
 
-#' fcab
-#'
-#' Test
-#'
 fcab <- function(last, nint, yam1, ybm1, h, x,
                  stdv, delta){
   nlim <- 5000

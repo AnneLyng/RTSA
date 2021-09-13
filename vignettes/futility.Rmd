@@ -1,0 +1,19 @@
+---
+title: "Futility"
+output: 
+  bookdown::html_document2:
+    fig_caption: yes
+vignette: >
+  %\VignetteIndexEntry{futility}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+# Purpose
+
+This vignette is used to introduce futility and it's two versions: binding and non-binding. 
+
+```{r}
+
+```
+
