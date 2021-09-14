@@ -1,0 +1,146 @@
+---
+title: "'RTSA'-manual"
+output: 
+  bookdown::html_document2:
+    toc: true
+    toc_depth: 2
+    fig_caption: yes
+vignette: >
+  %\VignetteIndexEntry{rtsa-manual}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r, include=FALSE}
+library(dplyr)
+library(kableExtra)
+```
+
+# Introduction
+
+*RTSA* is an R-package for sequential meta-analysis using Trial Sequential Analysis (TSA). 
+
+```{r message=FALSE}
+library(RTSA)
+```
+
+
+# Reliability and quality control
+To ensure the correctness and quality of the code in RTSA, we will be comparing the output of RTSA to other packages. Unfortunately, no package in R offer sequential stopping boundaries for meta-analysis. This is one of the reasons for creating the *RTSA*-package. For this reason we will both be comparing results from *RTSA* with the original [TSA-software](https://ctu.dk/tsa/) coded in Java (TSA v. **XXXXX**, Copenhagen Trial Unit, Copenhagen, Denmark) and to packages available on CRAN. The intended use of the packages available on CRAN is not for sequential meta-analysis, but the mathematical algorithms are comparable.
+
+TSA requires a traditional meta-analysis which have been implemented as part for the *RTSA*-package. As the *RTSA*-package is not created mainly for this purpose, we recommend using the [*metafor*](https://cran.r-project.org/web/packages/metafor/index.html)-package in R for traditional meta-analysis as this package has an extensive selection of methods and documentation. We will compare the results of the *RTSA*-package and the [*metafor*](https://cran.r-project.org/web/packages/metafor/index.html)-package for the traditional meta-analysis.
+
+The methods for calculating the sequential stopping boundaries in TSA are almost identical to the methods for calculating sequential stopping boundaries in clinical trials. Hence we can compare the *RTSA*-package with the existing packages in R for calculating stopping boundaries. We will specifically be comparing our stopping boundaries to the [*gsDesign*](https://cran.r-project.org/web/packages/gsDesign/gsDesign.pdf)-package. The [*gsDesign*](https://cran.r-project.org/web/packages/gsDesign/gsDesign.pdf)- and *RTSA*-packages differ in their intended purpose. The [*gsDesign*](https://cran.r-project.org/web/packages/gsDesign/gsDesign.pdf)-package is created for sequential methods in clinical trials and the *RTSA*-package is created for sequential methods in meta-analysis. Even with their difference in indended use, the boundries should be comparable. 
+
+For investigation of reliability we will use the `perioOxy`-data included in the *RTSA*-package.
+```{r}
+data("perioOxy")
+head(perioOxy)
+```
+
+## Traditional meta-analysis
+In the *RTSA*-package, we will be using the functions `metaPrepare` and `synthesize` to create a traditional meta-analysis. The function `metaPrepare` uses binary summary data (events and number of participants) as input and returns a list of trial specific treatment effects, confidence intervals and more.  
+
+```{r}
+mp <- metaPrepare(outcome = "RR", eI = perioOxy$eI, nI = perioOxy$nI,
+                 eC = perioOxy$eC, nC = perioOxy$nC, method = "IV")
+```
+
+The `escalc`-function in the [*metafor*](https://cran.r-project.org/web/packages/metafor/index.html)-package does essentially the same as the `metaPrepare`-function. To compute confidence intervals per trial, the summary function can be used. The results from the escalc function can be seen in Table \@ref(tab:trameta).
+
+```{r}
+me <- metafor::escalc(measure="RR", n1i=nI, n2i=nC, ai=eI, ci=eC, data=perioOxy)
+sum.me <- summary(me)
+```
+
+```{r trameta, echo = FALSE}
+out.mat <- cbind(perioOxy$trial, round(mp$te, 2), paste0("(", round(mp$lower,2), "; ", round(mp$upper,2),")"), round(exp(me$yi),2), paste0("(", round(exp(sum.me$ci.lb),2), "; ", round(exp(sum.me$ci.ub),2),")"))
+colnames(out.mat) <- c("Trial", "Effect estimate ", "95% CI", "Effect estimate ", "95% CI")
+knitr::kable(out.mat, caption = "Results from the metaPrepare and escalc function") %>% kable_paper() %>% add_header_above(c("", "RTSA::metaPrepare" = 2, "metafor::escalc and summary" = 2))
+```
+
+The saved object from `metaPrepare` can be used to compute a traditional meta-analysis by the function `synthesize` in *RTSA*-package. The `synthesize`-function returns a list containing information about a fixed-effect meta-analysis, a random-effects meta-analysis and more. We will specifically be fitting a fixed-effect model (always fitted) and a random-effects model (fitted per default) using the DerSimonian-Laird estimator for the heterogeneity. We will be comparing the output of the synthesize function with the `rma`-function from the [*metafor*](https://cran.r-project.org/web/packages/metafor/index.html)-package. See Table \@ref(tab:trametaout). 
+
+```{r}
+sm <- synthesize(mp) # RTSA function
+out.mtFE <- metafor::rma(yi, vi, data = me, method = "FE") # metafor function
+out.mtRE <- metafor::rma(yi, vi, data = me, method = "DL") # metafor function
+```
+
+```{r trametaout, echo = FALSE}
+out.mat <- rbind(c(round(sm$peF[c(1,2,3)],2),round(sm$peF[5],4),
+                  c(round(exp(c(out.mtFE$beta, out.mtFE$ci.lb, out.mtFE$ci.ub)),2),
+                    round(out.mtFE$pval,4))),
+                c(round(sm$peR[c(1,2,3)],2),round(sm$peR[5],4),
+                  round(exp(c(out.mtRE$beta, out.mtRE$ci.lb, out.mtRE$ci.ub)),2),
+                  round(out.mtRE$pval,4)))
+out.mat[,c(2,6)] <- c(paste0("(", out.mat[,2], "; ", out.mat[,3],")"),
+                    paste0("(", out.mat[,6], "; ", out.mat[,7],")"))
+out.mat = out.mat[,-c(3,7)]
+colnames(out.mat) <- c("Effect estimate ", "95% CI", "p-value", "Effect estimate ",
+                      "95% CI", "p-value")
+rownames(out.mat) <- c("Fixed-effect", "Random-effects")
+knitr::kable(out.mat, caption = "Results from the synthesize and rma function") %>% kable_paper() %>% add_header_above(c("", "RTSA::synthesize" = 3, "metafor::rma" = 3))
+```
+
+## Sequential meta-analysis
+The RTSA package is mainly created for sequential meta-analysis. We will first focus on the boundary calculation before looking at the main RTSA function in our package. 
+
+```{r}
+# Calculate the cumulative number of participants
+count <- cumsum(perioOxy$nI+perioOxy$nC)
+
+# Calculate the RIS 
+RR = 0.9
+p0 = sum(perioOxy$eC+perioOxy$eI)/sum(perioOxy$nC+perioOxy$nI)
+pI = exp(log(p0)+log(RR))
+pC = exp(log(p0)-log(RR))
+RIS = nRandom(alpha = 0.05, beta = 0.2, pI = pI, pC = pC, diversity = 0.2)
+
+# Set the timings of the studies relative to the RIS
+timing <- c(count/RIS,1)
+
+# create increment in the information
+timingincr <- timing - c(0,timing[-length(timing)])
+trials <- cbind(timing, timingincr, c(count,RIS))
+
+# Start BoundaryCalculations programme ------------------------------------
+# do not analyse after too small an increment in information
+IFincrementThreshold <- 0.01
+IFtotalThreshold <- 0.05
+
+trials <- trials[trials[,2] > IFincrementThreshold,]
+
+# calculate the boundaries
+boundaries <- boundary(informationFractions = trials[,1],
+                 side = 1, alpha = 0.05, zninf = -8, tol = 1e-24)
+boundaries
+```
+We can compare our boundaries to the gsDesign package.
+
+```{r}
+library(gsDesign)
+gs = gsDesign(k = 7,
+         n.I = trials[,3],
+         test.type = 1,
+         alpha = 0.05, sfu = sfLDOF, sfl = sfLDOF)
+gs$upper$bound
+```
+
+
+```{r}
+TSA(timing = timing, synth = mp, anaTimes = c(4,5,7,8),
+     side = 1, alpha = 0.05)
+```
+```{r}
+RTSAout = TSA(timing = timing, synth = mp, anaTimes = c(4,5,7,8),
+     side = 1, alpha = 0.05)
+plot(RTSAout)
+```
