@@ -138,6 +138,7 @@ gs = gsDesign(k = 7,
          alpha = 0.025, sfu = sfLDOF, sfl = sfLDOF)
 gs$upper$bound
 gs$lower$bound
+gs
 ```
 
 While the boundaries are not completely identical, they are very similar. It is also worth noting that the methods for calculating the boundaries are different. The method in gsDesign are largely based on the methods described in Jennison, Christopher and Turnbull, Bruce W., 2000, "Group Sequential Methods with Applications to Clinical Trials" ISBN: 0-8493-0316-8. See especially chapter 19 for a description of the numerical methods. The method for the RTSA boundary function is based on the java implementation different from the method in gsDesign. See Section "The history of the boundary calculation in RTSA" for more information.
@@ -145,15 +146,23 @@ While the boundaries are not completely identical, they are very similar. It is 
 To get an output with more informatin and less steps, we can use the RTSA function which provides different kinds of information. The information could be used for e.g. plotting as is done in the original TSA software. The function e.g. can set a number of analysis times (anaTimes) if we want to do a meta-analysis after the first 4, 5, 7 and 8 studies. 
 
 ```{r}
-RTSA(timing = timing, synth = mp, anaTimes = c(4,5,7,8),
+TSA(timing = timing, synth = mp, anaTimes = c(4,5,7,8),
      side = 2, alpha = 0.05)
 ```
+## One function to rule them all
+
+If we want a function that combines the metaPrepare function and the TSA function, then we can use the RTSA function. This function prints the outcome of the TSA function without the need to specify the metaPrepare function, as it is imbedded in the RTSA function. 
+
+```{r}
+RTSA(data = perioOxy, outcome = "RR", mc = 0.9)
+```
+
 # Plotting in RTSA
 
 The RTSA function can be used as an input for plotting the traditional TSA plot. We might consider making a plot function for RTSA objects. 
 
 ```{r}
-RTSAout = RTSA(timing = timing, synth = mp, anaTimes = c(4,5,7,8),
+RTSAout = TSA(timing = timing, synth = mp, anaTimes = c(4,5,7,8),
      side = 2, alpha = 0.05)
 plot(RTSAout)
 ```

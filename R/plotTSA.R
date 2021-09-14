@@ -12,7 +12,7 @@
 #' timing <- c(count/5540,1)
 #' mp = metaPrepare(outcome = "RR", eI = perioOxy$eI, nI = perioOxy$nI,
 #' eC = perioOxy$eC, nC = perioOxy$nC, method = "IV")
-#' RTSAout = RTSA(timing = timing, synth = mp, anaTimes = c(4,5,7,8),
+#' RTSAout = TSA(timing = timing, synth = mp, anaTimes = c(4,5,7,8),
 #' side = 2, alpha = 0.05)
 #' plot(x = RTSAout)
 #'

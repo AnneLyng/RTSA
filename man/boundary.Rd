@@ -4,7 +4,7 @@
 \alias{boundary}
 \title{boundary}
 \usage{
-boundary(informationFractions, side, alpha, zninf = -8, tol = 1e-07)
+boundary(informationFractions, side, alpha, zninf = -20, tol = 1e-07)
 }
 \arguments{
 \item{informationFractions}{Vector of information levels out of the required

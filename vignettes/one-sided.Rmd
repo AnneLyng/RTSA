@@ -140,11 +140,11 @@ gs$upper$bound
 
 
 ```{r}
-RTSA(timing = timing, synth = mp, anaTimes = c(4,5,7,8),
+TSA(timing = timing, synth = mp, anaTimes = c(4,5,7,8),
      side = 1, alpha = 0.05)
 ```
 ```{r}
-RTSAout = RTSA(timing = timing, synth = mp, anaTimes = c(4,5,7,8),
+RTSAout = TSA(timing = timing, synth = mp, anaTimes = c(4,5,7,8),
      side = 1, alpha = 0.05)
 plot(RTSAout)
 ```

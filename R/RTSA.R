@@ -1,4 +1,4 @@
-#' RTSA
+#' TSA
 #'
 #' @param timing Vector containing values from 0 to 1 in chronological order.
 #' @param anaTimes Analysis times.
@@ -29,9 +29,9 @@
 #' timing <- c(count/5673,1)
 #' mp = metaPrepare(outcome = "RR", eI = perioOxy$eI, nI = perioOxy$nI,
 #' eC = perioOxy$eC, nC = perioOxy$nC, method = "IV")
-#' RTSA(timing = timing, synth = mp, anaTimes = c(4,5,7,8), side = 2, alpha = 0.05)
+#' TSA(timing = timing, synth = mp, anaTimes = c(4,5,7,8), side = 2, alpha = 0.05)
 #'
-RTSA = function(timing,
+TSA = function(timing,
                 anaTimes,
                 synth,
                 side,
@@ -59,6 +59,7 @@ RTSA = function(timing,
   timingincr <- timing - c(0, timing[-length(timing)])
   trials <- cbind(timing, timingincr)
 
+  anaTimes = anaTimes[which(trials[, 2] > IFincrementThreshold)]
   trials <- trials[trials[, 2] > IFincrementThreshold, ]
 
   trials[, 2] <- trials[, 1] - c(0, trials[, 1][-length(trials[, 1])])
@@ -69,7 +70,7 @@ RTSA = function(timing,
                             alpha = alpha)
 
   # calculate the cum. z-score (do we want this per study?)
-  zout = lapply(anaTimes[-length(anaTimes)],
+  zout = lapply(anaTimes[anaTimes <= length(synth$eI)],
                 function(x) {
                   synout = synthesize(
                     metaPrepare(
@@ -84,12 +85,12 @@ RTSA = function(timing,
                   return(synout)
                 })
 
-  names(zout) = anaTimes[-length(anaTimes)]
+  names(zout) = anaTimes[anaTimes <= length(synth$eI)]
 
   zvalues = sapply(names(zout), function(x){c(zout[[x]]$peF[4], zout[[x]]$peR[4])})
 
   if (is.null(stopTime) & confInt == TRUE) {
-    stopTime = as.character(anaTimes[length(anaTimes) - 1])
+    stopTime = as.character(max(anaTimes[anaTimes < length(synth$eI)]))
     naiveCI = list(CIfixed = zout[[stopTime]]$peF[c(2, 3)],
                    CIrandom = zout[[stopTime]]$peR[c(2, 3)])
     adjCI = list(
@@ -125,4 +126,41 @@ RTSA = function(timing,
 
 }
 
+#' RTSA
+#'
+#' @param data A data set containing eI, eC, nI, nC
+#' @param outcome Outcome of interst, RR only possibility now
+#' @param mc minimum clinical relevant outcome
+#'
+#' @return A TSA object (list for now)
+#'
+#' @export
+#'
+#' @examples
+#' data(perioOxy)
+#' RTSA(data = perioOxy, outcome = "RR", mc = 0.9)
+RTSA <- function(data, outcome = "RR", mc){
+  # calculate the meta-analysis
+  mp = RTSA::metaPrepare(outcome = outcome, eI = data$eI, eC = data$eC,
+                         nI = data$nI, nC = data$nC)
 
+  # Calculate the cumulative number of participants
+  count <- cumsum(data$nI+data$nC)
+
+  # Calculate the RIS
+  if(outcome == "RR"){
+  p0 = sum(data$eC+data$eI)/sum(data$nC+data$nI)
+  pI = exp(log(p0)+log(mc))
+  pC = exp(log(p0)-log(mc))
+  RIS = RTSA::nRandom(alpha = 0.05, beta = 0.2, pI = pI, pC = pC, diversity = 0)
+  }
+
+  # Set the timings of the studies relative to the RIS
+  timing <- c(count/RIS)
+  if(max(timing) < 1){
+    timing = c(timing,1)
+  }
+
+  RTSA::TSA(timing = timing, synth = mp, anaTimes = 2:length(timing[timing < 1]),
+      side = 2, alpha = 0.05)
+}

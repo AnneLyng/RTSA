@@ -4,61 +4,21 @@
 \alias{RTSA}
 \title{RTSA}
 \usage{
-RTSA(
-  timing,
-  anaTimes,
-  synth,
-  side,
-  alpha,
-  stopTime = NULL,
-  confInt = TRUE,
-  count,
-  RIS,
-  hakn
-)
+RTSA(data, outcome = "RR", mc)
 }
 \arguments{
-\item{timing}{Vector containing values from 0 to 1 in chronological order.}
+\item{data}{A data set containing eI, eC, nI, nC}
 
-\item{anaTimes}{Analysis times.}
+\item{outcome}{Outcome of interst, RR only possibility now}
 
-\item{synth}{metaPrepare object.}
-
-\item{side}{1 or 2 sided test. Only 2 sided available for now.}
-
-\item{alpha}{Type 1 error rate.}
-
-\item{stopTime}{Stopping time. Defaults to second last analysis time.}
-
-\item{confInt}{If confidence intervals should be included.}
-
-\item{count}{If no timing is provided, provide cumulative count of participants.}
-
-\item{RIS}{If no timing is provided, provide RIS.}
-
-\item{hakn}{If HKSJ adjustment should be used.}
+\item{mc}{minimum clinical relevant outcome}
 }
 \value{
-A list consisting of:
-\item{boundout}{Timing and boundaries}
-\item{zout}{Meta-analysis synthesize object at either the time of stopping
-(stopTime input) or the meta-analysis synthesize object containing all studies.}
-\item{anaTimes}{Analysis times}
-\item{stopTime}{Stopping time. Either the time of stopping
-(stopTime input) or the analysis time which containing all studies.}
-\item{naiveCI}{1-alpha% CI for fixed-effect and random-effects model at stopping
-time}
-\item{adjCI}{TSA adjusted confidence intervals. Also known as repeated confidence
- intervals}
+A TSA object (list for now)
 }
 \description{
 RTSA
 }
 \examples{
-count <- cumsum(perioOxy$nI+perioOxy$nC)
-timing <- c(count/5673,1)
-mp = metaPrepare(outcome = "RR", eI = perioOxy$eI, nI = perioOxy$nI,
-eC = perioOxy$eC, nC = perioOxy$nC, method = "IV")
-RTSA(timing = timing, synth = mp, anaTimes = c(4,5,7,8), side = 2, alpha = 0.05)
-
+RTSA(data = perioOxy, outcome = "RR", mc = 0.9)
 }
