@@ -175,14 +175,43 @@ synout
 
 Originally the implementation of the boundary calculation method started with following chapter 19 in Jennison, Christopher and Turnbull, Bruce W., 2000, "Group Sequential Methods with Applications to Clinical Trials" ISBN: 0-8493-0316-8. This implementation was then tested against the gsDesign package, where the results were identical. For now, we are sticking with the TSA implementation to calculate boundaries, but we might do a larger investigation on which implementation is preferable. 
 
+The next subsections are created as a smaller walk-through of the boundary calculation.
+
 ## Alpha-spending functions
 
-The TSA software uses the Lan and DeMets version of the O'Brien-Fleming boundaries. 
+The TSA software uses the Lan and DeMets version of the O'Brien-Fleming boundaries. The calculation of the alpha spending is the first step to calculate the boundaries. These are dependent on the timing of the analyses *ti), the alpha level (alpha) and the side of the hypothesis test (side). 
 
 ```{r}
 ti = seq(0.1,1,0.1)
 alpha = 0.05
 side = 2
-2*(1 - pnorm(qnorm(1-alpha/side/2)/sqrt(ti), mean = 0, sd = 1))
+plot(y = 2*(1 - pnorm(qnorm(1-alpha/side/2)/sqrt(ti), mean = 0, sd = 1)), type = "l", 
+     x = ti, ylab = expression(alpha), xlab = "timing")
 ```
+
+As seen from the plot, a characteristic of the Lan and DeMets version of O'Brien-Fleming boundaries is the low alpha spending in the start of the analysis compared to later analyses. 
+
+## Using alpha spending for calculating the boundaries
+
+Calculating the first boundary for the first analysis is simple. For this reason the first boundary of the TSA method and the gsDesign method should be equivalent, and should only differ if there is a different analysis time exclusion rule of the two.
+
+The formula for calculating the first upper boundary is:
+
+\begin{align*}
+\psi_1(b_1 ;\theta) = \int^{\infty}_{b_1} f_1(z_1;\theta) dz_{1} 
+\end{align*}
+
+where $f_1(z_1;\theta) = \phi\left( z_1 - \theta \sqrt{I_1} \right) $ with $\phi(x)$ being the density of the standard normal distribution. The first boundary $b_1$ can be found by using the inverse cumulative function and setting $\psi_1(b_1 ;\theta) = \pi_1/2$. 
+
+The next boundary becomes more complicated, as it conditions on the first boundary not being crossed:
+
+\begin{align*}
+\psi_k(a_1, & b_1, \dots, b_2 ;\theta)  = \int_{a_1}^{b_1} \int_{b_2}^{\infty} f(z_1;\theta) f(z_2, z_1; \theta) d_{z_2} dz_1 
+\end{align*}
+
+which we can rewrite to:
+
+\begin{align*}
+\psi_2(a_1, b_1, b_2 ;\theta) = \int_{a_{1}}^{b_{1}} f_{1}(z_{1};\theta) \Phi\bigg( \frac{\theta\Delta_2+z_{1}\sqrt{I_{1}}-b_2\sqrt{I_2}}{\sqrt{\Delta_2}} \bigg) dz_{1}
+\end{align*}
 

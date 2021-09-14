@@ -26,14 +26,13 @@
 #' boundary(informationFractions = timing, side = 2, alpha = 0.05)
 #'
 boundary <- function(informationFractions, side, alpha,
-                     zninf = -8, tol = 1e-7){
+                     zninf = -20, tol = 1e-7){
   # set variables
   nn <- length(informationFractions); lnn <- 5000; h <- 0.05
   maxnn <- max(c(length(informationFractions), 50))
 
   # create variables (to be filled)
   za <- numeric(length = nn); zb <- numeric(length = nn)
-
   ya <- numeric(length = maxnn); yb <- numeric(length = maxnn)
   nints <- numeric(length = maxnn)
 
