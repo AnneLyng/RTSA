@@ -6,6 +6,8 @@
 #' @return Plot. Either a plot for two sided testing or one-sided
 #' @export
 #'
+#' @importFrom graphics abline lines points
+#'
 #' @examples
 #' data(perioOxy)
 #' count <- cumsum(perioOxy$nI+perioOxy$nC)

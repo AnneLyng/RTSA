@@ -111,7 +111,7 @@ boundary <- function(informationFractions, side, alpha,
               alpha.boundaries.upper = alpha.boundaries.upper,
               alpha.boundaries.lower = alpha.boundaries.lower))
 }
-#' @export
+
 
 fcab <- function(last, nint, yam1, ybm1, h, x,
                  stdv, delta){

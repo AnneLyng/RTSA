@@ -8,7 +8,9 @@ Description: Frequentist meta-analysis and sequential meta-analysis based on
     Trial Sequential Analysis by Copenhagen Trial Unit (CTU). 
 License: GPL (>= 2)
 Imports:
-    lme4
+    lme4,
+    graphics, 
+    stats
 Encoding: UTF-8
 Depends: R (>= 3.5.0)
 LazyData: true

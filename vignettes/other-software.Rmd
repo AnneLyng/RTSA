@@ -175,7 +175,7 @@ We show some more examples on other data sets. The next example shows that when 
 data("coronary")
 mp = metaPrepare(outcome = "OR", eI = coronary$eI, nI = coronary$nI,
                  eC = coronary$eC, nC = coronary$nC, method = "MH")
-synout = synthesize(mp, hakn = TRUE)
+synout = synthesize(mp, hksj = TRUE)
 synout
 ```
 

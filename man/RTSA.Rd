@@ -20,5 +20,6 @@ A TSA object (list for now)
 RTSA
 }
 \examples{
+data(perioOxy)
 RTSA(data = perioOxy, outcome = "RR", mc = 0.9)
 }
