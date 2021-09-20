@@ -41,7 +41,9 @@ meta-analysis. Defaults to FALSE.}
 \item{...}{Additional variables. See Details.}
 }
 \value{
-A list object
+A list object containing two data frames.
+1. studyResults contains information about the individual studies
+2. metaResults contains information about the meta-analysis (traditional, non-sequential)
 }
 \description{
 metaanalysis

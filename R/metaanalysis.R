@@ -15,30 +15,31 @@
 #' @param sign TBA.
 #' @param ... Additional variables. See Details.
 #'
-#' @return A list object
+#' @return A list object containing two data frames.
+#' 1. studyResults contains information about the individual studies
+#' 2. metaResults contains information about the meta-analysis (traditional, non-sequential)
 #' @export
 #'
 #' @examples
 #' data(perioOxy)
 #' metaanalysis(outcome = "RR", data = perioOxy, study = perioOxy$trial)
 metaanalysis <- function(outcome = "RR",
-                          data = NULL,
-                          study = NULL,
-                          vartype = "equal",
-                          method = "MH",
-                          fixedStudy = TRUE,
-                          hksj = FALSE,
-                          sign = NULL,
-                          ...) {
-
+                         data = NULL,
+                         study = NULL,
+                         vartype = "equal",
+                         method = "MH",
+                         fixedStudy = TRUE,
+                         hksj = FALSE,
+                         sign = NULL,
+                         ...) {
   # check if the correct outcome metric is choosen
-  if(!(outcome %in% c("cont", "RD", "RR", "OR"))){
+  if (!(outcome %in% c("cont", "RD", "RR", "OR"))) {
     stop("Outcome must be either: cont, RD, RR or OR.")
   }
 
   # check if the input is correct for outcome == "cont"
-  if(outcome == "cont"){
-    if(!is.null(data)){
+  if (outcome == "cont") {
+    if (!is.null(data)) {
       mI = data$mI
       mC = data$mC
       sdI = data$sdI
@@ -47,40 +48,72 @@ metaanalysis <- function(outcome = "RR",
   }
 
   # figure out if data is in data set or needs to be specified
-  if(outcome != "cont") {
+  if (outcome != "cont") {
     if (!is.null(data)) {
       eI = data$eI
       nI = data$nI
-      eC = data$nC
+      eC = data$eC
       nC = data$nC
     }
   }
 
-  if(outcome == "cont"){
-    mp = metaPrepare(outcome = "cont", mI = mI, mC = mC, sdI = sdI, sdC = sdC,
-                     vartype = vartype, method = method)
+  if (outcome == "cont") {
+    mp = metaPrepare(
+      outcome = "cont",
+      mI = mI,
+      mC = mC,
+      sdI = sdI,
+      sdC = sdC,
+      vartype = vartype,
+      method = method
+    )
   } else {
-    mp = metaPrepare(outcome = outcome, eI = eI, eC = eC, nI = nI, nC = nC,
-                     vartype = vartype, method = method)
+    mp = metaPrepare(
+      outcome = outcome,
+      eI = eI,
+      eC = eC,
+      nI = nI,
+      nC = nC,
+      vartype = vartype,
+      method = method
+    )
   }
 
   sy = synthesize(y = mp)
 
   # create an output object
-  if(is.null(study) | is.null(data$study)){
+  if (is.null(study) & is.null(data$study)) {
     trial = 1:length(mp$te)
     message("Provide a study vector to name studies.")
   } else {
-    if(is.null(study)) trial = data$study
-    if(is.null(data$study)) trial = study
+    if (is.null(study))
+      trial = data$study
+    if (is.null(data$study))
+      trial = study
   }
 
-  studyResults = data.frame(study = trial, "ES" = mp$te, "std.error" = sqrt(mp$sig), "lowerCI" = mp$lower,
-                            "upperCI" = mp$upper, weightFixed = mp$w*100, weightRandom = sy$rwR)
-  colnames(studyResults)[1] = c(outcome)
+  studyResults = data.frame(
+    study = trial,
+    "ES" = mp$te,
+    "std.error" = sqrt(mp$sig),
+    "lowerCI" = mp$lower,
+    "upperCI" = mp$upper,
+    weightFixed = mp$w,
+    weightRandom = sy$rwR
+  )
+  colnames(studyResults)[2] = c(outcome)
 
-  out = list(studyResults)
+  metaResults = data.frame(
+    type = c("Fixed", "Random"),
+    "ES" = c(sy$peF[1], sy$peR[1]),
+    "std.error" = c(sqrt(sy$peF[7]), sqrt(sy$peR[6])),
+    "lowerCI" = c(sy$peF[2], sy$peR[2]),
+    "upperCI" = c(sy$peF[3], sy$peR[3]),
+    "p-value" = c(sy$peF[5], sy$peR[5])
+  )
+  colnames(metaResults)[2] = c(outcome)
+
+  out = list(studyResults = studyResults, metaResults = metaResults)
 
   return(out)
 }
-
