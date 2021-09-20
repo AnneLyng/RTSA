@@ -95,7 +95,7 @@ metaanalysis <- function(outcome = "RR",
   studyResults = data.frame(
     study = trial,
     "ES" = mp$te,
-    "std.error" = sqrt(mp$sig),
+    "stdError" = sqrt(mp$sig),
     "lowerCI" = mp$lower,
     "upperCI" = mp$upper,
     weightFixed = mp$w,
@@ -106,10 +106,10 @@ metaanalysis <- function(outcome = "RR",
   metaResults = data.frame(
     type = c("Fixed", "Random"),
     "ES" = c(sy$peF[1], sy$peR[1]),
-    "std.error" = c(sqrt(sy$peF[7]), sqrt(sy$peR[6])),
+    "stdError" = c(sqrt(sy$peF[7]), sqrt(sy$peR[6])),
     "lowerCI" = c(sy$peF[2], sy$peR[2]),
     "upperCI" = c(sy$peF[3], sy$peR[3]),
-    "p-value" = c(sy$peF[5], sy$peR[5])
+    "pValue" = c(sy$peF[5], sy$peR[5])
   )
   colnames(metaResults)[2] = c(outcome)
 

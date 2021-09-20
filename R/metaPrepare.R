@@ -82,6 +82,8 @@ metaPrepare <- function(outcome = "RR", eI = NULL, nI = NULL, eC = NULL, nC = NU
       w <- 1/(sig^2)
       w <- w/sum(w)
       pe <- sum(te*w)
+
+      w <- w*100
     } else if(method == "MH" | method == "GLM"){ # Mantel-Haenszel or GLM
       A <- eI # make the complicated variance (emerson)
       B <- nI - eI

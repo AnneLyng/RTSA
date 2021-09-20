@@ -94,6 +94,14 @@ rownames(out.mat) = c("Fixed-effect", "Random-effects")
 knitr::kable(out.mat, caption = "Results from the synthesize and rma function") %>% kable_paper() %>% add_header_above(c("", "RTSA::synthesize" = 3, "metafor::rma" = 3))
 ```
 
+We have created a function metaanalysis that combines the two functions metaPrepare and synthesize. The function produces two data frames, one for study results and one with the meta-analysis results.  
+
+```{r}
+metaanalysis(outcome = "RR", data = perioOxy, study = perioOxy$trial, 
+             method = "IV")
+```
+
+
 # Sequential meta-analysis
 
 The RTSA package is mainly created for sequential meta-analysis. We will first focus on the boundary calculation before looking at the main RTSA function in our package. 
