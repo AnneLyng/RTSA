@@ -159,7 +159,7 @@ TSA(timing = timing, synth = mp, anaTimes = c(4,5,7,8),
 ```
 ## One function to rule them all
 
-If we want a function that combines the metaPrepare function and the TSA function, then we can use the RTSA function. This function prints the outcome of the TSA function without the need to specify the metaPrepare function, as it is imbedded in the RTSA function. 
+If we want a function that combines the metaPrepare, synthesize and TSA function, then we can use the RTSA function. This function prints the outcome of the TSA function without the need to specify the metaPrepare function, as it is imbedded in the RTSA function. 
 
 ```{r}
 RTSA(data = perioOxy, outcome = "RR", mc = 0.9)
