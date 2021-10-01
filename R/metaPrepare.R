@@ -13,6 +13,7 @@
 #' @param sdC standard error of estimate in control group (continuous outcome)
 #' @param vartype Variance type for continuous outcomes. Default is "equal", other choice is "non-equal"
 #' @param method Method for calculating weights. Options include: MH (Mantel-Haenzel), Inverse variance weighting (IV) or GLM
+#' @param data Data frame with the required columns
 #'
 #' @return A list is returned with the following items:
 #' \item{w}{weights}
@@ -36,7 +37,27 @@
 #' method = "MH"))
 metaPrepare <- function(outcome = "RR", eI = NULL, nI = NULL, eC = NULL, nC = NULL,
                          mI = NULL, mC = NULL, sdI = NULL, sdC = NULL, vartype = "equal",
-                         method = "MH") {
+                         method = "MH", data = NULL) {
+
+  if (outcome == "cont") {
+    if (!is.null(data)) {
+      mI = data$mI
+      mC = data$mC
+      sdI = data$sdI
+      sdC = data$sdC
+    }
+  }
+
+  # figure out if data is in data set or needs to be specified
+  if (outcome != "cont") {
+    if (!is.null(data)) {
+      eI = data$eI
+      nI = data$nI
+      eC = data$eC
+      nC = data$nC
+    }
+  }
+
   if(outcome %in% c("OR", "RR")){
 
     # if there is total zero events

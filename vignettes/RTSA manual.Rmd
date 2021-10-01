@@ -31,6 +31,15 @@ library(kableExtra)
 library(RTSA)
 ```
 
+## Why do a sequential meta-analysis 
+
+When conducting a meta-analysis 
+
+# Statistical background
+
+## Type 1 and type 2 error
+
+
 
 # Reliability and quality control
 To ensure the correctness and quality of the code in RTSA, we will be comparing the output of RTSA to other packages. Unfortunately, no package in R offer sequential stopping boundaries for meta-analysis. This is one of the reasons for creating the *RTSA*-package. For this reason we will both be comparing results from *RTSA* with the original [TSA-software](https://ctu.dk/tsa/) coded in Java (TSA v. **XXXXX**, Copenhagen Trial Unit, Copenhagen, Denmark) and to packages available on CRAN. The intended use of the packages available on CRAN is not for sequential meta-analysis, but the mathematical algorithms are comparable.

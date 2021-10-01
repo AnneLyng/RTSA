@@ -15,7 +15,8 @@ metaPrepare(
   sdI = NULL,
   sdC = NULL,
   vartype = "equal",
-  method = "MH"
+  method = "MH",
+  data = NULL
 )
 }
 \arguments{
@@ -40,6 +41,8 @@ metaPrepare(
 \item{vartype}{Variance type for continuous outcomes. Default is "equal", other choice is "non-equal"}
 
 \item{method}{Method for calculating weights. Options include: MH (Mantel-Haenzel), Inverse variance weighting (IV) or GLM}
+
+\item{data}{Data frame with the required columns}
 }
 \value{
 A list is returned with the following items:
