@@ -99,10 +99,11 @@ metaanalysis <- function(outcome = "RR",
     "lowerCI" = mp$lower,
     "upperCI" = mp$upper,
     weightFixed = mp$w,
-    weightRandom = sy$rwR
+    weightRandom = ifelse(is.null(sy$rwR), NA, sy$rwR)
   )
   colnames(studyResults)[2] = c(outcome)
 
+  if(!is.null(sy$peR)){
   metaResults = data.frame(
     type = c("Fixed", "Random"),
     "ES" = c(sy$peF[1], sy$peR[1]),
@@ -110,7 +111,15 @@ metaanalysis <- function(outcome = "RR",
     "lowerCI" = c(sy$peF[2], sy$peR[2]),
     "upperCI" = c(sy$peF[3], sy$peR[3]),
     "pValue" = c(sy$peF[5], sy$peR[5])
-  )
+  )} else {
+    metaResults = data.frame(
+      type = c("Fixed"),
+      "ES" = c(sy$peF[1]),
+      "stdError" = c(sqrt(sy$peF[7])),
+      "lowerCI" = c(sy$peF[2]),
+      "upperCI" = c(sy$peF[3]),
+      "pValue" = c(sy$peF[5]))
+  }
   colnames(metaResults)[2] = c(outcome)
 
   out = list(studyResults = studyResults, metaResults = metaResults)
