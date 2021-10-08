@@ -19,6 +19,7 @@
 #' 1. studyResults contains information about the individual studies
 #' 2. metaResults contains information about the meta-analysis (traditional, non-sequential)
 #' @export
+#' @aliases print.metaanalysis
 #'
 #' @examples
 #' data(perioOxy)
@@ -123,6 +124,17 @@ metaanalysis <- function(outcome = "RR",
   colnames(metaResults)[2] = c(outcome)
 
   out = list(studyResults = studyResults, metaResults = metaResults)
-
+  class(out) <- "metaanalysis"
   return(out)
+}
+
+
+#' @method print metaanalysis
+#' @export
+print.metaanalysis <- function(x,...){
+  cat("This is a test of printing a fancy output text: \n")
+  y <- x$studyResults
+  print(y)
+  invisible(x)
+  cat("\n OMG works")
 }

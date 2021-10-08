@@ -2,6 +2,7 @@
 % Please edit documentation in R/metaanalysis.R
 \name{metaanalysis}
 \alias{metaanalysis}
+\alias{print.metaanalysis}
 \title{metaanalysis}
 \usage{
 metaanalysis(
