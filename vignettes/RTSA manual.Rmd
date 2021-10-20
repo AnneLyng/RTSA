@@ -1,5 +1,5 @@
 ---
-title: "'RTSA'-manual"
+title: "'RTSA-manual"
 output: 
   bookdown::html_document2:
     toc: true
@@ -35,11 +35,40 @@ library(RTSA)
 
 When conducting a meta-analysis 
 
+# Notation
+
+$\mu$: Location parameter in the normal distribution
+$\theta$: Treatment difference between two populations
+$H_0$: Null-hypothesis
+$H_A$: Alternative hypothesis
+
 # Statistical background
+
+Users not trained in statistics might have troubles with some of the statistical metrics such as type-1- and type-2-error, p-values, z-values and more used to describe and make a trial sequential analysis. It is not recommended to fit TSA without statistical knowledge, but ones knowledge about some of the metrics just described might need to be refreshed. These following subsections are intended for those.
+
+## Hypothesis testing
+
+One of the purposes of making a TSA is to perform hypothesis testing. RTSA accommodates different types of hypothesis testing including:
+
+1. One-sided testing 
+    - with and without binding futility
+2. Two-sided testing
+    - with and without binding futility
+
+
 
 ## Type 1 and type 2 error
 
+Consider a scenario where we wish to reject the null hypothesis $H_0: \theta = 0$, where the alternative hypothesis is $H_A: \theta \neq 0$. The parameter $\theta$ is used, when we are interested in a treatment difference. As the alternative allows for both $\theta > 0$, intervention being superior, and $\theta < 0$, intervention being inferior, it is a two-sided test, we are considering. 
 
+State something about $\theta$ being normally distributed.
+
+Considering the test statistic $Z$, we have that $$P_{\theta = 0}(\vert Z\vert > c) = \alpha$$
+
+Here $\alpha$ is the type-1-error, the probability of a false positive.
+
+$$P_{\theta = \delta}(\vert Z \vert > c) = P_{\theta = -\delta}(\vert Z \vert > c) = 1 - \beta$$
+Here $\beta$ is the type-2-error, the probability of a false negative. Power is then defined as: $1-\beta$.
 
 # Reliability and quality control
 To ensure the correctness and quality of the code in RTSA, we will be comparing the output of RTSA to other packages. Unfortunately, no package in R offer sequential stopping boundaries for meta-analysis. This is one of the reasons for creating the *RTSA*-package. For this reason we will both be comparing results from *RTSA* with the original [TSA-software](https://ctu.dk/tsa/) coded in Java (TSA v. **XXXXX**, Copenhagen Trial Unit, Copenhagen, Denmark) and to packages available on CRAN. The intended use of the packages available on CRAN is not for sequential meta-analysis, but the mathematical algorithms are comparable.
