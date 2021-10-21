@@ -25,11 +25,13 @@ library(kableExtra)
 
 # Introduction
 
-*RTSA* is an R-package for sequential meta-analysis using Trial Sequential Analysis (TSA). 
+*RTSA* is an R-package for sequential meta-analysis using Trial Sequential Analysis (TSA). The package can be loaded by:
 
 ```{r message=FALSE}
 library(RTSA)
 ```
+
+This vignette's purpose is to function as a working manual for both statisticians and non-statisticians to understand how RTSA's main functions are implemented and to understand some of the statistical background behind TSA. The original implementation of TSA was done in java and as a stand-alone software. The idea behind the RTSA package was to implement the original functionalities of TSA to statistical software R, making it easier for users to see and understand the source code but also to allow for a faster implementation of new functions as sequential meta-analysis is still an evolving field. 
 
 ## Why do a sequential meta-analysis 
 
@@ -69,6 +71,10 @@ Here $\alpha$ is the type-1-error, the probability of a false positive.
 
 $$P_{\theta = \delta}(\vert Z \vert > c) = P_{\theta = -\delta}(\vert Z \vert > c) = 1 - \beta$$
 Here $\beta$ is the type-2-error, the probability of a false negative. Power is then defined as: $1-\beta$.
+
+# Data management? (Need a better word)
+
+## Handling of zero-trials
 
 # Reliability and quality control
 To ensure the correctness and quality of the code in RTSA, we will be comparing the output of RTSA to other packages. Unfortunately, no package in R offer sequential stopping boundaries for meta-analysis. This is one of the reasons for creating the *RTSA*-package. For this reason we will both be comparing results from *RTSA* with the original [TSA-software](https://ctu.dk/tsa/) coded in Java (TSA v. **XXXXX**, Copenhagen Trial Unit, Copenhagen, Denmark) and to packages available on CRAN. The intended use of the packages available on CRAN is not for sequential meta-analysis, but the mathematical algorithms are comparable.
