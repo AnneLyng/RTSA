@@ -1,10 +1,9 @@
 #' metaanalysis
 #'
-#' @param outcome Outcome metric for the studies. Choose between: cont, RR, RD or OR
-#' @param data Data.frame. If data is provided as a data set. Data set must then containing arguments for
-#'  meta-analysis. Either eI, eC, nC or nI for discrete data, or, mI, mC, sdI and sdC for cont.
+#' @param data Data.frame. If data is provided as a data set. Dataset must then containing arguments for
+#'  meta-analysis. Either `study`, `eI`, `eC`, `nC` or `nI` for discrete data, or, `study`, `mI`, `mC`, `sdI` and `sdC` for cont.
 #'  See details. If a data frame is not provided, the columns must be set in the function.
-#' @param study Vector of study names. Defaults to NULL.
+#' @param outcome Outcome metric for the studies. Choose between: cont, RR, RD or OR
 #' @param vartype Variance type for continuous outcomes. Choices are "equal" or "non-equal". Defaults to "equal".
 #' @param method Method for calculating weights. Options include: MH (Mantel-Haenzel), Inverse variance weighting (IV)
 #'  or GLM
@@ -24,15 +23,17 @@
 #' @examples
 #' data(perioOxy)
 #' metaanalysis(outcome = "RR", data = perioOxy, study = perioOxy$trial)
-metaanalysis <- function(outcome = "RR",
-                         data = NULL,
-                         study = NULL,
+metaanalysis <- function(data = NULL,
+                         outcome = "RR",
                          vartype = "equal",
                          method = "MH",
                          fixedStudy = TRUE,
                          hksj = FALSE,
                          sign = NULL,
                          ...) {
+
+  #skal vi lige have ordnet når vi er enige om trial eller study.
+  study <- NULL
   # check if the correct outcome metric is choosen
   if (!(outcome %in% c("cont", "RD", "RR", "OR"))) {
     stop("Outcome must be either: cont, RD, RR or OR.")
@@ -80,9 +81,11 @@ metaanalysis <- function(outcome = "RR",
     )
   }
 
-  sy = synthesize(y = mp)
+  sy = synthesize(y = mp, sign = sign, fixedStudy = fixedStudy, hksj = hksj)
 
   # create an output object
+  # Her skal vi nok blive enige om at være konsekvente - Trial eller study.
+  if(!is.null(data$trial)) colnames(data)[colnames(data) == "trial"] <- "study"
   if (is.null(study) & is.null(data$study)) {
     trial = 1:length(mp$te)
     message("Provide a study vector to name studies.")
@@ -105,25 +108,25 @@ metaanalysis <- function(outcome = "RR",
   colnames(studyResults)[2] = c(outcome)
 
   if(!is.null(sy$peR)){
-  metaResults = data.frame(
-    type = c("Fixed", "Random"),
-    "ES" = c(sy$peF[1], sy$peR[1]),
-    "stdError" = c(sqrt(sy$peF[7]), sqrt(sy$peR[6])),
-    "lowerCI" = c(sy$peF[2], sy$peR[2]),
-    "upperCI" = c(sy$peF[3], sy$peR[3]),
-    "pValue" = c(sy$peF[5], sy$peR[5])
-  )} else {
     metaResults = data.frame(
-      type = c("Fixed"),
-      "ES" = c(sy$peF[1]),
-      "stdError" = c(sqrt(sy$peF[7])),
-      "lowerCI" = c(sy$peF[2]),
-      "upperCI" = c(sy$peF[3]),
-      "pValue" = c(sy$peF[5]))
-  }
+      type = c("Fixed", "Random"),
+      "ES" = c(sy$peF[1], sy$peR[1]),
+      "stdError" = c(sqrt(sy$peF[7]), sqrt(sy$peR[6])),
+      "lowerCI" = c(sy$peF[2], sy$peR[2]),
+      "upperCI" = c(sy$peF[3], sy$peR[3]),
+      "pValue" = c(sy$peF[5], sy$peR[5])
+    )} else {
+      metaResults = data.frame(
+        type = c("Fixed"),
+        "ES" = c(sy$peF[1]),
+        "stdError" = c(sqrt(sy$peF[7])),
+        "lowerCI" = c(sy$peF[2]),
+        "upperCI" = c(sy$peF[3]),
+        "pValue" = c(sy$peF[5]))
+    }
   colnames(metaResults)[2] = c(outcome)
 
-  out = list(studyResults = studyResults, metaResults = metaResults)
+  out = list(studyResults = studyResults, metaResults = metaResults, metaPrepare = mp, synthesize = sy)
   class(out) <- "metaanalysis"
   return(out)
 }
@@ -132,9 +135,16 @@ metaanalysis <- function(outcome = "RR",
 #' @method print metaanalysis
 #' @export
 print.metaanalysis <- function(x,...){
-  cat("This is a test of printing a fancy output text: \n")
+  cat("Individual trial results: \n \n")
   y <- x$studyResults
   print(y)
+  cat("\n Non-sequential metaanalysis results: \n \n")
+  y <- x$metaResults
+  print(y)
   invisible(x)
-  cat("\n OMG works")
+  if(x$metaPrepare$method == "GLM"){
+    message("\n NB. Only fixed-effect is analysed since method is GLM")
+  }
+
 }
+
