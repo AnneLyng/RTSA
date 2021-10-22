@@ -138,12 +138,12 @@ print.metaanalysis <- function(x,...){
   cat("Individual trial results: \n \n")
   y <- x$studyResults
   print(y)
-  cat("\n Metanalysis results: \n \n")
+  cat("\n Non-sequential metaanalysis results: \n \n")
   y <- x$metaResults
   print(y)
   invisible(x)
-  if(testo$metaPrepare$method == "GLM"){
-    cat("\n NB. Only fixed-effect is analysed since method is GLM")
+  if(x$metaPrepare$method == "GLM"){
+    message("\n NB. Only fixed-effect is analysed since method is GLM")
   }
 
 }
