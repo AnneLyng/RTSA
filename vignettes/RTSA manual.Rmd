@@ -72,7 +72,7 @@ Here $\alpha$ is the type-1-error, the probability of a false positive.
 $$P_{\theta = \delta}(\vert Z \vert > c) = P_{\theta = -\delta}(\vert Z \vert > c) = 1 - \beta$$
 Here $\beta$ is the type-2-error, the probability of a false negative. Power is then defined as: $1-\beta$.
 
-# Data management? (Need a better word)
+# Practical implementations
 
 ## Handling of zero-trials
 
