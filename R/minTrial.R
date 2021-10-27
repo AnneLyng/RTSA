@@ -19,7 +19,7 @@
 #' different number of trials.
 #' @export
 #'
-#' @importFrom stats uniroot
+#' @importFrom stats uniroot qnorm
 #'
 #' @examples
 #' minTrial(metric = "RR", value = 0.7, tau2 = 0.05)

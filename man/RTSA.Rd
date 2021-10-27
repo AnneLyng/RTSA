@@ -7,7 +7,7 @@
 RTSA(data, outcome = "RR", mc)
 }
 \arguments{
-\item{data}{A data set containing eI, eC, nI, nC}
+\item{data}{A data set containing eI, eC, nI, nC or mI, mC, sdI, sdC, nI, nC}
 
 \item{outcome}{Outcome of interst, RR only possibility now}
 

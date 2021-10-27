@@ -53,7 +53,7 @@ A traditional meta-analysis (non-sequential meta-analysis) can be computed in RT
 In RTSA, we will be using the functions metaPrepare and synthesize to create a traditional meta-analysis. The function metaPrepare takes binary summary data (events and number of participants) as input and returns a list of trial specific treatment effects, confidence intervals and more. See Table \@ref(tab:trameta) for a presentation of some of the results from the metaPrepare function fit. 
 
 ```{r}
-mp = metaPrepare(outcome = "RR", eI = perioOxy$eI, nI = perioOxy$nI,
+mp = RTSA:::metaPrepare(outcome = "RR", eI = perioOxy$eI, nI = perioOxy$nI,
                  eC = perioOxy$eC, nC = perioOxy$nC, method = "IV")
 ```
 
@@ -73,7 +73,7 @@ knitr::kable(out.mat, caption = "Results from the metaPrepare and escalc functio
 The saved object from metaPrepare can then be used to compute a meta-analysis made by the function synthesize in RTSA. The function returns a list containing information about a fixed-effect meta-analysis, a random-effects meta-analysis and more. We will specifically be fitting a fixed-effect model (always fitted) and a random-effects model (fitted per default) using the DerSimonian-Laird estimator for the heterogeneity. We will be comparing the output of the synthesize function with the metafor package function rma. See Table \@ref(tab:trametaout). 
 
 ```{r}
-sm = synthesize(mp) # RTSA function
+sm = RTSA:::synthesize(mp) # RTSA function
 out.mtFE = rma(yi, vi, data = me, method = "FE") # metafor function
 out.mtRE = rma(yi, vi, data = me, method = "DL") # metafor function
 ```
@@ -124,7 +124,7 @@ IFtotalThreshold <- 0.05
 trials <- trials[trials[,2] > IFincrementThreshold,]
 
 # calculate the boundaries
-boundaries <- boundary(informationFractions = trials[,1],
+boundaries <- RTSA:::boundary(informationFractions = trials[,1],
                  side = 1, alpha = 0.05, zninf = -8, tol = 1e-24)
 boundaries
 ```
@@ -140,11 +140,11 @@ gs$upper$bound
 
 
 ```{r}
-TSA(timing = timing, synth = mp, anaTimes = c(4,5,7,8),
+RTSA:::TSA(timing = timing, synth = mp, anaTimes = c(4,5,7,8),
      side = 1, alpha = 0.05)
 ```
 ```{r}
-RTSAout = TSA(timing = timing, synth = mp, anaTimes = c(4,5,7,8),
+RTSAout = RTSA:::TSA(timing = timing, synth = mp, anaTimes = c(4,5,7,8),
      side = 1, alpha = 0.05)
 plot(RTSAout)
 ```

@@ -22,14 +22,6 @@
 #' time}
 #' \item{adjCI}{TSA adjusted confidence intervals. Also known as repeated confidence
 #'  intervals}
-#' @export
-#'
-#' @examples
-#' count <- cumsum(perioOxy$nI+perioOxy$nC)
-#' timing <- c(count/5673,1)
-#' mp = metaPrepare(outcome = "RR", eI = perioOxy$eI, nI = perioOxy$nI,
-#' eC = perioOxy$eC, nC = perioOxy$nC, method = "IV")
-#' TSA(timing = timing, synth = mp, anaTimes = c(4,5,7,8), side = 2, alpha = 0.05)
 #'
 TSA = function(timing,
                 anaTimes,
@@ -65,32 +57,29 @@ TSA = function(timing,
   trials[, 2] <- trials[, 1] - c(0, trials[, 1][-length(trials[, 1])])
 
   # calculate the boundaries
-  boundout = RTSA::boundary(informationFractions = trials[, 1],
+  boundout = boundary(informationFractions = trials[, 1],
                             side = side,
                             alpha = alpha)
 
   # calculate the cum. z-score (do we want this per study?)
-  zout = lapply(anaTimes[anaTimes <= length(synth$eI)],
+  zout = lapply(anaTimes[anaTimes <= length(synth$data$nI)],
                 function(x) {
                   synout = synthesize(
                     metaPrepare(
+                      data = synth$data[1:x,],
                       outcome = synth$outcome,
-                      eI = synth$eI[1:x],
-                      eC = synth$eC[1:x],
-                      nI = synth$nI[1:x],
-                      nC = synth$nC[1:x],
                       method = synth$method
                     )
                   )
                   return(synout)
                 })
 
-  names(zout) = anaTimes[anaTimes <= length(synth$eI)]
+  names(zout) = anaTimes[anaTimes <= length(synth$data$nI)]
 
   zvalues = sapply(names(zout), function(x){c(zout[[x]]$peF[4], zout[[x]]$peR[4])})
 
   if (is.null(stopTime) & confInt == TRUE) {
-    stopTime = as.character(max(anaTimes[anaTimes < length(synth$eI)]))
+    stopTime = as.character(max(anaTimes[anaTimes < length(synth$data$nI)]))
     naiveCI = list(CIfixed = zout[[stopTime]]$peF[c(2, 3)],
                    CIrandom = zout[[stopTime]]$peR[c(2, 3)])
     adjCI = list(
@@ -128,7 +117,7 @@ TSA = function(timing,
 
 #' RTSA
 #'
-#' @param data A data set containing eI, eC, nI, nC
+#' @param data A data set containing eI, eC, nI, nC or mI, mC, sdI, sdC, nI, nC
 #' @param outcome Outcome of interst, RR only possibility now
 #' @param mc minimum clinical relevant outcome
 #'
@@ -141,7 +130,7 @@ TSA = function(timing,
 #' RTSA(data = perioOxy, outcome = "RR", mc = 0.9)
 RTSA <- function(data, outcome = "RR", mc){
   # calculate the meta-analysis
-  mp = RTSA::metaPrepare(outcome = outcome, eI = data$eI, eC = data$eC,
+  mp = metaPrepare(outcome = outcome, eI = data$eI, eC = data$eC,
                          nI = data$nI, nC = data$nC)
 
   # Calculate the cumulative number of participants
@@ -161,6 +150,8 @@ RTSA <- function(data, outcome = "RR", mc){
     timing = c(timing,1)
   }
 
-  RTSA::TSA(timing = timing, synth = mp, anaTimes = 2:length(timing[timing < 1]),
+  RTSAout = TSA(timing = timing, synth = mp, anaTimes = 2:length(timing[timing < 1]),
       side = 2, alpha = 0.05)
+  class(RTSAout) <- c("list", "RTSA")
+  return(RTSAout)
 }

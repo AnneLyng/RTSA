@@ -11,6 +11,8 @@
 #' @return RIS for random-effects meta-analysis
 #' @export
 #'
+#' @importFrom stats qnorm
+#'
 #' @examples
 #' log.RR = log(0.9)
 #' p0 = 0.1

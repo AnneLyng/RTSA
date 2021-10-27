@@ -3,7 +3,6 @@
 S3method(plot,RTSA)
 S3method(print,metaanalysis)
 export(RTSA)
-export(TSA)
 export(boundary)
 export(metaanalysis)
 export(minTrial)

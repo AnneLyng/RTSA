@@ -6,10 +6,9 @@
 \title{metaanalysis}
 \usage{
 metaanalysis(
-  outcome = "RR",
   data = NULL,
-  study = NULL,
-  vartype = "equal",
+  outcome = "RR",
+  vartype = "unequal",
   method = "MH",
   fixedStudy = TRUE,
   hksj = FALSE,
@@ -18,13 +17,11 @@ metaanalysis(
 )
 }
 \arguments{
-\item{outcome}{Outcome metric for the studies. Choose between: cont, RR, RD or OR}
-
-\item{data}{Data.frame. If data is provided as a data set. Data set must then containing arguments for
-meta-analysis. Either eI, eC, nC or nI for discrete data, or, mI, mC, sdI and sdC for cont.
+\item{data}{Data.frame. If data is provided as a data set. Dataset must then containing arguments for
+meta-analysis. Either `study`, `eI`, `eC`, `nC` or `nI` for discrete data, or, `study`, `mI`, `mC`, `sdI` and `sdC` for cont.
 See details. If a data frame is not provided, the columns must be set in the function.}
 
-\item{study}{Vector of study names. Defaults to NULL.}
+\item{outcome}{Outcome metric for the studies. Choose between: cont, RR, RD or OR}
 
 \item{vartype}{Variance type for continuous outcomes. Choices are "equal" or "non-equal". Defaults to "equal".}
 
@@ -52,4 +49,6 @@ metaanalysis
 \examples{
 data(perioOxy)
 metaanalysis(outcome = "RR", data = perioOxy, study = perioOxy$trial)
+data(eds)
+metaanalysis(outcome = "cont", data = eds, study = eds$study)
 }

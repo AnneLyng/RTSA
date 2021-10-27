@@ -19,6 +19,8 @@
 #'  the values are the upper boundaries.}
 #' \item{alpha.boundaries.lower}{The lower boundaries. Only computed if side = 2.}
 #'
+#' @importFrom stats qnorm
+#'
 #' @export
 #'
 #' @examples
@@ -151,6 +153,7 @@ trap <- function(f, n, h){
   return(h/2*sum1)
 }
 
+#' @importFrom stats pnorm
 qpos <- function(xq, last, nint, yam1, ybm1, stdv){
   nwork <- 5000
   fun1 <- numeric(length = nwork)
@@ -178,7 +181,7 @@ first <- function(ya, yb, h, stdv, nints, delta, lnn){
   return(last)
 }
 
-
+#' @importFrom stats qnorm pnorm
 alphas <- function(alpha, side, ti, tol){
   alphaSpendCum <- numeric(length(ti))
   alphaSpendDelta <- numeric(length(ti))
@@ -197,7 +200,7 @@ alphas <- function(alpha, side, ti, tol){
   return(list(alphaValuesCum = alphaSpendCum, alphaValuesDelta = alphaSpendDelta))
 }
 
-
+#' @importFrom stats qnorm pnorm
 betas_Obf <- function( nn, beta, informationFractions, tol = 1e-13){
   pn_betaSpend <- numeric(length(informationFractions))
   pn_betaSpendDelta <- numeric(length(informationFractions))
@@ -215,6 +218,7 @@ betas_Obf <- function( nn, beta, informationFractions, tol = 1e-13){
   return(list(betaValuesCumulated = pn_betaSpend, betaValuesDelta = pn_betaSpendDelta))
 }
 
+#' @importFrom stats qnorm pnorm
 betas_An <- function( nn, beta, informationFractions, tol = tol){
   pn_betaSpend <- numeric(length(informationFractions))
   pn_betaSpendDelta <- numeric(length(informationFractions))
@@ -290,6 +294,7 @@ searchfunc <- function(last, nints, i, valSF, stdv, ya, yb){
   return(yb)
 }
 
+#' @importFrom stats qnorm
 getInnerWedge <- function(informationFractions, beta, bsInf, delta, side, fakeIFY,
                           zninf = -8, tol = tol){
   maxnn <- 50; lnn <- 5000; h <- 0.05

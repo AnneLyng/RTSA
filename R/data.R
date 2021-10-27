@@ -37,3 +37,18 @@
 #'   \item{nC}{Number of pax in the control group}
 #' }
 "coronary"
+
+#' A dataset containing data on ...
+#'
+#' @format A data frame with 9 studies and 8 variables:
+#' \describe{
+#'   \item{study}{Name of the city of the study}
+#'   \item{year}{Year of the trial}
+#'   \item{mI}{Mean ESD in intervention group}
+#'   \item{mC}{Mean ESD in control group}
+#'   \item{sdI}{SD in intervention group}
+#'   \item{sdC}{SD in control group}
+#'   \item{nI}{Number of participants in the intervention group}
+#'   \item{nC}{Number of participants in the control group}
+#' }
+"eds"

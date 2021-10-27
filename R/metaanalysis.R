@@ -23,9 +23,11 @@
 #' @examples
 #' data(perioOxy)
 #' metaanalysis(outcome = "RR", data = perioOxy, study = perioOxy$trial)
+#' data(eds)
+#' metaanalysis(outcome = "cont", data = eds, study = eds$study)
 metaanalysis <- function(data = NULL,
                          outcome = "RR",
-                         vartype = "equal",
+                         vartype = "unequal",
                          method = "MH",
                          fixedStudy = TRUE,
                          hksj = FALSE,
@@ -46,6 +48,8 @@ metaanalysis <- function(data = NULL,
       mC = data$mC
       sdI = data$sdI
       sdC = data$sdC
+      nI = data$nI
+      nC = data$nC
     }
   }
 
@@ -66,6 +70,8 @@ metaanalysis <- function(data = NULL,
       mC = mC,
       sdI = sdI,
       sdC = sdC,
+      nI = nI,
+      nC = nC,
       vartype = vartype,
       method = method
     )

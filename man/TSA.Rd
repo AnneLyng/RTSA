@@ -54,11 +54,3 @@ time}
 \description{
 TSA
 }
-\examples{
-count <- cumsum(perioOxy$nI+perioOxy$nC)
-timing <- c(count/5673,1)
-mp = metaPrepare(outcome = "RR", eI = perioOxy$eI, nI = perioOxy$nI,
-eC = perioOxy$eC, nC = perioOxy$nC, method = "IV")
-TSA(timing = timing, synth = mp, anaTimes = c(4,5,7,8), side = 2, alpha = 0.05)
-
-}
