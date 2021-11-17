@@ -3,30 +3,17 @@ metaPrepare <- function(data = NULL,
                         eI = NULL, nI = NULL, eC = NULL, nC = NULL,
                         mI = NULL, mC = NULL, sdI = NULL, sdC = NULL,
                         outcome = "RR",method = "MH",vartype = "equal") {
-  #Maybe add a test if no data is inputted.
-
-  #Import from 'data' depending on the chosen outcome.
-  #NB. If data i chosen this will overwrite any single defined variables.
-  if (!is.null(data) & outcome %in% c("OR", "RR", "RD")) {
-    eI = data$eI
-    nI = data$nI
-    eC = data$eC
-    nC = data$nC
-  }else if (!is.null(data) & outcome == "cont") {
-    mI = data$mI
-    mC = data$mC
-    sdI = data$sdI
-    sdC = data$sdC
-  }
 
   #Prepare dichotomous outcomes.
   if(outcome %in% c("OR", "RR", "RD")){
 
-    # Stop if any trial has zero total events.
+    # Remove studies with zero total events.
     if(sum(eI == 0 & eC == 0) > 0){
-      stop("One or more trials with zero total events.
-      Odds Ratio or Relative Risk cannot be computed.
-      Please remove zero total events trials from data or change to Risk Difference")
+      nonevent <- which(eI == 0 & eC == 0)
+      eI = eI[-nonevent]; nI = nI[-nonevent]
+      eC = eC[-nonevent]; nC = nC[-nonevent]
+    }else{
+      nonevent <- NULL
     }
 
     # Adding 0.5 if one of the event counts is zero
@@ -102,11 +89,11 @@ metaPrepare <- function(data = NULL,
     if(method == "MH"){
       out <- list(w = w, te = te, lower = lower, upper = upper, pe = c(pe, svpe),
                   sig = sig, outcome = outcome, method = method, eI = eI,
-                  eC = eC, nC = nC, nI = nI)
+                  eC = eC, nC = nC, nI = nI, nonevent = nonevent)
     }else{
       out <- list(w = w, te = te, lower = lower, upper = upper, pe = pe,
                   sig = sig, outcome = outcome, method = method, eI = eI,
-                  eC = eC, nC = nC, nI = nI)
+                  eC = eC, nC = nC, nI = nI, nonevent = nonevent)
     }
 
   }else if(outcome == "cont"){
@@ -146,11 +133,6 @@ synthesize <- function(y,
                        sign = NULL,
                        fixedStudy = TRUE,
                        hksj = FALSE) {
-
-  # Denne test kan vel fjernes når brugeren bare kører metaanalysis?
-  # if (class(y) != "synthPrepped") {
-  #   warning('sig object is not of synthPrepped-class, results may be inaccurate')
-  # }
 
   w <- y$w   # collect objects
   sig <- y$sig
