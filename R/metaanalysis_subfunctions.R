@@ -3,6 +3,7 @@
 metaPrepare <- function(data = NULL,
                         eI = NULL, nI = NULL, eC = NULL, nC = NULL,
                         mI = NULL, mC = NULL, sdI = NULL, sdC = NULL,
+<<<<<<< HEAD
                         outcome = "RR",method = "MH",vartype = "unequal") {
   #Maybe add a test if no data is inputted.
 
@@ -32,15 +33,28 @@ metaPrepare <- function(data = NULL,
   if(outcome == "cont"){
     method = "IV"
   }
+=======
+                        outcome = "RR",method = "MH",vartype = "equal") {
+>>>>>>> 16e9e491d1421b57742269701d323482c9ca689e
 
   #Prepare dichotomous outcomes.
   if(outcome %in% c("OR", "RR", "RD")){
 
+<<<<<<< HEAD
     # Stop if any trial has zero total events.
     if(sum(eI == 0 & eC == 0) > 0 & outcome %in% c("RR", "OR")){
       stop("One or more trials with zero total events.
       Odds Ratio (OR) or Relative Risk (RR) cannot be computed.
       Please remove zero total events trials from data or change to Risk Difference (RD)")
+=======
+    # Remove studies with zero total events.
+    if(sum(eI == 0 & eC == 0) > 0){
+      nonevent <- which(eI == 0 & eC == 0)
+      eI = eI[-nonevent]; nI = nI[-nonevent]
+      eC = eC[-nonevent]; nC = nC[-nonevent]
+    }else{
+      nonevent <- NULL
+>>>>>>> 16e9e491d1421b57742269701d323482c9ca689e
     }
 
     # Adding 0.5 if one of the event counts is zero
@@ -116,10 +130,19 @@ metaPrepare <- function(data = NULL,
     # return results
     if(method == "MH"){
       out <- list(w = w, te = te, lower = lower, upper = upper, pe = c(pe, svpe),
+<<<<<<< HEAD
                   sig = sig, outcome = outcome, method = method, data = data)
     }else{
       out <- list(w = w, te = te, lower = lower, upper = upper, pe = pe,
                   sig = sig, outcome = outcome, method = method, data = data)
+=======
+                  sig = sig, outcome = outcome, method = method, eI = eI,
+                  eC = eC, nC = nC, nI = nI, nonevent = nonevent)
+    }else{
+      out <- list(w = w, te = te, lower = lower, upper = upper, pe = pe,
+                  sig = sig, outcome = outcome, method = method, eI = eI,
+                  eC = eC, nC = nC, nI = nI, nonevent = nonevent)
+>>>>>>> 16e9e491d1421b57742269701d323482c9ca689e
     }
 
   }else if(outcome == "cont"){
@@ -158,11 +181,6 @@ synthesize <- function(y,
                        sign = NULL,
                        fixedStudy = TRUE,
                        hksj = FALSE) {
-
-  # Denne test kan vel fjernes når brugeren bare kører metaanalysis?
-  # if (class(y) != "synthPrepped") {
-  #   warning('sig object is not of synthPrepped-class, results may be inaccurate')
-  # }
 
   w <- y$w   # collect objects
   sig <- y$sig

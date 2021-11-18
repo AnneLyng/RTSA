@@ -12,6 +12,9 @@
 #' @param hksj TRUE or FALSE. Should the Hartung-Knapp-Sidik-Jonkman adjustment be used to the random-effects
 #'  meta-analysis. Defaults to FALSE.
 #' @param sign TBA.
+#' @param study XXX.
+#' @param mI,mC,sdI,sdC See details.
+#' @param eI,nI,eC,nC See details.
 #' @param ... Additional variables. See Details.
 #'
 #' @return A list object containing two data frames.
@@ -23,8 +26,12 @@
 #' @examples
 #' data(perioOxy)
 #' metaanalysis(outcome = "RR", data = perioOxy, study = perioOxy$trial)
+<<<<<<< HEAD
 #' data(eds)
 #' metaanalysis(outcome = "cont", data = eds, study = eds$study)
+=======
+
+>>>>>>> 16e9e491d1421b57742269701d323482c9ca689e
 metaanalysis <- function(data = NULL,
                          outcome = "RR",
                          vartype = "unequal",
@@ -32,15 +39,19 @@ metaanalysis <- function(data = NULL,
                          fixedStudy = TRUE,
                          hksj = FALSE,
                          sign = NULL,
+                         study = NULL,
+                         mI = NULL, mC = NULL,
+                         sdI = NULL, sdC = NULL,
+                         eI = NULL, nI = NULL,
+                         eC = NULL, nC = NULL,
                          ...) {
 
-  #skal vi lige have ordnet når vi er enige om trial eller study.
-  study <- NULL
   # check if the correct outcome metric is choosen
   if (!(outcome %in% c("cont", "RD", "RR", "OR"))) {
     stop("Outcome must be either: cont, RD, RR or OR.")
   }
 
+<<<<<<< HEAD
   # check if the input is correct for outcome == "cont"
   if (outcome == "cont") {
     if (!is.null(data)) {
@@ -60,12 +71,29 @@ metaanalysis <- function(data = NULL,
       nI = data$nI
       eC = data$eC
       nC = data$nC
+=======
+  #dataframe to variables.
+  if(!is.null(data)){
+    if(any(colnames(data) == "study")) study = data$study
+    if(outcome == "cont"){
+      if(any(colnames(data) == "mI")) mI = data$mI
+      if(any(colnames(data) == "mC")) mC = data$mC
+      if(any(colnames(data) == "sdI")) sdI = data$sdI
+      if(any(colnames(data) == "sdC")) sdC = data$sdC
+    }else{
+      if(any(colnames(data) == "eI")) eI = data$eI
+      if(any(colnames(data) == "nI")) nI = data$nI
+      if(any(colnames(data) == "eC")) eC = data$eC
+      if(any(colnames(data) == "nC")) nC = data$nC
+>>>>>>> 16e9e491d1421b57742269701d323482c9ca689e
     }
   }
 
-  if (outcome == "cont") {
+  #metaprepare
+  if(outcome == "cont") {
     mp = metaPrepare(
       outcome = "cont",
+<<<<<<< HEAD
       mI = mI,
       mC = mC,
       sdI = sdI,
@@ -74,36 +102,45 @@ metaanalysis <- function(data = NULL,
       nC = nC,
       vartype = vartype,
       method = method
+=======
+      mI = mI,mC = mC,
+      sdI = sdI,sdC = sdC,
+      vartype = vartype, method = method
+>>>>>>> 16e9e491d1421b57742269701d323482c9ca689e
     )
-  } else {
+  }else{
     mp = metaPrepare(
       outcome = outcome,
-      eI = eI,
-      eC = eC,
-      nI = nI,
-      nC = nC,
+      eI = eI,eC = eC,
+      nI = nI,nC = nC,
       vartype = vartype,
       method = method
     )
   }
 
+  #synthesize
   sy = synthesize(y = mp, sign = sign, fixedStudy = fixedStudy, hksj = hksj)
 
-  # create an output object
-  # Her skal vi nok blive enige om at være konsekvente - Trial eller study.
-  if(!is.null(data$trial)) colnames(data)[colnames(data) == "trial"] <- "study"
-  if (is.null(study) & is.null(data$study)) {
-    trial = 1:length(mp$te)
-    message("Provide a study vector to name studies.")
-  } else {
-    if (is.null(study))
-      trial = data$study
-    if (is.null(data$study))
-      trial = study
+
+  #create an output object
+
+  nonevent <- NULL
+  missing_vec <- NULL
+  if(is.null(study)){
+    missing_vec <- 1
+    study = 1:length(mp$te)
+    if(length(study) != length(eC)){
+      nonevent <- "A study"
+    }
+  }else{
+    if(!is.null(mp$nonevent)){
+      nonevent <- study[mp$nonevent]
+      study <- study[-mp$nonevent]
+    }
   }
 
   studyResults = data.frame(
-    study = trial,
+    study = study,
     "ES" = mp$te,
     "stdError" = sqrt(mp$sig),
     "lowerCI" = mp$lower,
@@ -111,7 +148,7 @@ metaanalysis <- function(data = NULL,
     weightFixed = mp$w,
     weightRandom = ifelse(is.null(sy$rwR), NA, sy$rwR)
   )
-  colnames(studyResults)[2] = c(outcome)
+  colnames(studyResults)[2] = outcome
 
   if(!is.null(sy$peR)){
     metaResults = data.frame(
@@ -121,18 +158,21 @@ metaanalysis <- function(data = NULL,
       "lowerCI" = c(sy$peF[2], sy$peR[2]),
       "upperCI" = c(sy$peF[3], sy$peR[3]),
       "pValue" = c(sy$peF[5], sy$peR[5])
-    )} else {
-      metaResults = data.frame(
-        type = c("Fixed"),
-        "ES" = c(sy$peF[1]),
-        "stdError" = c(sqrt(sy$peF[7])),
-        "lowerCI" = c(sy$peF[2]),
-        "upperCI" = c(sy$peF[3]),
-        "pValue" = c(sy$peF[5]))
-    }
-  colnames(metaResults)[2] = c(outcome)
+    )
+  }else{
+    metaResults = data.frame(
+      type = c("Fixed"),
+      "ES" = c(sy$peF[1]),
+      "stdError" = c(sqrt(sy$peF[7])),
+      "lowerCI" = c(sy$peF[2]),
+      "upperCI" = c(sy$peF[3]),
+      "pValue" = c(sy$peF[5]))
+  }
+  colnames(metaResults)[2] = outcome
 
-  out = list(studyResults = studyResults, metaResults = metaResults, metaPrepare = mp, synthesize = sy)
+  out = list(studyResults = studyResults, metaResults = metaResults,
+             metaPrepare = mp, synthesize = sy, nonevent = nonevent,
+             missing_vec = missing_vec)
   class(out) <- "metaanalysis"
   return(out)
 }
@@ -150,6 +190,13 @@ print.metaanalysis <- function(x,...){
   invisible(x)
   if(x$metaPrepare$method == "GLM"){
     message("\n NB. Only fixed-effect is analysed since method is GLM")
+  }
+  #ZERO TRIAL
+  if(!is.null(x$missing_vec)){
+    message("\n NB. Please provide a study vector to name studies.")
+  }
+  if(!is.null(x$nonevent)){
+    message(paste("\n NB.",x$nonevent,"was excluded from the analysis due to zero events, consider changing outcome to RD"))
   }
 
 }
