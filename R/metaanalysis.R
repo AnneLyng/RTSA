@@ -26,15 +26,10 @@
 #' @examples
 #' data(perioOxy)
 #' metaanalysis(outcome = "RR", data = perioOxy, study = perioOxy$trial)
-<<<<<<< HEAD
-#' data(eds)
-#' metaanalysis(outcome = "cont", data = eds, study = eds$study)
-=======
 
->>>>>>> 16e9e491d1421b57742269701d323482c9ca689e
 metaanalysis <- function(data = NULL,
                          outcome = "RR",
-                         vartype = "unequal",
+                         vartype = "equal",
                          method = "MH",
                          fixedStudy = TRUE,
                          hksj = FALSE,
@@ -51,27 +46,6 @@ metaanalysis <- function(data = NULL,
     stop("Outcome must be either: cont, RD, RR or OR.")
   }
 
-<<<<<<< HEAD
-  # check if the input is correct for outcome == "cont"
-  if (outcome == "cont") {
-    if (!is.null(data)) {
-      mI = data$mI
-      mC = data$mC
-      sdI = data$sdI
-      sdC = data$sdC
-      nI = data$nI
-      nC = data$nC
-    }
-  }
-
-  # figure out if data is in data set or needs to be specified
-  if (outcome != "cont") {
-    if (!is.null(data)) {
-      eI = data$eI
-      nI = data$nI
-      eC = data$eC
-      nC = data$nC
-=======
   #dataframe to variables.
   if(!is.null(data)){
     if(any(colnames(data) == "study")) study = data$study
@@ -85,7 +59,6 @@ metaanalysis <- function(data = NULL,
       if(any(colnames(data) == "nI")) nI = data$nI
       if(any(colnames(data) == "eC")) eC = data$eC
       if(any(colnames(data) == "nC")) nC = data$nC
->>>>>>> 16e9e491d1421b57742269701d323482c9ca689e
     }
   }
 
@@ -93,20 +66,9 @@ metaanalysis <- function(data = NULL,
   if(outcome == "cont") {
     mp = metaPrepare(
       outcome = "cont",
-<<<<<<< HEAD
-      mI = mI,
-      mC = mC,
-      sdI = sdI,
-      sdC = sdC,
-      nI = nI,
-      nC = nC,
-      vartype = vartype,
-      method = method
-=======
       mI = mI,mC = mC,
       sdI = sdI,sdC = sdC,
       vartype = vartype, method = method
->>>>>>> 16e9e491d1421b57742269701d323482c9ca689e
     )
   }else{
     mp = metaPrepare(
@@ -200,4 +162,3 @@ print.metaanalysis <- function(x,...){
   }
 
 }
-

@@ -3,50 +3,11 @@
 metaPrepare <- function(data = NULL,
                         eI = NULL, nI = NULL, eC = NULL, nC = NULL,
                         mI = NULL, mC = NULL, sdI = NULL, sdC = NULL,
-<<<<<<< HEAD
-                        outcome = "RR",method = "MH",vartype = "unequal") {
-  #Maybe add a test if no data is inputted.
-
-  #Import from 'data' depending on the chosen outcome.
-  #NB. If data i chosen this will overwrite any single defined variables.
-  if (!is.null(data) & outcome %in% c("OR", "RR", "RD")) {
-    eI = data$eI
-    nI = data$nI
-    eC = data$eC
-    nC = data$nC
-  }else if (!is.null(data) & outcome == "cont") {
-    mI = data$mI
-    mC = data$mC
-    sdI = data$sdI
-    sdC = data$sdC
-    nI = data$nI
-    nC = data$nC
-  }
-
-  if(is.null(data) & outcome %in% c("OR", "RR", "RD")){
-    data = data.frame(eI, nI, eC, nC)
-  }else if(is.null(data) & outcome == "cont"){
-    data = data.frame(mI, mC, sdI, sdC, nI, nC)
-  }
-
-
-  if(outcome == "cont"){
-    method = "IV"
-  }
-=======
                         outcome = "RR",method = "MH",vartype = "equal") {
->>>>>>> 16e9e491d1421b57742269701d323482c9ca689e
 
   #Prepare dichotomous outcomes.
   if(outcome %in% c("OR", "RR", "RD")){
 
-<<<<<<< HEAD
-    # Stop if any trial has zero total events.
-    if(sum(eI == 0 & eC == 0) > 0 & outcome %in% c("RR", "OR")){
-      stop("One or more trials with zero total events.
-      Odds Ratio (OR) or Relative Risk (RR) cannot be computed.
-      Please remove zero total events trials from data or change to Risk Difference (RD)")
-=======
     # Remove studies with zero total events.
     if(sum(eI == 0 & eC == 0) > 0){
       nonevent <- which(eI == 0 & eC == 0)
@@ -54,11 +15,9 @@ metaPrepare <- function(data = NULL,
       eC = eC[-nonevent]; nC = nC[-nonevent]
     }else{
       nonevent <- NULL
->>>>>>> 16e9e491d1421b57742269701d323482c9ca689e
     }
 
     # Adding 0.5 if one of the event counts is zero
-    if(outcome %in% c("OR", "RR"))
     if(sum(eI == 0 | eC == 0) > 0){
       zc <- which(eI == 0 | eC == 0)
       eI[zc] <- eI[zc] + 0.5
@@ -130,23 +89,17 @@ metaPrepare <- function(data = NULL,
     # return results
     if(method == "MH"){
       out <- list(w = w, te = te, lower = lower, upper = upper, pe = c(pe, svpe),
-<<<<<<< HEAD
-                  sig = sig, outcome = outcome, method = method, data = data)
-    }else{
-      out <- list(w = w, te = te, lower = lower, upper = upper, pe = pe,
-                  sig = sig, outcome = outcome, method = method, data = data)
-=======
                   sig = sig, outcome = outcome, method = method, eI = eI,
                   eC = eC, nC = nC, nI = nI, nonevent = nonevent)
     }else{
       out <- list(w = w, te = te, lower = lower, upper = upper, pe = pe,
                   sig = sig, outcome = outcome, method = method, eI = eI,
                   eC = eC, nC = nC, nI = nI, nonevent = nonevent)
->>>>>>> 16e9e491d1421b57742269701d323482c9ca689e
     }
 
   }else if(outcome == "cont"){
     te = mI - mC
+
 
     if(vartype == "equal"){
       spooled <- sqrt(((nI-1)*sdI^2+(nC-1)*sdC^2)/(nI+nC-2))
@@ -168,7 +121,8 @@ metaPrepare <- function(data = NULL,
     w <- w/sum(w)
 
     out <- list(w = w, te = te, lower = lower, upper = upper, pe = pe,
-                sig = sig, outcome = outcome, method = method, data = data)
+                sig = sig, outcome = outcome, method = method, mI = mI,
+                mC = mC, nC = nC, nI = nI)
   }
 
   class(out) <- "synthPrepped"
@@ -176,7 +130,6 @@ metaPrepare <- function(data = NULL,
 }
 
 # synthesize - func ----
-#' @importFrom stats qnorm qt binomial
 synthesize <- function(y,
                        sign = NULL,
                        fixedStudy = TRUE,
@@ -191,7 +144,8 @@ synthesize <- function(y,
   nI <- y$nI
   nC <- y$nC
   df <- length(w) - 1
-  if (length(w) == 1) df <- 1 #check up on this
+  if (length(w) == 1)
+    df <- 1 #check up on this
 
   #For GLM
   if (y$method == "GLM") {
@@ -209,7 +163,7 @@ synthesize <- function(y,
       const <- rep(rep(1, k), 2)
       glmFit <- lme4::glmer(grpOut ~ -1 + eff + const + (1 | trial),
                             nAGQ = 7,
-                            family = "binomial")
+                            family = binomial)
       es <- glmFit@beta[1]
       sigma2 <- lme4::VarCorr(glmFit)[[1]][1]
       tau2 <- 0
@@ -257,16 +211,15 @@ synthesize <- function(y,
       U = tau2
     ))
 
-  } else {
+  }else{
     # NOT GLM
 
-    if (y$method != "MH") {
+    if (y$method != "MH")
       w <- 1 / (sig ^ 2) # weight inverse variance
-      rw <- w / sum(w) # relative weight
-      vw <- 1 / sum(w) # variance of pooled effect
-    }
+    rw <- w / sum(w) # relative weight
+    vw <- 1 / sum(w) # variance of pooled effect
 
-    if (y$outcome == "cont") {
+    if (y$method == "cont") {
       peF <- sum(w * te) / sum(w)
       lci <- peF - 1.96 * sqrt(vw)
       uci <- peF + 1.96 * sqrt(vw)
@@ -277,7 +230,7 @@ synthesize <- function(y,
       }
       pval <- (1 - pnorm(abs(zval))) * 2
 
-    }else if (y$outcome != "cont" & y$method == "MH") {
+    }else if (y$method == "MH") {
       # method the same for OR and RR
       vw <- pe[2]
       lpeF <- log(sum(te * w) / sum(w))
@@ -306,7 +259,7 @@ synthesize <- function(y,
 
     }
 
-    if(y$outcome != "cont"){
+    if(y$method != "cont"){
       w <- 1 / (sig ^ 2)
       Q <- sum(w * log(te) ^ 2) - (sum(w * log(te))) ^ 2 / sum(w)
       U <- sum(w) - sum(w ^ 2) / sum(w)
@@ -356,7 +309,7 @@ synthesize <- function(y,
         D2 <- 1 - vw / vwR
         synth <-
           list(
-            fw = round(w / sum(w) * 100, 1),
+            fw = round(rw * 100, 1),
             peF = c(peF, lci, uci, zval, pval, lpeF, vw),
             rwR = rwR * 100,
             peR = c(peR, lciR, uciR, zvalR, pvalR, vwR),
