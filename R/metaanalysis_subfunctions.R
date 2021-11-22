@@ -3,7 +3,8 @@
 metaPrepare <- function(data = NULL,
                         eI = NULL, nI = NULL, eC = NULL, nC = NULL,
                         mI = NULL, mC = NULL, sdI = NULL, sdC = NULL,
-                        outcome = "RR",method = "MH",vartype = "equal") {
+                        outcome = "RR",method = "MH",vartype = "equal",
+                        alpha = 0.05) {
 
   #Prepare dichotomous outcomes.
   if(outcome %in% c("OR", "RR", "RD")){
@@ -16,9 +17,8 @@ metaPrepare <- function(data = NULL,
     # Remove studies with zero total events.
     if(sum(data$eI == 0 & data$eC == 0) > 0){
       nonevent <- which(data$eI == 0 & data$eC == 0)
-      data$eI = data$eI[-nonevent]; data$nI = data$nI[-nonevent]
-      data$eC = data$eC[-nonevent]; data$nC = data$nC[-nonevent]
-    }else{
+      data <- data[-nonevent,]
+      } else {
       nonevent <- NULL
     }
 
@@ -68,7 +68,7 @@ metaPrepare <- function(data = NULL,
       N <- A + B + C + D
 
       if(outcome == "OR"){
-        w <- (data$nI-data$eI)*data$eC/(data$nC+data$nI)
+        w <- (data$nI-data$eI)*data$eC/N
         T1 <- (A+D)/N
         T2 <- (B+C)/N
         T3 <- A*D/N
@@ -76,20 +76,29 @@ metaPrepare <- function(data = NULL,
         vpe <- 0.5*((T1*T3)/(sum(T3)^2)+(T1*T4+T2*T3)/(sum(T3)*sum(T4))+T2*T4/(sum(T4)^2))
         svpe <- sum(vpe)
       }else if(outcome == "RR"){
-        w <- (data$nI)*data$eC/(data$nI+data$nC)
+        w <- (data$nI)*data$eC/N
         D1 <- ((A+B)*(C+D)*(A+C)-(A*C*N))/(N^2)
         R <- (A*(C+D))/(N)
         S <- (C*(A+B))/N
         svpe <- sum(D1)/(sum(R)*sum(S))
       }else if(outcome == "RD"){
-        w <- (data$nI)*(data$nC)/(data$nI+data$nC)
+        w <- (data$nI)*(data$nC)/N
+        svpe <- sum(((A*B*data$nI)^3+(C*D*data$nC)^3)/
+                      (data$nI*data$nC*N)^2)/(sum(data$nI*data$nC)/N)^2
+
       }
 
       pe <- sum(te*w)/sum(w)
     }
 
-    lower <- exp(log(te) - qnorm(1-0.05/2)*sig)
-    upper <- exp(log(te) + qnorm(1-0.05/2)*sig)
+
+    if (outcome %in% c("RR", "OR")) {
+      lower <- exp(log(te) - qnorm(1 - alpha / 2) * sig)
+      upper <- exp(log(te) + qnorm(1 - alpha / 2) * sig)
+    } else {
+      lower <- te - qnorm(1 - alpha / 2) * sig
+      upper <- te + qnorm(1 - alpha / 2) * sig
+    }
 
     # return results
     if(method == "MH"){
@@ -222,7 +231,7 @@ synthesize <- function(y,
       U = tau2
     ))
 
-  }else{
+  } else {
     # NOT GLM
 
     if (y$method != "MH")
@@ -241,30 +250,53 @@ synthesize <- function(y,
       }
       pval <- (1 - pnorm(abs(zval))) * 2
 
-    }else if (y$method == "MH") {
-      # method the same for OR and RR
-      vw <- pe[2]
-      lpeF <- log(sum(te * w) / sum(w))
-      lci <- exp(lpeF - 1.96 * sqrt(vw))
-      uci <- exp(lpeF + 1.96 * sqrt(vw))
-      peF <- exp(lpeF)
-      if (is.null(sign)) {
-        zval <- lpeF / sqrt(vw)
-      } else {
-        zval <- sign * lpeF / sqrt(vw)
-      }
+    } else if (y$method == "MH") {
+      if(y$outcome == "RD"){
+        vw <- pe[2]
+        peF <- sum(te * w) / sum(w)
+        lci <- peF - 1.96 * sqrt(vw)
+        uci <- peF + 1.96 * sqrt(vw)
+        if (is.null(sign)) {
+          zval <- peF / sqrt(vw)
+        } else {
+          zval <- sign * peF / sqrt(vw)
+        }
+      } else {       # method the same for OR and RR
+        vw <- pe[2]
+        lpeF <- log(sum(te * w) / sum(w))
+        lci <- exp(lpeF - 1.96 * sqrt(vw))
+        uci <- exp(lpeF + 1.96 * sqrt(vw))
+        peF <- exp(lpeF)
+        if (is.null(sign)) {
+          zval <- lpeF / sqrt(vw)
+        } else {
+          zval <- sign * lpeF / sqrt(vw)
+        }
+        }
 
       pval <- (1 - pnorm(abs(zval))) * 2
 
     }else{
-      lpeF <- sum(log(te) * rw) # fixed effect log pooled estimate
-      uci <- exp(lpeF + 1.96 * sqrt(vw))
-      lci <- exp(lpeF - 1.96 * sqrt(vw))
-      peF <- exp(lpeF)
-      if(is.null(sign)){
-        zval <- lpeF / sqrt(vw)
-      }else{
-        zval <- sign * lpeF / sqrt(vw)
+      # if IV
+      if(y$outcome == "RD"){
+        peF <- sum(te * rw) # fixed effect log pooled estimate
+        uci <- peF + 1.96 * sqrt(vw)
+        lci <- peF - 1.96 * sqrt(vw)
+        if(is.null(sign)){
+          zval <- peF / sqrt(vw)
+        }else{
+          zval <- sign * peF / sqrt(vw)
+        }
+      } else {
+        lpeF <- sum(log(te) * rw) # fixed effect log pooled estimate
+        uci <- exp(lpeF + 1.96 * sqrt(vw))
+        lci <- exp(lpeF - 1.96 * sqrt(vw))
+        peF <- exp(lpeF)
+        if(is.null(sign)){
+          zval <- lpeF / sqrt(vw)
+        }else{
+          zval <- sign * lpeF / sqrt(vw)
+        }
       }
       pval <- (1 - pnorm(abs(zval))) * 2
 
@@ -272,7 +304,10 @@ synthesize <- function(y,
 
     if(y$method != "cont"){
       w <- 1 / (sig ^ 2)
-      Q <- sum(w * log(te) ^ 2) - (sum(w * log(te))) ^ 2 / sum(w)
+      if(y$outcome == "RD"){
+        Q <- sum(w * te ^ 2) - (sum(w * te)) ^ 2 / sum(w)
+      } else {
+        Q <- sum(w * log(te) ^ 2) - (sum(w * log(te))) ^ 2 / sum(w) }
       U <- sum(w) - sum(w ^ 2) / sum(w)
       tau2 <-
         ifelse(Q > df, (Q - df) / U, 0) # DerSimonian-Laird estimate
@@ -292,20 +327,44 @@ synthesize <- function(y,
         wR <- 1 / (sig ^ 2 + tau2)
         vwR <- 1 / sum(wR) # variance of pooled effect (random)
         rwR <- wR * vwR
-        teR <- sum(te * wR) / sum(wR)
-        leR <- sum(log(te) * rwR)
-        peR <- exp(leR)
+        peR <- sum(te * wR) / sum(wR)
+        if(y$outcome != "RD") {
+          leR <- sum(log(te) * rwR)
+          peR <- exp(leR)
+        }
         if (hksj == TRUE) {
-          vwR <- 1 / df * sum(wR * (log(te) - leR) ^ 2 / sum(wR))
-          if (is.null(sign)) {
-            zvalR <- leR / sqrt(vwR)
+          if (y$outcome == "RD") {
+            vwR <- 1 / df * sum(wR * (te - peR) ^ 2 / sum(wR))
+            if (is.null(sign)) {
+              zvalR <- peR / sqrt(vwR)
+            } else {
+              zvalR <- sign * peR / sqrt(vwR)
+            }
+            pvalR <- 2 * pt(abs(zvalR), df = df, lower.tail = FALSE)
+            lciR <- peR - qt(1 - 0.05 / 2, df = df) * sqrt(vwR)
+            uciR <- peR + qt(1 - 0.05 / 2, df = df) * sqrt(vwR)
           } else {
-            zvalR <- sign * leR / sqrt(vwR)
+            vwR <- 1 / df * sum(wR * (log(te) - leR) ^ 2 / sum(wR))
+            if (is.null(sign)) {
+              zvalR <- leR / sqrt(vwR)
+            } else {
+              zvalR <- sign * leR / sqrt(vwR)
+            }
+            pvalR <- 2 * pt(abs(zvalR), df = df, lower.tail = FALSE)
+            lciR <- exp(leR - qt(1 - 0.05 / 2, df = df) * sqrt(vwR))
+            uciR <- exp(leR + qt(1 - 0.05 / 2, df = df) * sqrt(vwR))
           }
-          pvalR <- 2 * pt(abs(zvalR), df = df, lower.tail = FALSE)
-          lciR <- exp(leR - qt(1 - 0.05 / 2, df = df) * sqrt(vwR))
-          uciR <- exp(leR + qt(1 - 0.05 / 2, df = df) * sqrt(vwR))
         } else {
+          if(y$outcome == "RD"){
+            if (is.null(sign)) {
+              zvalR <- peR / sqrt(vwR)
+            } else {
+              zvalR <- sign * peR / sqrt(vwR)
+            }
+            pvalR <- (1 - pnorm(abs(zvalR))) * 2
+            lciR <- peR - 1.96 * sqrt(vwR)
+            uciR <- peR + 1.96 * sqrt(vwR)
+          } else {
           if (is.null(sign)) {
             zvalR <- leR / sqrt(vwR)
           } else {
@@ -314,6 +373,7 @@ synthesize <- function(y,
           pvalR <- (1 - pnorm(abs(zvalR))) * 2
           lciR <- exp(leR - 1.96 * sqrt(vwR))
           uciR <- exp(leR + 1.96 * sqrt(vwR))
+          }
         }
 
         vw <- 1 / sum(w)
@@ -321,7 +381,7 @@ synthesize <- function(y,
         synth <-
           list(
             fw = round(rw * 100, 1),
-            peF = c(peF, lci, uci, zval, pval, lpeF, vw),
+            peF = c(peF, lci, uci, zval, pval, log(peF), vw),
             rwR = rwR * 100,
             peR = c(peR, lciR, uciR, zvalR, pvalR, vwR),
             Q = c(Q, df, pQ),
@@ -332,7 +392,7 @@ synthesize <- function(y,
       } else {
         synth <-
           list(
-            peF = c(peF, lci, uci, zval, pval, lpeF, vw),
+            peF = c(peF, lci, uci, zval, pval, log(peF), vw),
             Q = c(Q, df, pQ),
             U = c(tau2, H, I2)
           )

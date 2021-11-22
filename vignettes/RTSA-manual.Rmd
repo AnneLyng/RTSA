@@ -178,3 +178,14 @@ gs = gsDesign(k = 7,
 gs$upper$bound
 ```
 
+## Continuous outcome
+
+Testing cont. outcome
+```{r}
+data("perioOxy")
+perioOxy[c(4,5),c(3,5)] <- 0
+#names(perioOxy)[1] <- "Col1"
+metaanalysis(outcome = "RR", data = perioOxy, 
+             method = "MH")
+```
+

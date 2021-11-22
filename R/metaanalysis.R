@@ -146,7 +146,7 @@ print.metaanalysis <- function(x,...){
   cat("Individual trial results: \n \n")
   y <- x$studyResults
   print(y)
-  cat("\n Non-sequential metaanalysis results: \n \n")
+  cat("\nNon-sequential metaanalysis results: \n \n")
   y <- x$metaResults
   print(y)
   invisible(x)
