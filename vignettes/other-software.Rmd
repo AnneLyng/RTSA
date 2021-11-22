@@ -65,7 +65,7 @@ sum.me = summary(me)
 ```
 
 ```{r trameta, echo = FALSE}
-out.mat = cbind(perioOxy$trial, round(mp$te, 2), paste0("(", round(mp$lower,2), "; ", round(mp$upper,2),")"), round(exp(me$yi),2), paste0("(", round(exp(sum.me$ci.lb),2), "; ", round(exp(sum.me$ci.ub),2),")"))
+out.mat = cbind(perioOxy$study, round(mp$te, 2), paste0("(", round(mp$lower,2), "; ", round(mp$upper,2),")"), round(exp(me$yi),2), paste0("(", round(exp(sum.me$ci.lb),2), "; ", round(exp(sum.me$ci.ub),2),")"))
 colnames(out.mat) = c("Trial", "Effect estimate ", "95% CI", "Effect estimate ", "95% CI")
 knitr::kable(out.mat, caption = "Results from the metaPrepare and escalc function") %>% kable_paper() %>% add_header_above(c("", "RTSA::metaPrepare" = 2, "metafor::escalc and summary" = 2))
 ```
@@ -153,13 +153,9 @@ While the boundaries are not completely identical, they are very similar. It is 
 
 To get an output with more informatin and less steps, we can use the RTSA function which provides different kinds of information. The information could be used for e.g. plotting as is done in the original TSA software. The function e.g. can set a number of analysis times (anaTimes) if we want to do a meta-analysis after the first 4, 5, 7 and 8 studies. 
 
-```{r}
-RTSA:::TSA(timing = timing, synth = mp, anaTimes = c(4,5,7,8),
-     side = 2, alpha = 0.05)
-```
 ## One function to rule them all
 
-If we want a function that combines the metaPrepare, synthesize and TSA function, then we can use the RTSA function. This function prints the outcome of the TSA function without the need to specify the metaPrepare function, as it is imbedded in the RTSA function. 
+If we want a function that combines the metaPrepare, synthesize and TSA function, then we can use the RTSA function. This function prints the outcome of the TSA function without the need to specify the metaPrepare function, as it is embedded in the RTSA function. 
 
 ```{r}
 RTSA(data = perioOxy, outcome = "RR", mc = 0.9)
@@ -170,8 +166,7 @@ RTSA(data = perioOxy, outcome = "RR", mc = 0.9)
 The RTSA function can be used as an input for plotting the traditional TSA plot. We might consider making a plot function for RTSA objects. 
 
 ```{r}
-RTSAout = RTSA:::TSA(timing = timing, synth = mp, anaTimes = c(4,5,7,8),
-     side = 2, alpha = 0.05)
+RTSAout = RTSA(data = perioOxy, outcome = "RR", mc = 0.9)
 plot(RTSAout)
 ```
 

@@ -7,7 +7,7 @@
 \format{
 A data frame with 6 rows and 5 variables:
 \describe{
-  \item{trial}{Name of first author of the trial}
+  \item{study}{Name of first author of the trial}
   \item{eI}{Number of events in the intervention group}
   \item{nI}{Number of pax in the intervention group}
   \item{eC}{Number of events in the control group}

@@ -8,30 +8,35 @@ metaPrepare <- function(data = NULL,
   #Prepare dichotomous outcomes.
   if(outcome %in% c("OR", "RR", "RD")){
 
+    # set data columns to eI, nI, eC and nC
+    if(is.null(data)){
+      data <- data.frame(eI = eI, nI = nI, eC = eC, nC = nC)
+    }
+
     # Remove studies with zero total events.
-    if(sum(eI == 0 & eC == 0) > 0){
-      nonevent <- which(eI == 0 & eC == 0)
-      eI = eI[-nonevent]; nI = nI[-nonevent]
-      eC = eC[-nonevent]; nC = nC[-nonevent]
+    if(sum(data$eI == 0 & data$eC == 0) > 0){
+      nonevent <- which(data$eI == 0 & data$eC == 0)
+      data$eI = data$eI[-nonevent]; data$nI = data$nI[-nonevent]
+      data$eC = data$eC[-nonevent]; data$nC = data$nC[-nonevent]
     }else{
       nonevent <- NULL
     }
 
     # Adding 0.5 if one of the event counts is zero
-    if(sum(eI == 0 | eC == 0) > 0){
-      zc <- which(eI == 0 | eC == 0)
-      eI[zc] <- eI[zc] + 0.5
-      nI[zc] <- nI[zc] + 1
-      eC[zc] <- eC[zc] + 0.5
-      nC[zc] <- nC[zc] + 1
+    if(sum(data$eI == 0 | data$eC == 0) > 0){
+      zc <- data$which(eI == 0 | data$eC == 0)
+      data$eI[zc] <- data$eI[zc] + 0.5
+      data$nI[zc] <- data$nI[zc] + 1
+      data$eC[zc] <- data$eC[zc] + 0.5
+      data$nC[zc] <- data$nC[zc] + 1
     }
 
     # Calculate event probability
-    pI <- eI/nI
-    pC <- eC/nC
+    pI <- data$eI/data$nI
+    pC <- data$eC/data$nC
 
     # Set the number of trials
-    K <- length(eI)
+    K <- length(data$eI)
 
     # Prepare returned object
     out <- list()
@@ -40,13 +45,13 @@ metaPrepare <- function(data = NULL,
     # Calculate effects sizes and beloning std.
     if(outcome == "RD") { # Risk difference
       te <- pI-pC
-      sig <- sqrt(pI*(1-pI)/nI+pC*(1-pC)/nC)
+      sig <- sqrt(pI*(1-pI)/data$nI+pC*(1-pC)/data$nC)
     }else if(outcome == "OR") { # Odds Ratio
       te <- (pI/(1-pI))/(pC/(1-pC))
-      sig <- sqrt(1/eI+1/(nI-eI)+1/eC+1/(nC-eC))
+      sig <- sqrt(1/data$eI+1/(data$nI-data$eI)+1/data$eC+1/(data$nC-data$eC))
     }else if(outcome == "RR") { # Risk Ratio
       te <- pI/pC
-      sig <- sqrt(1/eI-1/nI+1/eC-1/nC)
+      sig <- sqrt(1/data$eI-1/data$nI+1/data$eC-1/data$nC)
     }
 
     # Calculate the weights
@@ -56,14 +61,14 @@ metaPrepare <- function(data = NULL,
       pe <- sum(te*w)
       w <- w*100
     }else if(method == "MH" | method == "GLM"){ # Mantel-Haenszel or GLM
-      A <- eI # make the complicated variance (emerson)
-      B <- nI - eI
-      C <- eC
-      D <- nC - eC
+      A <- data$eI # make the complicated variance (emerson)
+      B <- data$nI - data$eI
+      C <- data$eC
+      D <- data$nC - data$eC
       N <- A + B + C + D
 
       if(outcome == "OR"){
-        w <- (nI-eI)*eC/(nC+nI)
+        w <- (data$nI-data$eI)*data$eC/(data$nC+data$nI)
         T1 <- (A+D)/N
         T2 <- (B+C)/N
         T3 <- A*D/N
@@ -71,13 +76,13 @@ metaPrepare <- function(data = NULL,
         vpe <- 0.5*((T1*T3)/(sum(T3)^2)+(T1*T4+T2*T3)/(sum(T3)*sum(T4))+T2*T4/(sum(T4)^2))
         svpe <- sum(vpe)
       }else if(outcome == "RR"){
-        w <- (nI)*eC/(nI+nC)
+        w <- (data$nI)*data$eC/(data$nI+data$nC)
         D1 <- ((A+B)*(C+D)*(A+C)-(A*C*N))/(N^2)
         R <- (A*(C+D))/(N)
         S <- (C*(A+B))/N
         svpe <- sum(D1)/(sum(R)*sum(S))
       }else if(outcome == "RD"){
-        w <- (nI)*(nC)/(nI+nC)
+        w <- (data$nI)*(data$nC)/(data$nI+data$nC)
       }
 
       pe <- sum(te*w)/sum(w)
@@ -89,27 +94,32 @@ metaPrepare <- function(data = NULL,
     # return results
     if(method == "MH"){
       out <- list(w = w, te = te, lower = lower, upper = upper, pe = c(pe, svpe),
-                  sig = sig, outcome = outcome, method = method, eI = eI,
-                  eC = eC, nC = nC, nI = nI, nonevent = nonevent)
+                  sig = sig, outcome = outcome, method = method, data = data,
+                  nonevent = nonevent)
     }else{
       out <- list(w = w, te = te, lower = lower, upper = upper, pe = pe,
-                  sig = sig, outcome = outcome, method = method, eI = eI,
-                  eC = eC, nC = nC, nI = nI, nonevent = nonevent)
+                  sig = sig, outcome = outcome, method = method, data = data,
+                  nonevent = nonevent)
     }
 
   }else if(outcome == "cont"){
+
+    if(is.null(data)){
+      data <- data.frame(mI = mI, sdI = sdI, nI = nI, mC = mC,
+                         sdC = sdC, nC = nC)
+    }
+
     te = mI - mC
 
-
     if(vartype == "equal"){
-      spooled <- sqrt(((nI-1)*sdI^2+(nC-1)*sdC^2)/(nI+nC-2))
-      vte <- (nI+nC)/(nI*nC)*spooled^2
+      spooled <- sqrt(((data$nI-1)*data$sdI^2+(data$nC-1)*data$sdC^2)/(data$nI+data$nC-2))
+      vte <- (data$nI+data$nC)/(data$nI*data$nC)*spooled^2
       sete <- sqrt(vte)
-      df <- (nI-1)+(nC-1)
+      df <- (data$nI-1)+(data$nC-1)
       lower <- te - qt(0.975, df = df)*sete
       upper <- te + qt(0.975, df = df)*sete
     } else {
-      vte <- sdI^2/nI + sdC^2/nC
+      vte <- sdI^2/data$nI + sdC^2/data$nC
       sete <- sqrt(vte)
       lower <- te - qnorm(0.975)*sete
       upper <- te + qnorm(0.975)*sete
@@ -121,8 +131,7 @@ metaPrepare <- function(data = NULL,
     w <- w/sum(w)
 
     out <- list(w = w, te = te, lower = lower, upper = upper, pe = pe,
-                sig = sig, outcome = outcome, method = method, mI = mI,
-                mC = mC, nC = nC, nI = nI)
+                sig = sig, outcome = outcome, method = method, data = data)
   }
 
   class(out) <- "synthPrepped"
@@ -130,6 +139,7 @@ metaPrepare <- function(data = NULL,
 }
 
 # synthesize - func ----
+#' @importFrom stats binomial
 synthesize <- function(y,
                        sign = NULL,
                        fixedStudy = TRUE,
@@ -144,16 +154,17 @@ synthesize <- function(y,
   nI <- y$nI
   nC <- y$nC
   df <- length(w) - 1
+  data <- y$data
   if (length(w) == 1)
     df <- 1 #check up on this
 
   #For GLM
   if (y$method == "GLM") {
-    bi <- nI - eI
-    di <- nC - eC
+    bi <- data$nI - data$eI
+    di <- data$nC - data$eC
 
-    grpOut <- cbind(xi = c(rbind(eI, eC)), mi = c(rbind(bi, di)))
-    k <- length(eI)
+    grpOut <- cbind(xi = c(rbind(data$eI, data$eC)), mi = c(rbind(bi, di)))
+    k <- length(data$eI)
     eff <- rep(rep(1, k), 2)
     trial <- factor(rep(seq_len(k), each = 2))
     group <- rep(c(1, 0), times = k)

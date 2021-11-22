@@ -105,7 +105,7 @@ sum.me <- summary(me)
 ```
 
 ```{r trameta, echo = FALSE}
-out.mat <- cbind(perioOxy$trial, round(mp$te, 2), paste0("(", round(mp$lower,2), "; ", round(mp$upper,2),")"), round(exp(me$yi),2), paste0("(", round(exp(sum.me$ci.lb),2), "; ", round(exp(sum.me$ci.ub),2),")"))
+out.mat <- cbind(perioOxy$study, round(mp$te, 2), paste0("(", round(mp$lower,2), "; ", round(mp$upper,2),")"), round(exp(me$yi),2), paste0("(", round(exp(sum.me$ci.lb),2), "; ", round(exp(sum.me$ci.ub),2),")"))
 colnames(out.mat) <- c("Trial", "Effect estimate ", "95% CI", "Effect estimate ", "95% CI")
 knitr::kable(out.mat, caption = "Results from the metaPrepare and escalc function") %>% kable_paper() %>% add_header_above(c("", "RTSA::metaPrepare" = 2, "metafor::escalc and summary" = 2))
 ```
@@ -178,14 +178,3 @@ gs = gsDesign(k = 7,
 gs$upper$bound
 ```
 
-
-```{r}
-RTSA:::TSA(timing = timing, synth = mp, anaTimes = c(4,5,7,8),
-     side = 1, alpha = 0.05)
-```
-
-```{r}
-RTSAout = RTSA:::TSA(timing = timing, synth = mp, anaTimes = c(4,5,7,8),
-     side = 1, alpha = 0.05)
-plot(RTSAout)
-```

@@ -62,7 +62,7 @@ TSA = function(timing,
                             alpha = alpha)
 
   # calculate the cum. z-score (do we want this per study?)
-  zout = lapply(anaTimes[anaTimes <= length(synth$data$nI)],
+  zout = lapply(anaTimes[anaTimes <= dim(synth$data)[1]],
                 function(x) {
                   synout = synthesize(
                     metaPrepare(
@@ -74,12 +74,13 @@ TSA = function(timing,
                   return(synout)
                 })
 
-  names(zout) = anaTimes[anaTimes <= length(synth$data$nI)]
+  names(zout) = anaTimes[anaTimes <= dim(synth$data)[1]]
 
   zvalues = sapply(names(zout), function(x){c(zout[[x]]$peF[4], zout[[x]]$peR[4])})
 
-  if (is.null(stopTime) & confInt == TRUE) {
-    stopTime = as.character(max(anaTimes[anaTimes < length(synth$data$nI)]))
+  if (confInt == TRUE) {
+    if(is.null(stopTime)){ stopTime =
+      as.character(max(anaTimes[anaTimes <= dim(synth$data)[1]]))}
     naiveCI = list(CIfixed = zout[[stopTime]]$peF[c(2, 3)],
                    CIrandom = zout[[stopTime]]$peR[c(2, 3)])
     adjCI = list(
@@ -148,9 +149,12 @@ RTSA <- function(data, outcome = "RR", mc){
   timing <- c(count/RIS)
   if(max(timing) < 1){
     timing = c(timing,1)
+  } else {
+    warning("More information than needed. Setting timing to 1, where sample size is larger than RIS")
+    timing[timing>1] = 1
   }
 
-  RTSAout = TSA(timing = timing, synth = mp, anaTimes = 2:length(timing[timing < 1]),
+  RTSAout = TSA(timing = timing, synth = mp, anaTimes = 2:length(timing[timing <= 1]),
       side = 2, alpha = 0.05)
   class(RTSAout) <- c("list", "RTSA")
   return(RTSAout)

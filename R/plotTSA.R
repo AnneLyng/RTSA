@@ -30,7 +30,7 @@ plot.RTSA = function(x, ylim = c(-8,8),...){
     abline(h = 0)
     abline(h = 1.96, col = "red")
     abline(h = -1.96, col = "red")
-    if(x$boundout$informationFractions[length(x$boundout$informationFractions)] ==1 ){
+    if(x$boundout$informationFractions[length(x$boundout$informationFractions)] > 1 ){
       index = -length(x$boundout$informationFractions)
     } else {
       index = 1:length(x$boundout$informationFractions)

@@ -8,11 +8,20 @@
 metaanalysis(
   data = NULL,
   outcome = "RR",
-  vartype = "unequal",
+  vartype = "equal",
   method = "MH",
   fixedStudy = TRUE,
   hksj = FALSE,
   sign = NULL,
+  study = NULL,
+  mI = NULL,
+  mC = NULL,
+  sdI = NULL,
+  sdC = NULL,
+  eI = NULL,
+  nI = NULL,
+  eC = NULL,
+  nC = NULL,
   ...
 )
 }
@@ -36,6 +45,12 @@ meta-analysis. Defaults to FALSE.}
 
 \item{sign}{TBA.}
 
+\item{study}{XXX.}
+
+\item{mI, mC, sdI, sdC}{See details.}
+
+\item{eI, nI, eC, nC}{See details.}
+
 \item{...}{Additional variables. See Details.}
 }
 \value{
@@ -49,6 +64,4 @@ metaanalysis
 \examples{
 data(perioOxy)
 metaanalysis(outcome = "RR", data = perioOxy, study = perioOxy$trial)
-data(eds)
-metaanalysis(outcome = "cont", data = eds, study = eds$study)
 }
