@@ -54,6 +54,8 @@ metaanalysis <- function(data = NULL,
       if(any(colnames(data) == "mC")) mC = data$mC
       if(any(colnames(data) == "sdI")) sdI = data$sdI
       if(any(colnames(data) == "sdC")) sdC = data$sdC
+      if(any(colnames(data) == "nI")) nI = data$nI
+      if(any(colnames(data) == "nC")) nC = data$nC
     }else{
       if(any(colnames(data) == "eI")) eI = data$eI
       if(any(colnames(data) == "nI")) nI = data$nI
@@ -83,9 +85,7 @@ metaanalysis <- function(data = NULL,
   #synthesize
   sy = synthesize(y = mp, sign = sign, fixedStudy = fixedStudy, hksj = hksj)
 
-
   #create an output object
-
   nonevent <- NULL
   missing_vec <- NULL
   if(is.null(study)){
@@ -108,7 +108,7 @@ metaanalysis <- function(data = NULL,
     "lowerCI" = mp$lower,
     "upperCI" = mp$upper,
     weightFixed = mp$w,
-    weightRandom = ifelse(is.null(sy$rwR), NA, sy$rwR)
+    weightRandom = ifelse(sapply(sy$rwR,is.null), NA, sy$rwR)
   )
   colnames(studyResults)[2] = outcome
 
