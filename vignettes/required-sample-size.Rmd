@@ -5,8 +5,8 @@ output:
     fig_caption: yes
 vignette: >
   %\VignetteIndexEntry{required-sample-size}
-  %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
+  %\VignetteEngine{knitr::rmarkdown}
 ---
 
 ```{r, include = FALSE}
@@ -388,3 +388,24 @@ load("random-effects.Rda")
 knitr::kable(outl[,c(4,5,1,2,3)], caption = "Power per model as a function of number of trials and number of participants per trial")
 ```
 
+## Application 
+
+We will see how many trials are required in the `perioOxy` data set if we use a random effects model. We can for now only calculate the min number of trials for RR. We will need an estimate for $\tau^2$, the common probability of event `p0` and a minimum clinically relevant value for RR. We set the latter to 0.9. 
+
+```{r}
+tau2 <- metaanalysis(data = perioOxy, outcome = "RR")$synthesize$U[1]
+pC <- (sum(perioOxy$eI)+sum(perioOxy$eC))/(sum(perioOxy$nI)+sum(perioOxy$nC))
+minTrial(metric = "RR", tau2 = tau2, p0 = pC, value = 0.9)
+```
+We will need 74 trials - depressing .... Changing the minimum clincally value of RR to 0.8:
+
+```{r}
+minTrial(metric = "RR", tau2 = tau2, p0 = pC, value = 0.8)
+```
+Gives a smaller number of required trials. And had the heterogeneity been half of the estimated value, we get:
+
+```{r}
+minTrial(metric = "RR", tau2 = tau2/2, p0 = pC, value = 0.9)
+```
+
+That 37 trials are needed. 
