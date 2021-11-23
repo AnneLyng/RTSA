@@ -91,7 +91,7 @@ metaanalysis <- function(data = NULL,
   if(is.null(study)){
     missing_vec <- 1
     study = 1:length(mp$te)
-    if(length(study) != length(eC)){
+    if(length(study) != length(mp$te)){
       nonevent <- "A study"
     }
   }else{
@@ -101,6 +101,11 @@ metaanalysis <- function(data = NULL,
     }
   }
 
+  if(!is.null(sy$rwR)) { weightRandom = sy$rwR
+  } else {
+   weightRandom <- rep(NA, length(mp$w))
+  }
+
   studyResults = data.frame(
     study = study,
     "ES" = mp$te,
@@ -108,7 +113,7 @@ metaanalysis <- function(data = NULL,
     "lowerCI" = mp$lower,
     "upperCI" = mp$upper,
     weightFixed = mp$w,
-    weightRandom = ifelse(sapply(sy$rwR,is.null), NA, sy$rwR)
+    weightRandom = weightRandom
   )
   colnames(studyResults)[2] = outcome
 
