@@ -23,26 +23,30 @@ library(dplyr)
 library(kableExtra)
 ```
 
-# Introduction
+# Introduction of `RTSA`
 
-*RTSA* is an R-package for sequential meta-analysis using Trial Sequential Analysis (TSA). The package can be loaded by:
+`RTSA` is an R-package for sequential meta-analysis using Trial Sequential Analysis (TSA). The package can be loaded by:
 
 ```{r message=FALSE}
 library(RTSA)
 ```
 
-This vignette's purpose is to function as a working manual for both statisticians and non-statisticians to understand how RTSA's main functions are implemented and to understand some of the statistical background behind TSA. The original implementation of TSA was done in java and as a stand-alone software. The idea behind the RTSA package was to implement the original functionalities of TSA to statistical software R, making it easier for users to see and understand the source code but also to allow for a faster implementation of new functions as sequential meta-analysis is still an evolving field. 
-
-## Why do a sequential meta-analysis 
-
-When conducting a meta-analysis 
+This vignette's purpose is to function as a working manual for both statisticians and non-statisticians. This includes understanding how `RTSA`'s main functions are implemented and to understand some of the statistical background behind TSA. The original implementation of TSA was done in java and as a stand-alone software. The idea behind the `RTSA` package was to implement the original functionalities of TSA to statistical software `R`, making it easier for users to see and understand the source code but also to allow for a faster implementation of new functions as sequential meta-analysis is still an evolving field. 
 
 # Notation
 
 $\mu$: Location parameter in the normal distribution
-$\theta$: Treatment difference between two populations
+$\theta$: Effect of treatment between two populations represented by mean difference, relative risk etc. 
 $H_0$: Null-hypothesis
 $H_A$: Alternative hypothesis
+
+## Why do a sequential meta-analysis 
+
+Testing the same hypothesis more than once, using standard meta-analysis methods, as data/studies accumulate sequentially over time is known to inflate the risk of finding false positives. Inflation of finding false positives, is also called inflation of the type-1-error. Sequential meta-analysis controls the risk of finding false positives by using group sequential methods originally created for clinical trials. 
+
+Sequential meta-analysis should be considered, if the intend of the meta-analysis is to produce statistical inference such as p-values to aid in a decision making e.g. regarding modifying general practices or standard of care. If the hypothesis test to aid in the decision making is computed sequentially, hence the meta-analysis is updated at least once, the p-value can no longer be interpreted in the standard manner and must be evaluated in relation to the hypothesis being tested multiple times.
+
+There are several reasons for conducting a meta-analysis. If the intention is not to test a specific hypothesis and ... LIVING SYSTEMATIC REVIEW.  
 
 # Statistical background
 
