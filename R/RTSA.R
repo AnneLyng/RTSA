@@ -26,7 +26,7 @@
 TSA = function(timing,
                 anaTimes,
                 synth,
-                side,
+                side = 2,
                 alpha,
                 stopTime = NULL,
                 confInt = TRUE,
@@ -129,7 +129,7 @@ TSA = function(timing,
 #' @examples
 #' data(perioOxy)
 #' RTSA(data = perioOxy, outcome = "RR", mc = 0.9)
-RTSA <- function(data, outcome = "RR", mc){
+RTSA <- function(data, outcome = "RR", mc, alpha = 0.05, beta = 0.2, ...){
   # calculate the meta-analysis
   mp = metaPrepare(outcome = outcome, eI = data$eI, eC = data$eC,
                          nI = data$nI, nC = data$nC)
@@ -142,7 +142,7 @@ RTSA <- function(data, outcome = "RR", mc){
   p0 = sum(data$eC+data$eI)/sum(data$nC+data$nI)
   pI = exp(log(p0)+log(mc))
   pC = exp(log(p0)-log(mc))
-  RIS = RTSA::nRandom(alpha = 0.05, beta = 0.2, pI = pI, pC = pC, diversity = 0)
+  RIS = RTSA::nRandom(alpha = alpha, beta = beta, pI = pI, pC = pC, diversity = 0)
   }
 
   # Set the timings of the studies relative to the RIS
@@ -155,7 +155,7 @@ RTSA <- function(data, outcome = "RR", mc){
   }
 
   RTSAout = TSA(timing = timing, synth = mp, anaTimes = 2:length(timing[timing <= 1]),
-      side = 2, alpha = 0.05)
+                alpha = alpha, ...)
   class(RTSAout) <- c("list", "RTSA")
   return(RTSAout)
 }

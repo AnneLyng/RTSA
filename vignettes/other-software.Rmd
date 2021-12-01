@@ -158,7 +158,7 @@ To get an output with more informatin and less steps, we can use the RTSA functi
 If we want a function that combines the metaPrepare, synthesize and TSA function, then we can use the RTSA function. This function prints the outcome of the TSA function without the need to specify the metaPrepare function, as it is embedded in the RTSA function. 
 
 ```{r}
-RTSA(data = perioOxy, outcome = "RR", mc = 0.9)
+RTSA(data = perioOxy, outcome = "RR", mc = 0.9, side = 1, alpha = 0.25)
 ```
 
 # Plotting in RTSA

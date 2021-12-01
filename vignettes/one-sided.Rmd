@@ -128,6 +128,9 @@ boundaries <- RTSA:::boundary(informationFractions = trials[,1],
                  side = 1, alpha = 0.05, zninf = -8, tol = 1e-24)
 boundaries
 ```
+
+
+
 We can compare our boundaries to the gsDesign package.
 
 ```{r}
