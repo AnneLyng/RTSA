@@ -1,10 +1,14 @@
 
-# RTSA
+# Overview
 
 <!-- badges: start -->
 <!-- badges: end -->
 
-The goal of RTSA is to ...
+`RTSA` is a R package for sequential meta-analysis. 
+
+# Where to start
+
+We recommend that you read some of the tutorials vignettes such as the [RTSA manual](file:///home/anne/Documents/PhD/packages/RTSA/docs/articles/RTSA-manual.html), before conducting a sequential meta-analysis.
 
 ## Installation
 
@@ -14,12 +18,7 @@ You can install the released version of RTSA from [CRAN](https://CRAN.R-project.
 install.packages("RTSA")
 ```
 
-## Example
 
-This is a basic example which shows you how to solve a common problem:
 
-``` r
-library(RTSA)
-## basic example code
-```
+ <img src='man/figures/CTU.png'/>
 

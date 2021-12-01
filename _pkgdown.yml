@@ -1,0 +1,19 @@
+navbar:
+  structure:
+    left:  [home, manual, reference, articles]
+    right: [github]
+  components:
+    articles:
+      text: "Vignettes"
+      menu:
+      -  text: Futility
+         href: articles/futility.html
+      -  text: One-sided
+         href: articles/one-sided.html
+      -  text: Other software
+         href: articles/other-software.html
+      -  text: Required sample size
+         href: articles/required-sample-size.html
+    manual:
+      text: "RTSA manual"
+      href: articles/RTSA-manual.html

@@ -138,3 +138,10 @@ gs = gsDesign(k = 7,
 gs$upper$bound
 ```
 
+```{r}
+gs = gsDesign(k = 7,
+         n.I = trials[,3],
+         test.type = 1,
+         alpha = 0.05, sfu = sfLDOF, sfl = sfLDOF)
+gs$lower$bound
+```

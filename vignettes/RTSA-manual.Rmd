@@ -21,51 +21,78 @@ knitr::opts_chunk$set(
 ```{r, include=FALSE}
 library(dplyr)
 library(kableExtra)
-```
-
-# Introduction of `RTSA`
-
-`RTSA` is an R-package for sequential meta-analysis using Trial Sequential Analysis (TSA). The package can be loaded by:
-
-```{r message=FALSE}
 library(RTSA)
 ```
 
-This vignette's purpose is to function as a working manual for both statisticians and non-statisticians. This includes understanding how `RTSA`'s main functions are implemented and to understand some of the statistical background behind TSA. The original implementation of TSA was done in java and as a stand-alone software. The idea behind the `RTSA` package was to implement the original functionalities of TSA to statistical software `R`, making it easier for users to see and understand the source code but also to allow for a faster implementation of new functions as sequential meta-analysis is still an evolving field. 
+# Introduction to Trial Sequential Analysis
 
-# Notation
+Trial Sequential Analysis (TSA) is a method for conducting sequential meta-analysis.
 
-$\mu$: Location parameter in the normal distribution
-$\theta$: Effect of treatment between two populations represented by mean difference, relative risk etc. 
-$H_0$: Null-hypothesis
-$H_A$: Alternative hypothesis
+The purpose of this document is to function as a working manual for both statisticians and non-statisticians. It will contain descriptions of some of the key methods behind TSA. For more statistical and technical descriptions, we recommend reading the vignettes to this package.
 
-## Why do a sequential meta-analysis 
+This manual will start with a short introduction to when a sequential meta-analysis should be considered before moving to main section of this manual about the statistical background. The statistical background section will contain a short introduction to hypothesis testing, type-1- and type-2-errors, ...
 
-Testing the same hypothesis more than once, using standard meta-analysis methods, as data/studies accumulate sequentially over time is known to inflate the risk of finding false positives. Inflation of finding false positives, is also called inflation of the type-1-error. Sequential meta-analysis controls the risk of finding false positives by using group sequential methods originally created for clinical trials. 
+## Why do a sequential meta-analysis
 
-Sequential meta-analysis should be considered, if the intend of the meta-analysis is to produce statistical inference such as p-values to aid in a decision making e.g. regarding modifying general practices or standard of care. If the hypothesis test to aid in the decision making is computed sequentially, hence the meta-analysis is updated at least once, the p-value can no longer be interpreted in the standard manner and must be evaluated in relation to the hypothesis being tested multiple times.
+Testing the same hypothesis more than once, using standard meta-analysis methods, as data/studies accumulate sequentially over time is known to inflate the risk of finding false positives. Inflation of finding false positives is also called inflation of the type-1-error. Sequential meta-analysis controls the risk of finding false positives by using group sequential methods originally created for clinical trials.
 
-There are several reasons for conducting a meta-analysis. If the intention is not to test a specific hypothesis and ... LIVING SYSTEMATIC REVIEW.  
+Sequential meta-analysis should be considered, if the intend of the meta-analysis is to produce statistical inference such as p-values to aid in a decision making e.g. regarding modifying general practices or standard of care. If the hypothesis test to aid in the decision making is computed sequentially, hence the meta-analysis is updated at least once, the p-value can no longer be interpreted in the standard manner and must be evaluated from the perspective of the hypothesis being tested multiple times.
 
 # Statistical background
 
-Users not trained in statistics might have troubles with some of the statistical metrics such as type-1- and type-2-error, p-values, z-values and more used to describe and make a trial sequential analysis. It is not recommended to fit TSA without statistical knowledge, but ones knowledge about some of the metrics just described might need to be refreshed. These following subsections are intended for those.
+This section will describe some of the statistical terms such as type-1- and type-2-error, p-values, z-values and more used to create a trial sequential analysis. It is not recommended to fit TSA without statistical knowledge, but ones knowledge about some of the metrics just described might need to be refreshed. These following subsections are intended for those.
 
 ## Hypothesis testing
 
-One of the purposes of making a TSA is to perform hypothesis testing. RTSA accommodates different types of hypothesis testing including:
+TSA can be used for correcting the p-value, where the p-value is used for making a decision about the likelihood of ones hypothesis. `RTSA` accommodates different types of hypothesis testing including:
 
-1. One-sided testing 
-    - with and without binding futility
-2. Two-sided testing
-    - with and without binding futility
+1.  Two sided (Two-tailed) testing
+2.  One sided (One-tailed) testing
+3.  Futility testing
 
+Each of these will be explained below. For all of the different hypothesis tests, are we interested in the distinction between the null hypothesis, often denoted $H_0$, and the alternative hypothesis, often denoted $H_A$. The statistical hypothesis test is from the perspective of finding evidence against the null hypothesis. Hence we will believe in the null hypothesis until proven otherwise in relation to some threshold, which in TSA is the pre-specified $\alpha$ significance level. A subsection is dedicated to describe the role of $\alpha$. For now we will return to the different form of hypothesis tests available in `RTSA`. 
+
+We will use some mathematical notation when presenting the different types of hypothesis tests. Let $\mu$ be the effect estimated from data of interest, which can includes mean difference, risk ratio (relative risk), odds ratio or risk difference. We often wish to compare the effect estimated to a value described by the null hypothesis, we define this value to be $\mu_0$. For mean differences $\mu_0$ is often 0, while for risk and odds ratios the value is 1. 
+
+### Two sided testing
+
+In the two-tailed or two sided test, we specify our null and alternative hypothesis as: 
+
+$$H_0: \mu = \mu_0 $$ against
+$$H_A: \mu \neq \mu_0 $$
+An example of a two sided test, is the test of which of two treatments is better. We will provide a few examples of real-world applications tested using two-sided tests. 
+
+#### Continuous outcome
+
+Maybe an example here
+
+#### Binary outcome
+
+Maybe an example here
+
+### One sided testing
+
+In the one-tailed or one sided test, we specify our null and alternative hypothesis as: 
+
+$$H_0: \mu \leq \mu_0 $$ against
+$$H_A: \mu > \mu_0.$$
+
+An example of a one sided test is the test of whether a new treatment is more effective than placebo. It is common in group sequential methods
+
+### Futility testing
+
+If there is sufficient statistical evidence against the alternative hypothesis, it might be just as beneficial to stop the meta-analysis early for futility as it would have been to stop it for benefit or harm. Futility testing can be used in combination with the two or one sided hypothesis testing or stand alone.
+
+Futility hypothesis testing in TSA is created using $\beta$ spending functions, a topic we will address in a later section. 
 
 
 ## Type 1 and type 2 error
 
-Consider a scenario where we wish to reject the null hypothesis $H_0: \theta = 0$, where the alternative hypothesis is $H_A: \theta \neq 0$. The parameter $\theta$ is used, when we are interested in a treatment difference. As the alternative allows for both $\theta > 0$, intervention being superior, and $\theta < 0$, intervention being inferior, it is a two-sided test, we are considering. 
+Consider a scenario where we wish to reject the null hypothesis $H_0: \theta = 0$, where the alternative hypothesis is $H_A: \theta \neq 0$. The parameter $\theta$ is used, when we are interested in a treatment difference. As the alternative allows for both $\theta > 0$, intervention being superior, and $\theta < 0$, intervention being inferior, it is a two-sided test, we are considering.
+
+```{r}
+
+```
 
 State something about $\theta$ being normally distributed.
 
@@ -73,28 +100,30 @@ Considering the test statistic $Z$, we have that $$P_{\theta = 0}(\vert Z\vert >
 
 Here $\alpha$ is the type-1-error, the probability of a false positive.
 
-$$P_{\theta = \delta}(\vert Z \vert > c) = P_{\theta = -\delta}(\vert Z \vert > c) = 1 - \beta$$
-Here $\beta$ is the type-2-error, the probability of a false negative. Power is then defined as: $1-\beta$.
+$$P_{\theta = \delta}(\vert Z \vert > c) = P_{\theta = -\delta}(\vert Z \vert > c) = 1 - \beta$$ Here $\beta$ is the type-2-error, the probability of a false negative. Power is then defined as: $1-\beta$.
 
 # Practical implementations
 
 ## Handling of zero-trials
 
 # Reliability and quality control
+
 To ensure the correctness and quality of the code in RTSA, we will be comparing the output of RTSA to other packages. Unfortunately, no package in R offer sequential stopping boundaries for meta-analysis. This is one of the reasons for creating the *RTSA*-package. For this reason we will both be comparing results from *RTSA* with the original [TSA-software](https://ctu.dk/tsa/) coded in Java (TSA v. **XXXXX**, Copenhagen Trial Unit, Copenhagen, Denmark) and to packages available on CRAN. The intended use of the packages available on CRAN is not for sequential meta-analysis, but the mathematical algorithms are comparable.
 
 TSA requires a traditional meta-analysis which have been implemented as part for the *RTSA*-package. As the *RTSA*-package is not created mainly for this purpose, we recommend using the [*metafor*](https://cran.r-project.org/web/packages/metafor/index.html)-package in R for traditional meta-analysis as this package has an extensive selection of methods and documentation. We will compare the results of the *RTSA*-package and the [*metafor*](https://cran.r-project.org/web/packages/metafor/index.html)-package for the traditional meta-analysis.
 
-The methods for calculating the sequential stopping boundaries in TSA are almost identical to the methods for calculating sequential stopping boundaries in clinical trials. Hence we can compare the *RTSA*-package with the existing packages in R for calculating stopping boundaries. We will specifically be comparing our stopping boundaries to the [*gsDesign*](https://cran.r-project.org/web/packages/gsDesign/gsDesign.pdf)-package. The [*gsDesign*](https://cran.r-project.org/web/packages/gsDesign/gsDesign.pdf)- and *RTSA*-packages differ in their intended purpose. The [*gsDesign*](https://cran.r-project.org/web/packages/gsDesign/gsDesign.pdf)-package is created for sequential methods in clinical trials and the *RTSA*-package is created for sequential methods in meta-analysis. Even with their difference in indended use, the boundries should be comparable. 
+The methods for calculating the sequential stopping boundaries in TSA are almost identical to the methods for calculating sequential stopping boundaries in clinical trials. Hence we can compare the *RTSA*-package with the existing packages in R for calculating stopping boundaries. We will specifically be comparing our stopping boundaries to the [*gsDesign*](https://cran.r-project.org/web/packages/gsDesign/gsDesign.pdf)-package. The [*gsDesign*](https://cran.r-project.org/web/packages/gsDesign/gsDesign.pdf)- and *RTSA*-packages differ in their intended purpose. The [*gsDesign*](https://cran.r-project.org/web/packages/gsDesign/gsDesign.pdf)-package is created for sequential methods in clinical trials and the *RTSA*-package is created for sequential methods in meta-analysis. Even with their difference in indended use, the boundries should be comparable.
 
 For investigation of reliability we will use the `perioOxy`-data included in the *RTSA*-package.
+
 ```{r}
 data("perioOxy")
 head(perioOxy)
 ```
 
 ## Traditional meta-analysis
-In the *RTSA*-package, we will be using the functions `metaPrepare` and `synthesize` to create a traditional meta-analysis. The function `metaPrepare` uses binary summary data (events and number of participants) as input and returns a list of trial specific treatment effects, confidence intervals and more.  
+
+In the *RTSA*-package, we will be using the functions `metaPrepare` and `synthesize` to create a traditional meta-analysis. The function `metaPrepare` uses binary summary data (events and number of participants) as input and returns a list of trial specific treatment effects, confidence intervals and more.
 
 ```{r}
 mp <- RTSA:::metaPrepare(outcome = "RR", eI = perioOxy$eI, nI = perioOxy$nI,
@@ -114,7 +143,7 @@ colnames(out.mat) <- c("Trial", "Effect estimate ", "95% CI", "Effect estimate "
 knitr::kable(out.mat, caption = "Results from the metaPrepare and escalc function") %>% kable_paper() %>% add_header_above(c("", "RTSA::metaPrepare" = 2, "metafor::escalc and summary" = 2))
 ```
 
-The saved object from `metaPrepare` can be used to compute a traditional meta-analysis by the function `synthesize` in *RTSA*-package. The `synthesize`-function returns a list containing information about a fixed-effect meta-analysis, a random-effects meta-analysis and more. We will specifically be fitting a fixed-effect model (always fitted) and a random-effects model (fitted per default) using the DerSimonian-Laird estimator for the heterogeneity. We will be comparing the output of the synthesize function with the `rma`-function from the [*metafor*](https://cran.r-project.org/web/packages/metafor/index.html)-package. See Table \@ref(tab:trametaout). 
+The saved object from `metaPrepare` can be used to compute a traditional meta-analysis by the function `synthesize` in *RTSA*-package. The `synthesize`-function returns a list containing information about a fixed-effect meta-analysis, a random-effects meta-analysis and more. We will specifically be fitting a fixed-effect model (always fitted) and a random-effects model (fitted per default) using the DerSimonian-Laird estimator for the heterogeneity. We will be comparing the output of the synthesize function with the `rma`-function from the [*metafor*](https://cran.r-project.org/web/packages/metafor/index.html)-package. See Table \@ref(tab:trametaout).
 
 ```{r}
 sm <- RTSA:::synthesize(mp) # RTSA function
@@ -139,7 +168,8 @@ knitr::kable(out.mat, caption = "Results from the synthesize and rma function") 
 ```
 
 ## Sequential meta-analysis
-The RTSA package is mainly created for sequential meta-analysis. We will first focus on the boundary calculation before looking at the main RTSA function in our package. 
+
+The RTSA package is mainly created for sequential meta-analysis. We will first focus on the boundary calculation before looking at the main RTSA function in our package.
 
 ```{r}
 # Calculate the cumulative number of participants
@@ -171,6 +201,7 @@ boundaries <- RTSA:::boundary(informationFractions = trials[,1],
                  side = 1, alpha = 0.05, zninf = -8, tol = 1e-24)
 boundaries
 ```
+
 We can compare our boundaries to the gsDesign package.
 
 ```{r}
@@ -185,6 +216,7 @@ gs$upper$bound
 ## Continuous outcome
 
 Testing cont. outcome
+
 ```{r}
 data("perioOxy")
 perioOxy[c(4,5),c(3,5)] <- 0
@@ -193,3 +225,10 @@ metaanalysis(outcome = "RR", data = perioOxy,
              method = "MH")
 ```
 
+# Notation
+
+-   $\alpha$: Proportion of false positives, also called type-1-error.
+-   $H_0$: Null-hypothesis
+-   $H_A$: Alternative hypothesis
+-   $\mu$: Location parameter in the normal distribution
+-   $\theta$: Effect of treatment between two populations represented by mean difference, relative risk etc.
