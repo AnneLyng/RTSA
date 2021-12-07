@@ -1,3 +1,32 @@
+# nFixed ----
+# Calculate RIS with fixed effect.
+#' @importFrom stats qnorm
+nFixed <- function(alpha, beta, pI = NULL, pC = NULL, iE = NULL,
+                   sdE = NULL, binary = TRUE){
+  if(binary == TRUE){
+    p <- (pC + pI)/2
+    v <- p*(1-p)
+    theta <- pC-pI
+    return(2*(qnorm(1-alpha/2)+qnorm(1-beta))^2*2*v/theta^2)
+  } else {
+    return(2*(qnorm(1-alpha/2)+qnorm(1-beta))^2*2*sdE^2/iE^2)
+  }
+}
+
+
+# nRandom ----
+# Calculate RIS with random effect using diversity
+nRandom <- function(alpha, beta, pI, pC, diversity = NULL){
+
+  p <- (pC + pI)/2
+  v <- p*(1-p)
+  theta <- pC-pI
+  NF <- 2*(qnorm(1-alpha/2)+qnorm(1-beta))^2*2*v/theta^2
+
+  NR <- 1/(1-diversity)*NF
+  return(NR)
+}
+
 #' boundary
 #'
 #' Calculate boundaries for sequential meta-analysis. The functions are based
@@ -114,9 +143,19 @@ boundary <- function(informationFractions, side, alpha,
               alpha.boundaries.lower = alpha.boundaries.lower))
 }
 
+# fcap / gfunc ----
+# Quantify where boundaries will lie
+
 
 fcab <- function(last, nint, yam1, ybm1, h, x,
                  stdv, delta){
+
+  #HELPER FUNCTIONS
+  gfunc <- function(x, delta){
+    exp(-0.5*(x - delta)^2)/sqrt(2*pi)
+  }
+  #HELPER FUNCTIONS
+
   nlim <- 5000
   f <- numeric(length = nlim)
 
@@ -142,6 +181,8 @@ other <- function(ya, yb, i, stdv, h, last, nints){
   return(last)
 }
 
+# trap ----
+#
 trap <- function(f, n, h){
   sum1 = f[1] # rename from sum to sum1
 
@@ -153,6 +194,8 @@ trap <- function(f, n, h){
   return(h/2*sum1)
 }
 
+# qpos ----
+# reverse integrals
 #' @importFrom stats pnorm
 qpos <- function(xq, last, nint, yam1, ybm1, stdv){
   nwork <- 5000
@@ -166,10 +209,8 @@ qpos <- function(xq, last, nint, yam1, ybm1, stdv){
   return(trap(f = fun1, n = nint, h = hlast))
 }
 
-gfunc <- function(x, delta){
-  exp(-0.5*(x - delta)^2)/sqrt(2*pi)
-}
-
+# first ----
+# focus on the first trial
 first <- function(ya, yb, h, stdv, nints, delta, lnn){
   hh <- (yb - ya)/nints[1]
 
@@ -181,6 +222,8 @@ first <- function(ya, yb, h, stdv, nints, delta, lnn){
   return(last)
 }
 
+# alphas ----
+# Alpha spending boundaries
 #' @importFrom stats qnorm pnorm
 alphas <- function(alpha, side, ti, tol){
   alphaSpendCum <- numeric(length(ti))
@@ -236,7 +279,8 @@ betas_An <- function( nn, beta, informationFractions, tol = tol){
   return(list(betaValuesCumulated = pn_betaSpend, betaValuesDelta = pn_betaSpendDelta))
 }
 
-
+# sdfunc ----
+# Ratio of how much information is available
 sdfunc <- function(ti){
   sdincr <- numeric(length = length(ti))
   sdproc <- numeric(length = length(ti))
@@ -253,6 +297,9 @@ sdfunc <- function(ti){
   return(list(sdincr = sdincr, sdproc = sdproc))
 }
 
+#searchfunc ----
+# Readjusting RIS based on the number of interim-analyses
+# TODO: Talk with CG, should it be implemented
 searchfunc <- function(last, nints, i, valSF, stdv, ya, yb){
   maxnn <- max(c(length(nints), 50)); upper <- yb[i - 1]
   del <- 10
@@ -294,6 +341,8 @@ searchfunc <- function(last, nints, i, valSF, stdv, ya, yb){
   return(yb)
 }
 
+#getInnerWedge ----
+# TODO: To be implemented
 #' @importFrom stats qnorm
 getInnerWedge <- function(informationFractions, beta, bsInf, delta, side, fakeIFY,
                           zninf = -8, tol = tol){
@@ -384,4 +433,101 @@ getInnerWedge <- function(informationFractions, beta, bsInf, delta, side, fakeIF
   ret2 <- za + outsd$sdproc*testDrift
   return(list(ret1 = ret1, ret2 = ret2, betaValuesDelta = outbeta$betaValuesDelta, za = za, zb = zb,
               ya = ya, yb = yb, drift = testDrift))
+}
+
+
+
+# TSA ----
+# Gathers all of the information in a nested list for TSA
+TSA = function(timing,
+               anaTimes,
+               synth,
+               side = 2,
+               alpha,
+               stopTime = NULL,
+               confInt = TRUE,
+               count,
+               RIS,
+               hakn) {
+  # start with preparing the timing data
+  if (is.null(timing)) {
+    timing = c(count / RIS, 1)
+    timing = timing[timing < 1]
+  }
+
+  if(is.null(anaTimes)){
+    anaTimes = 1:length(timing)
+  }
+
+  timing = timing[anaTimes]
+
+  IFincrementThreshold <- 0.01
+  IFtotalThreshold <- 0.05
+
+  timingincr <- timing - c(0, timing[-length(timing)])
+  trials <- cbind(timing, timingincr)
+
+  anaTimes = anaTimes[which(trials[, 2] > IFincrementThreshold)]
+  trials <- trials[trials[, 2] > IFincrementThreshold, ]
+
+  trials[, 2] <- trials[, 1] - c(0, trials[, 1][-length(trials[, 1])])
+
+  # calculate the boundaries
+  boundout = boundary(informationFractions = trials[, 1],
+                      side = side,
+                      alpha = alpha)
+
+  # calculate the cum. z-score (do we want this per study?)
+  zout = lapply(anaTimes[anaTimes <= dim(synth$data)[1]],
+                function(x) {
+                  synout = synthesize(
+                    metaPrepare(
+                      data = synth$data[1:x,],
+                      outcome = synth$outcome,
+                      method = synth$method
+                    )
+                  )
+                  return(synout)
+                })
+
+  names(zout) = anaTimes[anaTimes <= dim(synth$data)[1]]
+
+  zvalues = sapply(names(zout), function(x){c(zout[[x]]$peF[4], zout[[x]]$peR[4])})
+
+  if (confInt == TRUE) {
+    if(is.null(stopTime)){ stopTime =
+      as.character(max(anaTimes[anaTimes <= dim(synth$data)[1]]))}
+    naiveCI = list(CIfixed = zout[[stopTime]]$peF[c(2, 3)],
+                   CIrandom = zout[[stopTime]]$peR[c(2, 3)])
+    adjCI = list(
+      CIfixed = exp(
+        log(zout[[stopTime]]$peF[1]) +
+          c(-1, 1) * boundout$alpha.boundaries.upper[which(stopTime == anaTimes)] *
+          sqrt(zout[[stopTime]]$peF[7])
+      ),
+      CIrandom = exp(
+        log(zout[[stopTime]]$peR[1]) +
+          c(-1, 1) * boundout$alpha.boundaries.upper[which(stopTime == anaTimes)] *
+          sqrt(zout[[stopTime]]$peR[6])
+      )
+    )
+  }
+
+  RTSAout =     list(
+    side = side,
+    boundout = boundout,
+    zout = zout[stopTime],
+    zvalues = zvalues,
+    anaTimes = anaTimes,
+    stopTime = stopTime,
+    naiveCI = naiveCI,
+    adjCI = adjCI
+  )
+
+  class(RTSAout) <- c("list", "RTSA")
+
+  return(
+    RTSAout
+  )
+
 }
