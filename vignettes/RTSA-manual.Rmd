@@ -9,6 +9,7 @@ vignette: >
   %\VignetteIndexEntry{rtsa-manual}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
+bibliography: /home/anne/Documents/PhD/packages/RTSA/phd.bib
 ---
 
 ```{r, include = FALSE}
@@ -30,29 +31,31 @@ Trial Sequential Analysis (TSA) is a method for conducting sequential meta-analy
 
 The purpose of this document is to function as a working manual for both statisticians and non-statisticians. It will contain descriptions of some of the key methods behind TSA. For more statistical and technical descriptions, we recommend reading the vignettes to this package.
 
-This manual will start with a short introduction to when a sequential meta-analysis should be considered before moving to main section of this manual about the statistical background. The statistical background section will contain a short introduction to hypothesis testing, type-1- and type-2-errors, ...
+This manual will start with a short introduction to when a sequential meta-analysis should be considered before moving to main section of this manual about the statistical background. The statistical background section will contain a short introduction to hypothesis testing, type I and type II errors, ...
 
 ## Why do a sequential meta-analysis
 
-Testing the same hypothesis more than once, using standard meta-analysis methods, as data/studies accumulate sequentially over time is known to inflate the risk of finding false positives. Inflation of finding false positives is also called inflation of the type-1-error. Sequential meta-analysis controls the risk of finding false positives by using group sequential methods originally created for clinical trials.
+Testing the same hypothesis more than once, using standard meta-analysis methods, as data/studies accumulate sequentially over time is known to inflate the risk of finding false positives. Inflation of finding false positives is also called inflation of the type I error. Hence for a repeated meta-analysis, some findings may have a higher risk of being false compared to the set risk of e.g. 5% usually used in a traditional non-sequential meta-analysis. Sequential meta-analysis controls the risk of finding false positives by using group sequential methods originally created for clinical trials. TSA is an implementation/method of sequential meta-analysis. 
 
 Sequential meta-analysis should be considered, if the intend of the meta-analysis is to produce statistical inference such as p-values to aid in a decision making e.g. regarding modifying general practices or standard of care. If the hypothesis test to aid in the decision making is computed sequentially, hence the meta-analysis is updated at least once, the p-value can no longer be interpreted in the standard manner and must be evaluated from the perspective of the hypothesis being tested multiple times.
 
+It is of interest to control for finding false positives, which can be achieved by using TSA correctly. But, RTSA also provides information about the risk of finding false negatives, known as the type II error. 
+
 # Statistical background
 
-This section will describe some of the statistical terms such as type-1- and type-2-error, p-values, z-values and more used to create a trial sequential analysis. It is not recommended to fit TSA without statistical knowledge, but ones knowledge about some of the metrics just described might need to be refreshed. These following subsections are intended for those.
+This section will describe some of the statistical terms such as type I and type II errors, $p$-values, $z$-values, $\alpha$ and $\beta$ spending functions and more used to create a trial sequential analysis. It is not recommended to fit TSA without statistical knowledge, but ones knowledge about some of the metrics just described might need to be refreshed. These following subsections are intended for those.
 
 ## Hypothesis testing
 
-TSA can be used for correcting the p-value, where the p-value is used for making a decision about the likelihood of ones hypothesis. `RTSA` accommodates different types of hypothesis testing including:
+TSA can be used for correcting the $p$-value, where the p-value is used for making a decision about the likelihood of ones hypothesis. `RTSA` accommodates different types of hypothesis testing including:
 
 1.  Two sided (Two-tailed) testing
 2.  One sided (One-tailed) testing
 3.  Futility testing
 
-Each of these will be explained below. For all of the different hypothesis tests, are we interested in the distinction between the null hypothesis, often denoted $H_0$, and the alternative hypothesis, often denoted $H_A$. The statistical hypothesis test is from the perspective of finding evidence against the null hypothesis. Hence we will believe in the null hypothesis until proven otherwise in relation to some threshold, which in TSA is the pre-specified $\alpha$ significance level. A subsection is dedicated to describe the role of $\alpha$. For now we will return to the different form of hypothesis tests available in `RTSA`. 
+Each of these will be explained below. For all of the different hypothesis tests, we are interested in the distinction between the null hypothesis, often denoted $H_0$, and the alternative hypothesis, often denoted $H_A$. The statistical hypothesis test is, most often, from the perspective of finding evidence against the null hypothesis. Hence we will believe in the null hypothesis until proven otherwise in relation to some probability of the null hypothesis being true, which in TSA, and most other scenarios, is the pre-specified $\alpha$ significance level. A subsection is dedicated to describe the role of $\alpha$. For now we will return to the different form of hypothesis tests available in `RTSA`. 
 
-We will use some mathematical notation when presenting the different types of hypothesis tests. Let $\mu$ be the effect estimated from data of interest, which can includes mean difference, risk ratio (relative risk), odds ratio or risk difference. We often wish to compare the effect estimated to a value described by the null hypothesis, we define this value to be $\mu_0$. For mean differences $\mu_0$ is often 0, while for risk and odds ratios the value is 1. 
+We will use some mathematical notation when presenting the different types of hypothesis tests. For a list over the notation used in this manual, see Section \@ref(notation). Let $\mu$ be the effect estimated from data of interest, which can includes mean difference, risk ratio (relative risk), odds ratio or risk difference. We often wish to compare the effect estimated to a value described by the null hypothesis, we define this value to be $\mu_0$. For mean differences $\mu_0$ is often 0, while for risk and odds ratios the value is 1. 
 
 ### Two sided testing
 
@@ -61,6 +64,8 @@ In the two-tailed or two sided test, we specify our null and alternative hypothe
 $$H_0: \mu = \mu_0 $$ against
 $$H_A: \mu \neq \mu_0 $$
 An example of a two sided test, is the test of which of two treatments is better. We will provide a few examples of real-world applications tested using two-sided tests. 
+
+ONE FIGURE HERE, TWO SIDED TESTING
 
 #### Continuous outcome
 
@@ -77,22 +82,23 @@ In the one-tailed or one sided test, we specify our null and alternative hypothe
 $$H_0: \mu \leq \mu_0 $$ against
 $$H_A: \mu > \mu_0.$$
 
-An example of a one sided test is the test of whether a new treatment is more effective than placebo. It is common in group sequential methods
+An example of a one sided test is the test of whether a new treatment is more effective than placebo. It is common in group sequential methods to also test futility, when interested in one-sided hypothesis testing.
+
+TWO FIGURES HERE: ONE OF ONE-SIDED TEST WITH AND ONE WITHOUT FUTILITY BOUNDARIES
 
 ### Futility testing
 
-If there is sufficient statistical evidence against the alternative hypothesis, it might be just as beneficial to stop the meta-analysis early for futility as it would have been to stop it for benefit or harm. Futility testing can be used in combination with the two or one sided hypothesis testing or stand alone.
+If there is sufficient statistical evidence against the alternative hypothesis, it might be just as beneficial to stop the meta-analysis early for futility as it would have been to stop it for benefit or harm. Futility testing can provide information about how unlikely it is to reject the null hypothesis and allow for an early stopping, hence one can finish the meta-analysis without having reached the required sample size. Futility testing can be used in combination with the two or one sided hypothesis testing or stand alone. When stand alone, the futility testing can be used as a equivalence test. 
+
+We will consider two kinds of futility in TSA, binding and non-binding futility. When binding futility is considered, we assume that the meta-analysis will be stopped. When non-binding futility is chosen, the futility boundaries should only be used as a visual aid, and should not be used to make a decision to stop the meta-analysis. 
 
 Futility hypothesis testing in TSA is created using $\beta$ spending functions, a topic we will address in a later section. 
 
+TWO FIGURES HERE: ONE SIDED FUTILITY, TWO SIDED FUTILITY
 
-## Type 1 and type 2 error
+## Type I and type II error
 
 Consider a scenario where we wish to reject the null hypothesis $H_0: \theta = 0$, where the alternative hypothesis is $H_A: \theta \neq 0$. The parameter $\theta$ is used, when we are interested in a treatment difference. As the alternative allows for both $\theta > 0$, intervention being superior, and $\theta < 0$, intervention being inferior, it is a two-sided test, we are considering.
-
-```{r}
-
-```
 
 State something about $\theta$ being normally distributed.
 
@@ -102,9 +108,34 @@ Here $\alpha$ is the type-1-error, the probability of a false positive.
 
 $$P_{\theta = \delta}(\vert Z \vert > c) = P_{\theta = -\delta}(\vert Z \vert > c) = 1 - \beta$$ Here $\beta$ is the type-2-error, the probability of a false negative. Power is then defined as: $1-\beta$.
 
+
+## Heterogeneity, $\tau^2$, estimation 
+
+There are different methods to calculate the estimate of the heterogeneity, $\tau^2$. We use one of the methods based on the $Q$ statistic calculated by, 
+$$Q = \sum_{i = 1}^k w_i \cdot (y_i - \hat{\mu})^2.$$
+The weights $w_i$ are the inverse-variance weights. Other methods use other choices of weights for the calculation of $Q$. For more information about the $Q$ statistic see [@Borenstein2009] and [@jackson2016]. 
+
+
+### DerSimonian-Laird
+
+### Hartung-Knapp-Sidik-Jonkman adjustment
+
+
+
 # Practical implementations
 
 ## Handling of zero-trials
+
+In a situation with binary data as outcome data, there might be studies where no events were observed for either both or one of the treatment groups. When both treatment groups have no events, we call these studies total-zero-studies. 
+
+When the effect estimates from the studies are represented as risk ratios/relative risks (RR) or odds ratios (OR)
+
+## Adding small trials to the meta-analysis
+
+## 
+
+
+
 
 # Reliability and quality control
 
@@ -232,3 +263,5 @@ metaanalysis(outcome = "RR", data = perioOxy,
 -   $H_A$: Alternative hypothesis
 -   $\mu$: Location parameter in the normal distribution
 -   $\theta$: Effect of treatment between two populations represented by mean difference, relative risk etc.
+
+# References
