@@ -27,35 +27,8 @@ nRandom <- function(alpha, beta, pI, pC, diversity = NULL){
   return(NR)
 }
 
-#' boundary
-#'
-#' Calculate boundaries for sequential meta-analysis. The functions are based
-#' on the TSA software
-#'
-#' @param informationFractions Vector of information levels out of the required
-#'  information. Must be in cronological order and between 0 and 1.
-#' @param side 2 or 1, for 2-sided or 1-sided testing. For now is only 2-sided
-#'  possible
-#' @param alpha alpha level e.g. 0.05
-#' @param zninf First boundary on z-scale when the first alpha spending is too
-#' small based on the variable tol. Defaults to -8.
-#' @param tol The tolerance level on probabilities when defining the stopping
-#' boundaries. Defaults to 1e-13.
-#'
-#' @return A list of two elements
-#' \item{InformationFractions}{The information fractions. On a scale from 0 to 1.}
-#' \item{alpha.boundaries.upper}{The alpha spending boundaries. For 2-sided testing,
-#'  the values are the upper boundaries.}
-#' \item{alpha.boundaries.lower}{The lower boundaries. Only computed if side = 2.}
-#'
-#' @importFrom stats qnorm
-#'
-#' @export
-#'
-#' @examples
-#' timing = c(0.19, 0.5, 1)
-#' boundary(informationFractions = timing, side = 2, alpha = 0.05)
-#'
+# boundary ----
+# Calculate boundaries for sequential meta-analysis.
 boundary <- function(informationFractions, side, alpha,
                      zninf = -20, tol = 1e-7){
   # set variables
@@ -143,18 +116,15 @@ boundary <- function(informationFractions, side, alpha,
               alpha.boundaries.lower = alpha.boundaries.lower))
 }
 
-# fcap / gfunc ----
+# gfunc ----
+gfunc <- function(x, delta){
+  exp(-0.5*(x - delta)^2)/sqrt(2*pi)
+}
+
+# fcap ----
 # Quantify where boundaries will lie
-
-
 fcab <- function(last, nint, yam1, ybm1, h, x,
                  stdv, delta){
-
-  #HELPER FUNCTIONS
-  gfunc <- function(x, delta){
-    exp(-0.5*(x - delta)^2)/sqrt(2*pi)
-  }
-  #HELPER FUNCTIONS
 
   nlim <- 5000
   f <- numeric(length = nlim)
@@ -166,6 +136,7 @@ fcab <- function(last, nint, yam1, ybm1, h, x,
   return(trap(f = f, n = nint, h = h))
 }
 
+#other ----
 other <- function(ya, yb, i, stdv, h, last, nints){
   nlim <- 5000
   fn <- numeric(length = nlim)
@@ -182,7 +153,6 @@ other <- function(ya, yb, i, stdv, h, last, nints){
 }
 
 # trap ----
-#
 trap <- function(f, n, h){
   sum1 = f[1] # rename from sum to sum1
 
@@ -243,7 +213,7 @@ alphas <- function(alpha, side, ti, tol){
   return(list(alphaValuesCum = alphaSpendCum, alphaValuesDelta = alphaSpendDelta))
 }
 
-#' @importFrom stats qnorm pnorm
+#betas_Obf ----
 betas_Obf <- function( nn, beta, informationFractions, tol = 1e-13){
   pn_betaSpend <- numeric(length(informationFractions))
   pn_betaSpendDelta <- numeric(length(informationFractions))
@@ -261,7 +231,7 @@ betas_Obf <- function( nn, beta, informationFractions, tol = 1e-13){
   return(list(betaValuesCumulated = pn_betaSpend, betaValuesDelta = pn_betaSpendDelta))
 }
 
-#' @importFrom stats qnorm pnorm
+#betas_An ----
 betas_An <- function( nn, beta, informationFractions, tol = tol){
   pn_betaSpend <- numeric(length(informationFractions))
   pn_betaSpendDelta <- numeric(length(informationFractions))
