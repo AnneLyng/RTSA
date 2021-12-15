@@ -416,6 +416,8 @@ synthesize <- function(y,
       I2 <- (Q - df) / Q
       D2 <- (1 - vw / vwR)
 
+
+
       synth <-
         list(
           fw = round(w / sum(w) * 100, 1),

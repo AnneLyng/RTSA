@@ -107,7 +107,7 @@ RR = 0.9
 p0 = sum(perioOxy$eC+perioOxy$eI)/sum(perioOxy$nC+perioOxy$nI)
 pI = exp(log(p0)+log(RR))
 pC = exp(log(p0)-log(RR))
-RIS = nRandom(alpha = 0.05, beta = 0.2, pI = pI, pC = pC, diversity = 0.2)
+RIS = RTSA:::nRandom(alpha = 0.05, beta = 0.2, pI = pI, pC = pC, diversity = 0.2)
 
 # Set the timings of the studies relative to the RIS
 timing <- c(count/RIS,1)

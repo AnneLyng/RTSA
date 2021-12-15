@@ -115,7 +115,7 @@ RR = 0.9
 p0 = sum(perioOxy$eC+perioOxy$eI)/sum(perioOxy$nC+perioOxy$nI)
 pI = exp(log(p0)+log(RR))
 pC = exp(log(p0)-log(RR))
-RIS = nRandom(alpha = 0.05, beta = 0.2, pI = pI, pC = pC, diversity = 0.2)
+RIS = RTSA:::nRandom(alpha = 0.05, beta = 0.2, pI = pI, pC = pC, diversity = 0.2)
 
 # Set the timings of the studies relative to the RIS
 timing <- c(count/RIS,1)
@@ -158,7 +158,7 @@ To get an output with more informatin and less steps, we can use the RTSA functi
 If we want a function that combines the metaPrepare, synthesize and TSA function, then we can use the RTSA function. This function prints the outcome of the TSA function without the need to specify the metaPrepare function, as it is embedded in the RTSA function. 
 
 ```{r}
-RTSA(data = perioOxy, outcome = "RR", mc = 0.9, side = 1, alpha = 0.25)
+RTSA(data = perioOxy, outcome = "RR", mc = 0.9, side = 1, alpha = 0.025)
 ```
 
 # Plotting in RTSA

@@ -61,7 +61,7 @@ Suppose we assume an effect of intervention compared to control resulting in a r
 log.RR = log(0.9); log.p0 = log(0.1)
 pI = exp(log.p0+log.RR/2)
 pC = exp(log.p0-log.RR/2)
-nFixed(alpha = 0.05, beta = 0.2, pI = pI, pC = pC, binary = TRUE)
+RTSA:::nFixed(alpha = 0.05, beta = 0.2, pI = pI, pC = pC, binary = TRUE)
 ```
 
 We investigate via simulation if the RIS estimated provide the correct power. In the simulation study we let the number of participants in the meta-analysis range from around 2500 to 25000 which were split over 10 trials equally. Hence for a meta-analysis of 2500, the number of participants per trial is 250. For each considered number of participants in the meta-analysis, we run 10000 simulations, thus 10000 meta-analyses. For each meta-analysis, we set the $RR=0.9$ and the common event of probability to $0.1$. We fit one fixed-effect model and two random-effects models using either DerSimonian-Laird (DL) or Hartung-Knapp-Sidik-Jonkman (HKSJ) per simulated meta-analysis. For a visualization of the effect of increasing the number of participants, see Figure \@ref(fig:powerFixed). 
@@ -158,7 +158,7 @@ An example of calculating RIS using RIS based on Diversity is given below.
 log.RR = log(0.9); log.p0 = log(0.1)
 pI = exp(log.p0+log.RR/2)
 pC = exp(log.p0-log.RR/2)
-nRandom(alpha = 0.05, beta = 0.2, pI = pI, pC = pC, diversity = 0.77)
+RTSA:::nRandom(alpha = 0.05, beta = 0.2, pI = pI, pC = pC, diversity = 0.77)
 ```
 
 

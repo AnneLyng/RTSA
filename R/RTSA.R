@@ -3,6 +3,8 @@
 #' @param data A data set containing eI, eC, nI, nC or mI, mC, sdI, sdC, nI, nC
 #' @param outcome Outcome of interest, RR only possibility now
 #' @param mc minimum clinical relevant outcome
+#' @param alpha The type I error
+#' @param beta The type II error
 #'
 #' @return A TSA object (list for now)
 #'
@@ -24,7 +26,7 @@ RTSA <- function(data, outcome = "RR", mc, alpha = 0.05, beta = 0.2, ...){
   p0 = sum(data$eC+data$eI)/sum(data$nC+data$nI)
   pI = exp(log(p0)+log(mc))
   pC = exp(log(p0)-log(mc))
-  RIS = RTSA::nRandom(alpha = alpha, beta = beta, pI = pI, pC = pC, diversity = 0)
+  RIS = nRandom(alpha = alpha, beta = beta, pI = pI, pC = pC, diversity = 0)
   }
 
   # Set the timings of the studies relative to the RIS

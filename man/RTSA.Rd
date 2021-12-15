@@ -4,14 +4,18 @@
 \alias{RTSA}
 \title{RTSA}
 \usage{
-RTSA(data, outcome = "RR", mc)
+RTSA(data, outcome = "RR", mc, alpha = 0.05, beta = 0.2, ...)
 }
 \arguments{
 \item{data}{A data set containing eI, eC, nI, nC or mI, mC, sdI, sdC, nI, nC}
 
-\item{outcome}{Outcome of interst, RR only possibility now}
+\item{outcome}{Outcome of interest, RR only possibility now}
 
 \item{mc}{minimum clinical relevant outcome}
+
+\item{alpha}{The type I error}
+
+\item{beta}{The type II error}
 }
 \value{
 A TSA object (list for now)

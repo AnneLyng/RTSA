@@ -111,18 +111,28 @@ $$P_{\theta = \delta}(\vert Z \vert > c) = P_{\theta = -\delta}(\vert Z \vert > 
 
 ## Heterogeneity, $\tau^2$, estimation 
 
+When using a random-effects model, we are estimating a between-study variation, often denoted by $\tau^2$. The random-effects meta-analysis assumes that the studies do not share one true parameter $\theta$. Instead it is assumed that each study has its own true parameter $\theta_i$, where the $\theta_i$ follow a normal distribution with a location parameter $\theta$ and variance parameter $\tau^2$.
+
 There are different methods to calculate the estimate of the heterogeneity, $\tau^2$. We use one of the methods based on the $Q$ statistic calculated by, 
 $$Q = \sum_{i = 1}^k w_i \cdot (y_i - \hat{\mu})^2.$$
 The weights $w_i$ are the inverse-variance weights. Other methods use other choices of weights for the calculation of $Q$. For more information about the $Q$ statistic see [@Borenstein2009] and [@jackson2016]. 
 
+There are several other methods for estimating the $\tau^2$ parameter. For more choices, we recommend using either the `meta` package or the `metafor` package.  
 
 ### DerSimonian-Laird
 
 ### Hartung-Knapp-Sidik-Jonkman adjustment
 
+### REML
 
+For continuous outcomes, one can consider REML estimation of the heterogeneity $\tau^2$. 
+### Confidence intervals of $\tau^2$
+
+Using the `metafor` package, we provide two different kinds of confidence interval methods for $\tau^2$. These methods are: The Q Profile (QP) method and Biggerstaff and Jackson (BJ) method. These methods has been recommended by [@veroniki2015]. In their paper, it is recommended to use QP method for large $\tau^2$ and the BJ method for smaller $\tau^2$. For more choices of confidence intervals, we recommend using either the `meta` package or the `metafor` package.  
 
 # Practical implementations
+
+To ensure an as smooth 
 
 ## Handling of zero-trials
 
@@ -211,7 +221,7 @@ RR = 0.9
 p0 = sum(perioOxy$eC+perioOxy$eI)/sum(perioOxy$nC+perioOxy$nI)
 pI = exp(log(p0)+log(RR))
 pC = exp(log(p0)-log(RR))
-RIS = nRandom(alpha = 0.05, beta = 0.2, pI = pI, pC = pC, diversity = 0.2)
+RIS = RTSA:::nRandom(alpha = 0.05, beta = 0.2, pI = pI, pC = pC, diversity = 0.2)
 
 # Set the timings of the studies relative to the RIS
 timing <- c(count/RIS,1)
