@@ -97,8 +97,19 @@ knitr::kable(out.mat, caption = "Results from the synthesize and rma function") 
 We have created a function metaanalysis that combines the two functions `metaPrepare` and `synthesize`. The function produces two data frames, one for study results and one with the meta-analysis results.  
 
 ```{r}
-metaanalysis(outcome = "RD", data = perioOxy, study = perioOxy$study, 
-             method = "IV")
+metaanalysis(outcome = "RR", data = perioOxy, study = perioOxy$study, 
+             method = "IV", tau.ci.method = "QP")
+ma <- metaanalysis(outcome = "RR", data = perioOxy, study = perioOxy$study, 
+             method = "IV", tau.ci.method = "BJ")
+ma$synthesize$ci.tau
+ma <- metaanalysis(outcome = "RR", data = perioOxy, study = perioOxy$study, 
+             method = "IV", tau.ci.method = "QP")
+ma$synthesize$ci.tau
+```
+```{r}
+library(meta)
+metagen(log(mp$te), mp$sig, method.tau.ci = "BJ")
+metagen(log(mp$te), mp$sig, method.tau.ci = "QP")
 ```
 
 

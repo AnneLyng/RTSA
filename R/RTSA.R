@@ -5,6 +5,7 @@
 #' @param mc minimum clinical relevant outcome
 #' @param alpha The type I error
 #' @param beta The type II error
+#' @param ... other arguments
 #'
 #' @return A TSA object (list for now)
 #'

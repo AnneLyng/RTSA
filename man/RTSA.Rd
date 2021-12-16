@@ -16,6 +16,8 @@ RTSA(data, outcome = "RR", mc, alpha = 0.05, beta = 0.2, ...)
 \item{alpha}{The type I error}
 
 \item{beta}{The type II error}
+
+\item{...}{other arguments}
 }
 \value{
 A TSA object (list for now)

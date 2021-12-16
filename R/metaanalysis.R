@@ -83,7 +83,7 @@ metaanalysis <- function(data = NULL,
   }
 
   #synthesize
-  sy = synthesize(y = mp, sign = sign, fixedStudy = fixedStudy, hksj = hksj)
+  sy = synthesize(y = mp, sign = sign, fixedStudy = fixedStudy, hksj = hksj, ...)
 
   #create an output object
   nonevent <- NULL

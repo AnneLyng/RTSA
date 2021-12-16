@@ -149,10 +149,12 @@ metaPrepare <- function(data = NULL,
 
 # synthesize - func ----
 #' @importFrom stats binomial
+#' @importFrom metafor rma.uni confint.rma.uni
 synthesize <- function(y,
                        sign = NULL,
                        fixedStudy = TRUE,
-                       hksj = FALSE) {
+                       hksj = FALSE,
+                       tau.ci.method = "BJ") {
 
   w <- y$w   # collect objects
   sig <- y$sig
@@ -164,10 +166,13 @@ synthesize <- function(y,
   nC <- y$nC
   df <- length(w) - 1
   data <- y$data
+
+  ci.tau <- ""
+
   if (length(w) == 1)
     df <- 1 #check up on this
 
-  #For GLM
+  #### For GLM
   if (y$method == "GLM") {
     bi <- data$nI - data$eI
     di <- data$nC - data$eC
@@ -232,7 +237,7 @@ synthesize <- function(y,
     ))
 
   } else {
-    # NOT GLM
+    ### NOT GLM
 
     if (y$method != "MH")
       w <- 1 / (sig ^ 2) # weight inverse variance
@@ -378,6 +383,17 @@ synthesize <- function(y,
 
         vw <- 1 / sum(w)
         D2 <- 1 - vw / vwR
+
+        if(y$outcome %in% c("RR", "OR") & tau.ci.method == "BJ"){
+          ci.tau <- confint.rma.uni(rma.uni(
+            yi = log(te), sei = sig, method = "GENQ", weights = 1/sig^2))
+        }
+
+        if(y$outcome %in% c("RR", "OR") & tau.ci.method == "QP"){
+          ci.tau <- confint.rma.uni(rma.uni(
+            yi = log(te), sei = sig, method = "DL"))
+        }
+
         synth <-
           list(
             fw = round(rw * 100, 1),
@@ -385,9 +401,11 @@ synthesize <- function(y,
             rwR = rwR * 100,
             peR = c(peR, lciR, uciR, zvalR, pvalR, vwR),
             Q = c(Q, df, pQ),
-            U = c(tau2, H, I2, D2)
+            U = c(tau2, H, I2, D2),
+            ci.tau = ci.tau
           )
         class(synth) <- "synthesized"
+
         return(synth)
       } else {
         synth <-
@@ -415,8 +433,6 @@ synthesize <- function(y,
       H <- sqrt(Q / df)
       I2 <- (Q - df) / Q
       D2 <- (1 - vw / vwR)
-
-
 
       synth <-
         list(

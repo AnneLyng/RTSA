@@ -126,9 +126,10 @@ There are several other methods for estimating the $\tau^2$ parameter. For more 
 ### REML
 
 For continuous outcomes, one can consider REML estimation of the heterogeneity $\tau^2$. 
+
 ### Confidence intervals of $\tau^2$
 
-Using the `metafor` package, we provide two different kinds of confidence interval methods for $\tau^2$. These methods are: The Q Profile (QP) method and Biggerstaff and Jackson (BJ) method. These methods has been recommended by [@veroniki2015]. In their paper, it is recommended to use QP method for large $\tau^2$ and the BJ method for smaller $\tau^2$. For more choices of confidence intervals, we recommend using either the `meta` package or the `metafor` package.  
+Using the `metafor` package, we provide two different kinds of confidence interval methods for $\tau^2$. These methods are: The Q Profile (QP) method and Biggerstaff and Jackson (BJ) method. These methods has been recommended by @veroniki2015. In their paper, it is recommended to use QP method for large $\tau^2$ and the BJ method for smaller $\tau^2$. Given the results in @jackson2013, large $\tau^2$ is around 0.2. For more choices of confidence intervals, we recommend using either the `meta` package or the `metafor` package.  
 
 # Practical implementations
 
