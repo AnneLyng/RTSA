@@ -638,23 +638,42 @@ print.metaanalysis <- function(x,...){
 # FUNCTION | plot metaanalysis ----
 #' @method plot metaanalysis
 #' @export
-plot.metaanalysis <- function(x,...){
-  #ORDER TO DEPICT DATAFRAME
-  #
+plot.metaanalysis <- function(x, type="both", ...){
+#TODO: Size depending on weight, prioritise Random
+
+  if(type=="both") cat("hej")
 
   plot <- merge(x$metaPrepare$data,x$studyResults)
-  plot <- cbind(1:nrow(plot),plot)
+  results <- x$metaResults
+  colnames(results)[1] <- "study"
+  results[,colnames(plot)[!(colnames(plot) %in% colnames(results))]] <- NA
+  results$study[results$study == "Fixed"] <- "Fixed-effect"
+  results$study[results$study == "Random"] <- "Random-effect"
+
+  plot <- rbind(plot, results[names(plot)])
+  plot <- cbind(nrow(plot):1,plot)
   colnames(plot)[1] <- "yaxis"
+
   outcome <- colnames(plot)[8]
   colnames(plot)[8] <- "outcome"
+
   plot$out_ci <- paste0(round(plot$outcome,2)," (",round(plot$lowerCI,2),"-",
                         round(plot$upperCI,2),")")
-  nchar_n <- max(nchar(c(plot$nI,plot$nC)))
+  shapes <- grepl("Fixed-ef|Random-ef",plot$study)*2+21
+  sizes <- (plot$weightRandom/100+0.5)*4
+  sizes[is.na(sizes)] <- 3
+
+  colors <- rep("black",nrow(plot))
+  colors[grepl("Fixed-ef",plot$study)] <- "#0053a3"
+  colors[grepl("Random-ef",plot$study)] <- "#b30000"
+
+  nchar_n <- max(nchar(c(plot$nI,plot$nC)),na.rm=T)
 
   left_theme <- theme(plot.margin = margin(),
     axis.title.x.bottom = element_text(color="white"),
     axis.text.x.bottom = element_text(color="white"),
     axis.text.x.top = element_text(hjust=1),
+    axis.title.x.top = element_text(hjust=0.5),
     axis.ticks.x = element_blank(), axis.line.x = element_blank(),
     axis.title.y = element_blank(), axis.ticks.y = element_blank(),
     axis.text.y = element_text(hjust=0, color="black"),
@@ -664,36 +683,50 @@ plot.metaanalysis <- function(x,...){
     annotate("text",x = 0, y = plot$yaxis, label = plot$eC, hjust = 1) +
     annotate("text",x = nchar_n/2, y = plot$yaxis, label = plot$nC,hjust = 1) +
     scale_x_continuous(sec.axis = dup_axis(),limits=c(-1,NA),
-      name="Control", breaks = c(0,4), labels=c("eC","nC")) +
+      name="Control", breaks = c(0,nchar_n/2), labels=c("eC","nC")) +
     scale_y_continuous(breaks=plot$yaxis,labels=plot$study) +
-    theme_classic() + left_theme
+    theme_classic() + left_theme +
+    theme(axis.text.y = element_text(size=10))
 
   left_2 <- ggplot(data = plot, aes(y = yaxis)) +
     annotate("text",x = 0, y = plot$yaxis, label = plot$eI, hjust = 1) +
     annotate("text",x = nchar_n/2, y = plot$yaxis, label = plot$nI,hjust = 1) +
     scale_x_continuous(sec.axis = dup_axis(),limits=c(-1,NA),
-      name="Experimental", breaks = c(0,4), labels=c("eC","nC")) +
+      name="Experimental", breaks = c(0,nchar_n/2), labels=c("eI","nI")) +
     scale_y_continuous(breaks=plot$yaxis,labels=plot$study) +
     theme_classic() + left_theme + theme(axis.text.y = element_blank())
 
-  middle <- ggplot(plot,aes(x=outcome,xmin=lowerCI,xmax=upperCI,y=yaxis)) +
-    geom_pointrange(shape = 22, fill = "black") +
-    geom_vline(xintercept = 1, linetype = 3) +
+  middle <-
+   ggplot(plot,aes(x=outcome,xmin=lowerCI,xmax=upperCI,y=yaxis)) +
+    geom_vline(xintercept = 1, color="gray", linetype=3) +
+    geom_segment(aes(x=plot$outcome[grepl("Fixed-effect",plot$study)],
+                     xend=plot$outcome[grepl("Fixed-effect",plot$study)],
+                     y=Inf,yend=plot$yaxis[grepl("Fixed-effect",plot$study)]),
+                     color = "#7cbfff") +
+    geom_segment(aes(x=plot$outcome[grepl("Random-effect",plot$study)],
+                     xend=plot$outcome[grepl("Random-effect",plot$study)],
+                     y=Inf,yend=plot$yaxis[grepl("Random-effect",plot$study)]),
+                 color = "#ff8c8c") +
+     geom_segment(aes(x=min(plot$lowerCI),xend=max(plot$upperCI),y=-Inf,yend=-Inf)) +
+    geom_point(shape = shapes, color = colors, fill = colors,size=sizes) +
+    geom_errorbar(color = colors, width=0) +
     theme_classic() +
     scale_colour_identity() +
-    scale_x_continuous(sec.axis = dup_axis()) +
+    scale_x_continuous(trans="log10",sec.axis = dup_axis(), name=paste(outcome, "(95%CI)")) +
     theme(axis.text.y = element_blank(), axis.title.y = element_blank(),
-          plot.margin = margin())
+          plot.margin = margin(), axis.line = element_blank(),
+          axis.ticks.x.top = element_blank(), axis.text.x.top = element_text(color="white"), axis.line.y.left = element_blank(), axis.ticks.y.left = element_blank())
 
   right_1 <- ggplot(data = plot, aes(y = yaxis)) +
     annotate("text",x = 0, y = plot$yaxis, label = plot$out_ci, hjust = 1) +
     annotate("text",x = 3, y = plot$yaxis, label = round(plot$weightFixed,2), hjust = 1) +
+    annotate("text",x = 6, y = plot$yaxis, label = round(plot$weightRandom,2), hjust = 1) +
     scale_x_continuous(sec.axis = dup_axis(), limits=c(-6,NA),
-                       name=" ", breaks = c(0,3), labels=c(paste0(outcome, "(95%CI)"),"Weight")) +
+                       name=" ", breaks = c(0,3,6), labels=c(paste(outcome, "(95%CI)"),"F-Weight (%)","R-Weight (%)")) +
     scale_y_continuous(breaks=plot$yaxis,labels=plot$study) +
     theme_classic() + left_theme + theme(axis.text.y = element_blank())
       # coord_fixed(.50)
 
-  grid.arrange(left_1,left_2,middle,right_1,ncol=4,widths=c(2,1,4,3))
+  grid.arrange(left_1,left_2,middle,right_1,ncol=4,widths=c(1.5,1,4,3))
 
 }
