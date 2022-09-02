@@ -641,24 +641,39 @@ print.metaanalysis <- function(x,...){
 plot.metaanalysis <- function(x, type="both", ...){
 #TODO: Size depending on weight, prioritise Random
 
-  if(type=="both") cat("hej")
+  if(type=="both") cat("TOBEIMPLEMENTED")
 
   plot <- merge(x$metaPrepare$data,x$studyResults)
   results <- x$metaResults
   colnames(results)[1] <- "study"
   results[,colnames(plot)[!(colnames(plot) %in% colnames(results))]] <- NA
   results$study[results$study == "Fixed"] <- "Fixed-effect"
-  results$study[results$study == "Random"] <- "Random-effect"
+  results$study[results$study == "Random"] <- "Random-effects"
 
   plot <- rbind(plot, results[names(plot)])
   plot <- cbind(nrow(plot):1,plot)
   colnames(plot)[1] <- "yaxis"
 
+  plot$eI[grepl("Fixed-ef|Random-ef",plot$study)] <- sum(plot$eI,na.rm=T)
+  plot$nI[grepl("Fixed-ef|Random-ef",plot$study)] <- sum(plot$nI,na.rm=T)
+  plot$eC[grepl("Fixed-ef|Random-ef",plot$study)] <- sum(plot$eC,na.rm=T)
+  plot$nC[grepl("Fixed-ef|Random-ef",plot$study)] <- sum(plot$nC,na.rm=T)
+
   outcome <- colnames(plot)[8]
   colnames(plot)[8] <- "outcome"
 
-  plot$out_ci <- paste0(round(plot$outcome,2)," (",round(plot$lowerCI,2),"-",
-                        round(plot$upperCI,2),")")
+  plot$out_ci <- paste0(sprintf(plot$outcome, fmt = '%#.2f')," (",
+                        sprintf(plot$lowerCI, fmt = '%#.2f'),"-",
+                        sprintf(plot$upperCI, fmt = '%#.2f'),")")
+  plot$controls <- paste0(plot$eC,"/",plot$nC)
+  plot$controls[plot$controls == "NA/NA"] <- ""
+  plot$experimental <- paste0(plot$eI,"/",plot$nI)
+  plot$experimental[plot$experimental == "NA/NA"] <- ""
+  plot$wF <- round(plot$weightFixed)
+  plot$wF[plot$wF < 10 & !is.na(plot$wF)] <- round(plot$weightFixed[plot$wF <10 & !is.na(plot$wF)],1)
+  plot$wR <- round(plot$weightRandom)
+  plot$wR[plot$wR < 10 & !is.na(plot$wR)] <- round(plot$weightRandom[plot$wR <10 & !is.na(plot$wR)],1)
+
   shapes <- grepl("Fixed-ef|Random-ef",plot$study)*2+21
   sizes <- (plot$weightRandom/100+0.5)*4
   sizes[is.na(sizes)] <- 3
@@ -669,35 +684,36 @@ plot.metaanalysis <- function(x, type="both", ...){
 
   nchar_n <- max(nchar(c(plot$nI,plot$nC)),na.rm=T)
 
-  left_theme <- theme(plot.margin = margin(),
-    axis.title.x.bottom = element_text(color="white"),
-    axis.text.x.bottom = element_text(color="white"),
-    axis.text.x.top = element_text(hjust=1),
-    axis.title.x.top = element_text(hjust=0.5),
-    axis.ticks.x = element_blank(), axis.line.x = element_blank(),
-    axis.title.y = element_blank(), axis.ticks.y = element_blank(),
-    axis.text.y = element_text(hjust=0, color="black"),
-    axis.line.y = element_blank())
+  xl <- list(`l0` = 10^(log10(min(plot$lowerCI))-0.9),
+             `l1` = 10^(log10(min(plot$lowerCI))-0.6),
+             `l2` = 10^(log10(min(plot$lowerCI))-0.1),
+             `r1` = 10^(log10(max(plot$upperCI))+0.9),
+             `r2` = 10^(log10(max(plot$upperCI))+1.3),
+             `r3` = 10^(log10(max(plot$upperCI))+1.6))
 
-  left_1 <- ggplot(data = plot, aes(y = yaxis)) +
-    annotate("text",x = 0, y = plot$yaxis, label = plot$eC, hjust = 1) +
-    annotate("text",x = nchar_n/2, y = plot$yaxis, label = plot$nC,hjust = 1) +
-    scale_x_continuous(sec.axis = dup_axis(),limits=c(-1,NA),
-      name="Control", breaks = c(0,nchar_n/2), labels=c("eC","nC")) +
-    scale_y_continuous(breaks=plot$yaxis,labels=plot$study) +
-    theme_classic() + left_theme +
-    theme(axis.text.y = element_text(size=10))
+  xl2 <- c(unlist(unname(xl[-1])),mean(c(xl$r2,xl$r3)))
+  xl2 <- xl2[order(xl2)]
+  xlabs <- c("Experimental","Control",paste0("",outcome,"(95% CI)"),"Random","Weights (%)\n","Fixed")
 
-  left_2 <- ggplot(data = plot, aes(y = yaxis)) +
-    annotate("text",x = 0, y = plot$yaxis, label = plot$eI, hjust = 1) +
-    annotate("text",x = nchar_n/2, y = plot$yaxis, label = plot$nI,hjust = 1) +
-    scale_x_continuous(sec.axis = dup_axis(),limits=c(-1,NA),
-      name="Experimental", breaks = c(0,nchar_n/2), labels=c("eI","nI")) +
-    scale_y_continuous(breaks=plot$yaxis,labels=plot$study) +
-    theme_classic() + left_theme + theme(axis.text.y = element_blank())
+  heterogen <- paste0("Heterogeneity: Tau² = ",
+      sprintf(x$synthesize$U[1], fmt = '%#.2f'), " (",
+      sprintf(x$synthesize$ci.tau$random["tau^2","ci.lb"], fmt = '%#.2f'),"-",
+      sprintf(x$synthesize$ci.tau$random["tau^2","ci.ub"], fmt = '%#.2f'),")",
+      ", Q = ", sprintf(x$synthesize$Q[1], fmt = '%#.1f'),
+      ", df = ", round(x$synthesize$Q[2]),
+      ", I² = ", round(x$synthesize$U[3]*100),
+      "%\n",
+      "Overall effect: Fixed-effect, z = ",
+      sprintf(x$synthesize$peF[4], fmt = '%#.2f'),
+      " (p = ",
+      sprintf(x$metaResults[x$metaResults == "Fixed","pValue"], fmt = '%#.4f'),
+      "); Random-effects, z = ",
+      sprintf(x$synthesize$peR[4], fmt = '%#.2f'),
+      " (p = ",
+      sprintf(x$metaResults[x$metaResults == "Random","pValue"], fmt = '%#.4f'),
+      ")")
 
-  middle <-
-   ggplot(plot,aes(x=outcome,xmin=lowerCI,xmax=upperCI,y=yaxis)) +
+  ggplot(plot,aes(x=outcome,xmin=lowerCI,xmax=upperCI,y=yaxis)) +
     geom_vline(xintercept = 1, color="gray", linetype=3) +
     geom_segment(aes(x=plot$outcome[grepl("Fixed-effect",plot$study)],
                      xend=plot$outcome[grepl("Fixed-effect",plot$study)],
@@ -708,25 +724,35 @@ plot.metaanalysis <- function(x, type="both", ...){
                      y=Inf,yend=plot$yaxis[grepl("Random-effect",plot$study)]),
                  color = "#ff8c8c") +
      geom_segment(aes(x=min(plot$lowerCI),xend=max(plot$upperCI),y=-Inf,yend=-Inf)) +
+    annotate("text",x=xl$l1,y=plot$yaxis,label=plot$experimental,hjust=1) +
+    annotate("text",x=xl$l2,y=plot$yaxis,label=plot$control,hjust=1) +
+    annotate("text",x=xl$r1,y=plot$yaxis,label=plot$out_ci,hjust=1) +
+    annotate("text",x=xl$r2,y=plot$yaxis,label=plot$wR,hjust=1) +
+    annotate("text",x=xl$r3,y=plot$yaxis,label=plot$wF,hjust=1) +
+    geom_segment(aes(x=0,xend=xl$l2,
+                     y=plot$yaxis[plot$study == "Fixed-effect"]+0.5,
+                     yend=plot$yaxis[plot$study == "Fixed-effect"]+0.5),
+                 linetype=3) +
+    geom_segment(aes(x=max(plot$upperCI),xend=Inf,
+                     y=plot$yaxis[plot$study == "Fixed-effect"]+0.5,
+                     yend=plot$yaxis[plot$study == "Fixed-effect"]+0.5),
+                 linetype=3) +
+    labs(tag=heterogen)+
     geom_point(shape = shapes, color = colors, fill = colors,size=sizes) +
     geom_errorbar(color = colors, width=0) +
     theme_classic() +
     scale_colour_identity() +
-    scale_x_continuous(trans="log10",sec.axis = dup_axis(), name=paste(outcome, "(95%CI)")) +
-    theme(axis.text.y = element_blank(), axis.title.y = element_blank(),
-          plot.margin = margin(), axis.line = element_blank(),
-          axis.ticks.x.top = element_blank(), axis.text.x.top = element_text(color="white"), axis.line.y.left = element_blank(), axis.ticks.y.left = element_blank())
-
-  right_1 <- ggplot(data = plot, aes(y = yaxis)) +
-    annotate("text",x = 0, y = plot$yaxis, label = plot$out_ci, hjust = 1) +
-    annotate("text",x = 3, y = plot$yaxis, label = round(plot$weightFixed,2), hjust = 1) +
-    annotate("text",x = 6, y = plot$yaxis, label = round(plot$weightRandom,2), hjust = 1) +
-    scale_x_continuous(sec.axis = dup_axis(), limits=c(-6,NA),
-                       name=" ", breaks = c(0,3,6), labels=c(paste(outcome, "(95%CI)"),"F-Weight (%)","R-Weight (%)")) +
-    scale_y_continuous(breaks=plot$yaxis,labels=plot$study) +
-    theme_classic() + left_theme + theme(axis.text.y = element_blank())
-      # coord_fixed(.50)
-
-  grid.arrange(left_1,left_2,middle,right_1,ncol=4,widths=c(1.5,1,4,3))
+    scale_x_continuous(trans="log10",
+      sec.axis = sec_axis(~.,breaks = xl2,label=xlabs),
+      limits=c(xl$l0,xl$r3), name="o\no",
+      breaks=c(((round(max(plot$upperCI))-1)/2+1)/10,1,(round(max(plot$upperCI))-1)/2+1)) +
+    scale_y_continuous(breaks=plot$yaxis, label=plot$study) +
+    theme(axis.title.y = element_blank(),
+           axis.line = element_blank(),
+          axis.ticks.x.top = element_blank(), axis.line.y.left = element_blank(), axis.ticks.y.left = element_blank(),
+          axis.title.x = element_text(color="white"),
+          axis.text.x.top = element_text(hjust=1,color="black"),
+          axis.text.y = element_text(color="black",size=10,face="bold"),
+          plot.tag.position = c(0,0), plot.tag = element_text(hjust=0, vjust=0, size=9))
 
 }
