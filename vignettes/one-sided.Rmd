@@ -148,3 +148,11 @@ gs = gsDesign(k = 7,
          alpha = 0.05, sfu = sfLDOF, sfl = sfLDOF)
 gs$lower$bound
 ```
+
+## Plot
+
+```{r, fig.height = 8, fig.width = 8}
+outRTSA <- RTSA(data = perioOxy, outcome = "RR", mc = 0.7, side = 1, alpha = 0.05)
+plot(outRTSA)
+```
+

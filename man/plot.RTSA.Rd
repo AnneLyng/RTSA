@@ -4,12 +4,10 @@
 \alias{plot.RTSA}
 \title{plot.RTSA}
 \usage{
-\method{plot}{RTSA}(x, ylim = c(-8, 8), ...)
+\method{plot}{RTSA}(x, ...)
 }
 \arguments{
 \item{x}{RTSA object}
-
-\item{ylim}{y axis limits}
 
 \item{...}{Other arguments to plot.RTSA}
 }
@@ -21,7 +19,7 @@ plot.RTSA
 }
 \examples{
 data(perioOxy)
-RTSAout = RTSA(data = perioOxy, outcome = "RR", mc = 0.9)
-plot(x = RTSAout)
+outRTSA <- RTSA(data = perioOxy, outcome = "RR", mc = 0.7, side = 2, alpha = 0.05, fixed = FALSE)
+plot(x = outRTSA)
 
 }

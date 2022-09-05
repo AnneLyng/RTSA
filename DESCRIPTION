@@ -12,7 +12,8 @@ Imports:
     graphics, 
     stats,
     meta,
-    metafor
+    metafor,
+    ggplot2
 Encoding: UTF-8
 Depends: R (>= 3.5.0)
 LazyData: true

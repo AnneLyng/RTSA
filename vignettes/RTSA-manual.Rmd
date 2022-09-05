@@ -21,6 +21,7 @@ knitr::opts_chunk$set(
 
 ```{r, include=FALSE}
 library(dplyr)
+library(knitr)
 library(kableExtra)
 library(RTSA)
 ```
@@ -29,21 +30,33 @@ library(RTSA)
 
 Trial Sequential Analysis (TSA) is a method for conducting sequential meta-analysis.
 
-The purpose of this document is to function as a working manual for both statisticians and non-statisticians. It will contain descriptions of some of the key methods behind TSA. For more statistical and technical descriptions, we recommend reading the vignettes to this package.
+The purpose of this manual is to function as a working manual for both statisticians and non-statisticians. It contains information about most of the key statistical methods behind TSA. For tutorials on how to use RTSA, we recommend reading the vignettes to this package. 
 
-This manual will start with a short introduction to when a sequential meta-analysis should be considered before moving to main section of this manual about the statistical background. The statistical background section will contain a short introduction to hypothesis testing, type I and type II errors, ...
+This manual will start with a short introduction to when a sequential meta-analysis should be considered before moving to main section of this manual about the statistical background. The statistical background section will touch upon hypothesis testing, type I and type II errors, ...
 
 ## Why do a sequential meta-analysis
 
-Testing the same hypothesis more than once, using standard meta-analysis methods, as data/studies accumulate sequentially over time is known to inflate the risk of finding false positives. Inflation of finding false positives is also called inflation of the type I error. Hence for a repeated meta-analysis, some findings may have a higher risk of being false compared to the set risk of e.g. 5% usually used in a traditional non-sequential meta-analysis. Sequential meta-analysis controls the risk of finding false positives by using group sequential methods originally created for clinical trials. TSA is an implementation/method of sequential meta-analysis. 
+Testing the same hypothesis more than once, using standard meta-analysis methods, as data/studies accumulate sequentially over time is known to inflate the risk of finding false positives. Inflation of finding false positives is also called inflation of the type I error. Hence for a repeated meta-analysis, some positive findings may have a higher risk of being false compared to the wanted risk of e.g. 5% - the level usually used in a traditional non-sequential and sequential meta-analysis. Sequential meta-analysis controls the risk of finding false positives by using group sequential methods originally created for clinical trials. TSA is an implementation/method of sequential meta-analysis. 
 
-Sequential meta-analysis should be considered, if the intend of the meta-analysis is to produce statistical inference such as p-values to aid in a decision making e.g. regarding modifying general practices or standard of care. If the hypothesis test to aid in the decision making is computed sequentially, hence the meta-analysis is updated at least once, the p-value can no longer be interpreted in the standard manner and must be evaluated from the perspective of the hypothesis being tested multiple times.
+Sequential meta-analysis should be considered if the intend of the meta-analysis is to produce statistical inference such as p-values to aid in a decision making e.g. regarding modifying general practices or standard of care and if the test is repeated over time as new studies and results accumulate. If the hypothesis test to aid in the decision making is computed sequentially, hence the meta-analysis is updated at least once, the p-value can no longer be interpreted in the standard manner and must be evaluated from the perspective of the hypothesis being tested multiple times.
 
-It is of interest to control for finding false positives, which can be achieved by using TSA correctly. But, RTSA also provides information about the risk of finding false negatives, known as the type II error. 
+Besides controlling for the type I error, TSA also provides information about the risk of finding false negatives, known as the type II error and can aid in the planning of new trials. 
 
 # Statistical background
 
-This section will describe some of the statistical terms such as type I and type II errors, $p$-values, $z$-values, $\alpha$ and $\beta$ spending functions and more used to create a trial sequential analysis. It is not recommended to fit TSA without statistical knowledge, but ones knowledge about some of the metrics just described might need to be refreshed. These following subsections are intended for those.
+## Traditional meta-analysis
+
+The TSA program facilitates meta-analysis of dichotomous (binary) data and of continuous data. Dichotomous data being data defined by one of two categories e.g., infected and non-infected. Continuous data are measured on a numerical scale e.g., blood pressure or quality-of-life scores. For each type of data, there are various measures available for comparing the effectiveness of an intervention of interest.
+
+### Dichotomous effect measures
+Assume we have $K$ independent trials comparing two interventions e.g. active treatment vs placebo with a dichotomous outcome. From the trial we observe events (e.g., infection) in the two groups and the total number of participants in the two groups. For dichotomous data, the intervention effect between the two interventions can be measured as risk difference (RD), relative risk (RR), or odds ratio (OR).
+
+Let $e_A$ and $e_B$ be the number of observed events in intervention group $A$ and $B$, and let $n_A$ and $n_B$ be the number of participants in intervention group $A$ and $B$. The three intervention effects can then be calculated as:
+
+$$RD = \frac{e_A}{n_A}-\frac{e_B}{n_B}, \quad RR = \frac{e_A/n_A}{e_B/n_B}, \quad OR = \frac{e_A/(n_A - e_A)}{e_B(n_B - e_B)}$$
+with belonging standard errors:
+
+$$se(RD) = \sqrt{\frac{e_A\cdot (n_A - e_A)}{n_A^3}+\frac{e_B\cdot (n_B - e_B)}{n_B^3}}, \quad se(log(RR)) = \sqrt{\frac{1}{e_A}+\frac{1}{e_B} - \frac{1}{n_A} - \frac{1}{n_B}}, \quad se(log(OR)) = \sqrt{\frac{1}{e_A}+\frac{1}{e_B} + \frac{1}{n_A-e_A} - \frac{1}{n_B-e_B}}$$
 
 ## Hypothesis testing
 
@@ -69,11 +82,11 @@ ONE FIGURE HERE, TWO SIDED TESTING
 
 #### Continuous outcome
 
-Maybe an example here
+An example here
 
 #### Binary outcome
 
-Maybe an example here
+An example here
 
 ### One sided testing
 
@@ -90,11 +103,33 @@ TWO FIGURES HERE: ONE OF ONE-SIDED TEST WITH AND ONE WITHOUT FUTILITY BOUNDARIES
 
 If there is sufficient statistical evidence against the alternative hypothesis, it might be just as beneficial to stop the meta-analysis early for futility as it would have been to stop it for benefit or harm. Futility testing can provide information about how unlikely it is to reject the null hypothesis and allow for an early stopping, hence one can finish the meta-analysis without having reached the required sample size. Futility testing can be used in combination with the two or one sided hypothesis testing or stand alone. When stand alone, the futility testing can be used as a equivalence test. 
 
-We will consider two kinds of futility in TSA, binding and non-binding futility. When binding futility is considered, we assume that the meta-analysis will be stopped. When non-binding futility is chosen, the futility boundaries should only be used as a visual aid, and should not be used to make a decision to stop the meta-analysis. 
+We will consider two kinds of futility in TSA, binding and non-binding futility. When binding futility is considered, we assume that the meta-analysis will be stopped. This means that when the futility area is entered, the analysis must stop. When non-binding futility is chosen, the futility boundaries should only be used as a visual aid, and should not be used to make a decision to stop the meta-analysis. 
 
 Futility hypothesis testing in TSA is created using $\beta$ spending functions, a topic we will address in a later section. 
 
 TWO FIGURES HERE: ONE SIDED FUTILITY, TWO SIDED FUTILITY
+
+
+### Z-score
+
+For a non-repeated test, the $Z$ score is defined as:
+\begin{align*}
+Z = \frac{\mu - \mu_0}{\sigma/ \sqrt{n}},
+\end{align*}
+where $\theta$ is the estimated effect size of interest, $\theta_0$ is the
+effect size we want to compare $\theta$ with, \sigma is the variance of
+$\theta$ and $n$ is the sample size. Let $H_0:$ $\theta = \theta_0$ be the null
+hypothesis. Under the null hypothesis $Z$ is standard normal distributed, hence $Z \sim \mathcal{N}(0,1)$.
+
+In a sequential setting, we calculate the $Z$ score repeatedly. The cumulative $Z$ score at stage $k$ is:
+\begin{align*}
+Z_k=(\hat{\mu}_k - \mu_0)\sqrt{I_k}.
+\end{align*}
+Defining $I_k = (\sigma^2 / \sum_{j = 1}^{k} n_j)^{-1}$ and
+$\hat{\mu}_k - \mu_0 = (1/ \sum_{j = 1}^{k} n_j) \sum_{j=1}^{k} n_j \overline{X}_j - \mu_0$. Then:
+and marginally, $Z_k \sim \mathcal{N}(\theta \sqrt{I_k}, 1)$ with
+$\hat{\mu}_k - \mu_0 = \theta$. The covariance between the $Z_k$ and
+$Z_{k+1}$ is equal to $\sqrt{I_{j}/I_{j+1}}$.
 
 ## Type I and type II error
 
@@ -143,10 +178,128 @@ When the effect estimates from the studies are represented as risk ratios/relati
 
 ## Adding small trials to the meta-analysis
 
-## 
+The meta-analysis can be updated when one or more several new studies can been conducted or found relevant to the existing meta-analysis. Should only one small study or several new studies have been finalized since the last update of the meta-analysis, the TSA code at the moment, requires that the information gain (the number of participants in the new study out of the required sample size) is above 1% for the meta-analysis boundaries to be updated. This requirement is created for not updating the meta-analysis infinitely many times without actually gaining more information.
+
+Before adding new studies to a meta-analysis, the researcher should consider whether adding the new study or studies would add information to the meta-analysis. Updating for the sake of updating does not provide more knowledge to test the specific hypothesis test unless the new study or studies either adds to the hypothesis test due to size or results. In TSA, we have decided to use a limit of 1%, but this specific threshold is just a guideline. If wanted, the limit can be skipped.  
+
+Note that the studies with less than 1% information gain is still added to the meta-analysis, but the meta-analysis boundaries are not updated. This can be shown via the perioOxy example. 
+
+```{r}
+outRTSA <- RTSA(data = perioOxy, outcome = "RR", mc = 0.9, side = 2, alpha = 0.05,
+                fixed = TRUE)
+outRTSA$orgTiming # cumulative sum of information gain
+outRTSA$boundout # the analysis times for the boundary calculation
+```
+
+## Analysis times
+
+How to specify the analysis times yourself
+
+# $Z$ scores
+
+We will be using Z-scores to specify the stopping boundaries, as our test metric is a cumulative Z-score. Let $Z_1, Z_2, \dots, Z_K$ be the number of planned meta-analysis in a sequential meta-analysis. Then:
+
+\begin{align*}
+&Z_k \sim \mathcal{N}(\theta \sqrt{I_k}, 1) \\
+&Cov(Z_{k1}, Z_{k2}) = \sqrt{I_{k1}/I_{k2}}, \quad 1 \leq k_1 \leq k_2 \leq K
+\end{align*}
+
+Let $\Delta_k = I_k-I_{k-1}$. To have an independent representation of the cumulative $Z$ scores, we can write:
+
+\begin{align*}
+Z_k\sqrt{I_k} - Z_{k-1}\sqrt{I_{k-1}} \sim \mathcal{N}(\theta \Delta_k, \Delta_k).
+\end{align*}
+
+We will calculate the information $I_k$ from the information fractions/timings. 
+
+# Calculating the boundaries
+
+To control for type I error in TSA, we split the wanted $\alpha$ level across the multiple times that the meta-analysis is run in the sequential meta-analysis. One way to split the $\alpha$ is to use $\alpha$ spending functions, such as the Lan DeMets version of the O'Brien-Fleming boundaries @demets1994.  We will introduce the specific spending function that we use in TSA before presenting the how to then calculate the boundaries. 
+
+## Lan and DeMets O'Brien Fleming $\alpha$ spending function
+
+In TSA we use the Lan and DeMets version of the O'Brien-Fleming boundaries. 
+
+Let $T$ be the stopping time, which we set to 1, where we have reached the wanted number of participants in the sequential meta-analysis. The information between zero participants in the meta-analysis and the final stopping time $T$, can then be expressed on a scale from 0 to 1. Hence for all meta-analysis, where we have less participants than the required participants, we have describe the timing of the $k'th$ meta-analysis by $t_k$, where $0 < t_1 < \dots < t_k < \dots < t_K = T = 1$, are the meta-analysis timing. 
+
+The Lan and DeMets version of the O'Brien-Fleming can then be written as:
+
+$$\alpha(t_k) = 2 - 2 \cdot \Phi(Z_{\alpha/2}/\sqrt{t_k})$$
+
+Where we have that $\alpha(0) = 0$ and $\alpha(T) = \alpha$. Notice that the $a(t_k)$ is a cumulative sum from 0 to $\alpha$. The actual $\alpha$ spent at each meta-analysis in the sequential meta-analysis is the increment between the cumulative $\alpha(t_k)'s$ which we denote $\pi(t_k) = \alpha(t_k) - \alpha(t_{k-1})$, where $\pi(0)=0$. We thus have sequence of $\pi(t_k)'s$. 
+
+Example: Let the timings for a specific sequential meta-analysis, where we expect to have $K=5$ analyses be $t_1 = 0.1, t_2 = 0.25, t_3 = 0.5, t_4 = 0.8, t_5 = T = 1$. The corresponding cumulative $\alpha$ spending is then calculated as: 
+
+```{r}
+timing <- c(0.4, 0.5, 0.7, 0.8, 1)
+alpha <- 0.05
+alpha_spend <- 2 - 2*pnorm(qnorm(1-alpha/2)/sqrt(timing))
+alpha_spend
+```
+
+We see than the last value of the `alpha_spend`, which is equal to $\alpha(t_K)$ is equal to the set $\alpha$ level of 0.05. The specific amount of $\alpha$ spent per meta-analysis is then described by $\pi(t_k)$:
+
+```{r}
+pi_spend <- diff(c(0,alpha_spend))
+pi_spend
+sum(pi_spend)
+```
+
+The sum of the $\pi(t_k)$ is equal to the total amount of $\alpha$ spent. 
+
+## Boundaries for harm, benefit and futility
+
+$\alpha$ and $\beta$ spending functions are used to calculate the boundaries in `RTSA`. To explain how the boundaries are calculated, we will express first the mathematical theory behind calculating the boundaries before introducing the numerical calculation. The notation for this section is very much inspired by @Jennison1999. 
+
+We start with introducing the how to calculate the boundaries based on $\alpha$ spending functions, hence only consider the boundaries for harm and benefit, before adding $\beta$ spending to the calculation. 
+
+### Boundaries for harm and benefit
+
+We will explain the two-sided. Calculating the boundaries is to a large extend done by solving conditional probabilities. Let $a_1, a_2, \dots, a_K$ be the lower boundaries and $b_1, b_2, \dots, b_K$ be the upper boundaries. Given the repeated $Z_k$ score, we define the conditional probabilities for stopping at the $k'th$ upper boundary as:
+
+\begin{align*}
+\psi_{k}(a_1, & b_1, \dots, a_k, b_k ;\theta)  \\ 
+&=P_{\theta}(a_1 < Z_1 < b_1, a_2 < Z_2 < b_2, \dots, a_{k-1} < Z_{k-1} < b_{k-1}, Z_k \geq b_k)
+\end{align*}
+
+We set $\psi_k = \pi(t_k)/2$, as we wish to spend half of the total $\alpha$ level on the upper boundary (boundary for benefit) and the other half on the lower boundary (boundary for harm). The first upper boundary is then:
+
+\begin{align*}
+\psi_{1}(a_1, b_1 ;\theta)  = P_{\theta}(a_1 < Z_1, Z_1 \geq b_1) 
+\end{align*}
+
+Calculating the first boundary for the first analysis is simple. Let $f_1(z_1)$ be the density of the first $Z$ score, $Z_1$. Remember that $Z_k$ is normally distributed with $Z_k \sim \mathcal{N}(\theta \sqrt{I_k}, 1)$. Hence $f_1(z_1) = \frac{1}{\sqrt{2\pi}}\cdot e^{-\frac{1}{2}\left(\theta\sqrt{I_1} - z_1 \right)^2}$. The formula for calculating the first upper boundary $b_1$ is:
+
+\begin{align*}
+\psi_1(b_1 ;\theta) = \pi(t_1)/2 = \int^{\infty}_{b_1} f_1(z_1;\theta) dz_{1} 
+\end{align*}
+
+where we could also write $f_1(z_1;\theta) = \phi \left( z_1 - \theta \sqrt{I_1} \right)$ with $\phi(x)$ being the density of the standard normal distribution. The first boundary $b_1$ can be found by using the inverse cumulative function and setting $\psi_1(b_1 ;\theta) = \pi_1/2$. 
+
+The next boundary becomes more complicated, as it conditions on the first boundary not being crossed:
+
+\begin{align*}
+\psi_2(a_1, & b_1, b_2 ;\theta)  = \int_{a_1}^{b_1} \int_{b_2}^{\infty} f(z_1;\theta) f(z_2, z_1; \theta) dz_2 dz_1 
+\end{align*}
+
+which we can rewrite to:
+
+\begin{align*}
+\psi_2(a_1, b_1, b_2 ;\theta) = \int_{a_{1}}^{b_{1}} f_{1}(z_{1};\theta) \Phi\bigg( \frac{\theta\Delta_2+z_{1}\sqrt{I_{1}}-b_2\sqrt{I_2}}{\sqrt{\Delta_2}} \bigg) dz_{1}
+\end{align*}
+
+### Boundaries for futility
 
 
 
+# Analysis after sequential testing
+
+
+## Confidence intervals 
+
+## P-values
+
+## Point estimates
 
 # Reliability and quality control
 

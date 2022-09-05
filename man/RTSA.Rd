@@ -4,7 +4,7 @@
 \alias{RTSA}
 \title{RTSA}
 \usage{
-RTSA(data, outcome = "RR", mc, alpha = 0.05, beta = 0.2, ...)
+RTSA(data, outcome = "RR", mc, alpha = 0.05, beta = 0.2, fixed = FALSE, ...)
 }
 \arguments{
 \item{data}{A data set containing eI, eC, nI, nC or mI, mC, sdI, sdC, nI, nC}
@@ -16,6 +16,8 @@ RTSA(data, outcome = "RR", mc, alpha = 0.05, beta = 0.2, ...)
 \item{alpha}{The type I error}
 
 \item{beta}{The type II error}
+
+\item{fixed}{Default is FALSE. Sets heterogeneity to 0 if TRUE.}
 
 \item{...}{other arguments}
 }

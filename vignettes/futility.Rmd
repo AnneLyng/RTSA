@@ -11,7 +11,8 @@ vignette: >
 
 # Purpose
 
-This vignette is used to introduce futility and it's two versions: binding and non-binding. 
+This vignette is used to introduce futility and it's two versions: binding and non-binding. Binding futility are used if the meta-analysis will stop when reaching the futility area. Non-binding futility areas are for information only and the meta-analysis is not meant to be stopped when reaching a non-binding futility area.
+See the RTSA manual for more information about binding and non-binding futility.
 
 ```{r}
 

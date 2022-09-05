@@ -84,6 +84,8 @@
     "roloff2012"
     "jackson2016"
     "veroniki2015"
-    "jackson2013"))
+    "jackson2013"
+    "Jennison1999"
+    "demets1994"))
  :bibtex)
 

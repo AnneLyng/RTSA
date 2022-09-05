@@ -5,8 +5,8 @@ output:
     fig_caption: yes
 vignette: >
   %\VignetteIndexEntry{other-software}
-  %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
+  %\VignetteEngine{knitr::rmarkdown}
 ---
 
 ```{r, include = FALSE}
@@ -18,15 +18,15 @@ knitr::opts_chunk$set(
 
 # Introduction
 
-RTSA is intended as a tool for sequential meta-analysis using Trial Sequential Analysis (TSA) in statistical software R. To ensure the correctness and quality of the code in RTSA, we will be comparing the output of RTSA to other packages. Unfortunately, no package in R offer sequential stopping boundaries for meta-analysis. This is one of the reasons for creating the RTSA package. For this reason we will sometimes be comparing results to the original TSA software coded in java and sometimes to packages on CRAN not intended for sequential meta-analysis. 
+RTSA is intended as a tool for sequential meta-analysis using Trial Sequential Analysis (TSA) in statistical software R. To ensure the correctness and quality of the code in RTSA, we will be comparing the output of RTSA to other packages. Unfortunately, no package in R offer sequential stopping boundaries for meta-analysis. This is one of the reasons for creating the RTSA package. For this reason we will sometimes be comparing results to the original TSA software coded in java and sometimes to packages on CRAN not intended for sequential meta-analysis.
 
-The methods for calculating the sequential stopping boundaries in TSA are almost identical to the methods for calculating sequential stopping boundaries in clinical trials. Hence we can compare the RTSA code with the existing packages in R for calculating stopping boundaries. We will specifically be comparing our stopping boundaries to the gsDesign package in R although gsDesign is created for sequential methods in clinical trials and RTSA is created for sequential methods in meta-analysis. 
+The methods for calculating the sequential stopping boundaries in TSA are almost identical to the methods for calculating sequential stopping boundaries in clinical trials. Hence we can compare the RTSA code with the existing packages in R for calculating stopping boundaries. We will specifically be comparing our stopping boundaries to the gsDesign package in R although gsDesign is created for sequential methods in clinical trials and RTSA is created for sequential methods in meta-analysis.
 
 Besides doing sequential meta-analysis, RTSA can also perform traditional meta-analysis. As the package is not created mainly for this purpose, we recommend using the metafor package in R for traditional meta-analysis as this package has an extensive selection of methods and documentation. The metafor package function also worked as an inspiration for some of the functions implemented in RTSA. We will in this vignette be comparing to the metafor package when conducting traditional meta-analyses.
 
 # Setup
 
-We will be using the RTSA, metafor and gsDesign packages in this vignette. 
+We will be using the RTSA, metafor and gsDesign packages in this vignette.
 
 ```{r message=FALSE}
 library(RTSA)
@@ -39,7 +39,6 @@ library(dplyr)
 library(kableExtra)
 ```
 
-
 We will use a data example which is included in the RTSA package called perioOxy.
 
 ```{r}
@@ -48,9 +47,10 @@ head(perioOxy)
 ```
 
 # Traditional meta-analysis
-A traditional meta-analysis (non-sequential meta-analysis) can be computed in RTSA. 
 
-In RTSA, we will be using the functions metaPrepare and synthesize to create a traditional meta-analysis. The function metaPrepare takes binary summary data (events and number of participants) as input and returns a list of trial specific treatment effects, confidence intervals and more. See Table \@ref(tab:trameta) for a presentation of some of the results from the metaPrepare function fit. 
+A traditional meta-analysis (non-sequential meta-analysis) can be computed in RTSA.
+
+In RTSA, we will be using the functions metaPrepare and synthesize to create a traditional meta-analysis. The function metaPrepare takes binary summary data (events and number of participants) as input and returns a list of trial specific treatment effects, confidence intervals and more. See Table \@ref(tab:trameta) for a presentation of some of the results from the metaPrepare function fit.
 
 ```{r}
 mp = RTSA:::metaPrepare(outcome = "RR", eI = perioOxy$eI, nI = perioOxy$nI,
@@ -70,7 +70,7 @@ colnames(out.mat) = c("Trial", "Effect estimate ", "95% CI", "Effect estimate ",
 knitr::kable(out.mat, caption = "Results from the metaPrepare and escalc function") %>% kable_paper() %>% add_header_above(c("", "RTSA::metaPrepare" = 2, "metafor::escalc and summary" = 2))
 ```
 
-The saved object from metaPrepare can then be used to compute a meta-analysis made by the function synthesize in RTSA. The function returns a list containing information about a fixed-effect meta-analysis, a random-effects meta-analysis and more. We will specifically be fitting a fixed-effect model (always fitted) and a random-effects model (fitted per default) using the DerSimonian-Laird estimator for the heterogeneity. We will be comparing the output of the synthesize function with the metafor package function rma. See Table \@ref(tab:trametaout). 
+The saved object from metaPrepare can then be used to compute a meta-analysis made by the function synthesize in RTSA. The function returns a list containing information about a fixed-effect meta-analysis, a random-effects meta-analysis and more. We will specifically be fitting a fixed-effect model (always fitted) and a random-effects model (fitted per default) using the DerSimonian-Laird estimator for the heterogeneity. We will be comparing the output of the synthesize function with the metafor package function rma. See Table \@ref(tab:trametaout).
 
 ```{r}
 sm = RTSA:::synthesize(mp) # RTSA function
@@ -94,7 +94,7 @@ rownames(out.mat) = c("Fixed-effect", "Random-effects")
 knitr::kable(out.mat, caption = "Results from the synthesize and rma function") %>% kable_paper() %>% add_header_above(c("", "RTSA::synthesize" = 3, "metafor::rma" = 3))
 ```
 
-We have created a function metaanalysis that combines the two functions `metaPrepare` and `synthesize`. The function produces two data frames, one for study results and one with the meta-analysis results.  
+We have created a function metaanalysis that combines the two functions `metaPrepare` and `synthesize`. The function produces two data frames, one for study results and one with the meta-analysis results.
 
 ```{r}
 metaanalysis(outcome = "RR", data = perioOxy, study = perioOxy$study, 
@@ -106,16 +106,16 @@ ma <- metaanalysis(outcome = "RR", data = perioOxy, study = perioOxy$study,
              method = "IV", tau.ci.method = "QP")
 ma$synthesize$ci.tau
 ```
+
 ```{r}
 library(meta)
 metagen(log(mp$te), mp$sig, method.tau.ci = "BJ")
 metagen(log(mp$te), mp$sig, method.tau.ci = "QP")
 ```
 
-
 # Sequential meta-analysis
 
-The RTSA package is mainly created for sequential meta-analysis. We will first focus on the boundary calculation before looking at the main RTSA function in our package. 
+The RTSA package is mainly created for sequential meta-analysis. We will first focus on the boundary calculation before looking at the main RTSA function in our package.
 
 ```{r}
 # Calculate the cumulative number of participants
@@ -143,7 +143,7 @@ IFtotalThreshold <- 0.05
 trials <- trials[trials[,2] > IFincrementThreshold,]
 
 # calculate the boundaries
-boundaries <- RTSA:::boundary(informationFractions = trials[,1],
+boundaries <- RTSA:::boundary(inf_frac = trials[,1],
                  side = 2, alpha = 0.05, zninf = -8, tol = 1e-24)
 boundaries
 ```
@@ -162,28 +162,34 @@ gs
 
 While the boundaries are not completely identical, they are very similar. It is also worth noting that the methods for calculating the boundaries are different. The method in gsDesign are largely based on the methods described in Jennison, Christopher and Turnbull, Bruce W., 2000, "Group Sequential Methods with Applications to Clinical Trials" ISBN: 0-8493-0316-8. See especially chapter 19 for a description of the numerical methods. The method for the RTSA boundary function is based on the java implementation different from the method in gsDesign. See Section "The history of the boundary calculation in RTSA" for more information.
 
-To get an output with more informatin and less steps, we can use the RTSA function which provides different kinds of information. The information could be used for e.g. plotting as is done in the original TSA software. The function e.g. can set a number of analysis times (anaTimes) if we want to do a meta-analysis after the first 4, 5, 7 and 8 studies. 
+To get an output with more informatin and less steps, we can use the RTSA function which provides different kinds of information. The information could be used for e.g. plotting as is done in the original TSA software. The function e.g. can set a number of analysis times (anaTimes) if we want to do a meta-analysis after the first 4, 5, 7 and 8 studies.
 
 ## One function to rule them all
 
-If we want a function that combines the metaPrepare, synthesize and TSA function, then we can use the RTSA function. This function prints the outcome of the TSA function without the need to specify the metaPrepare function, as it is embedded in the RTSA function. 
+If we want a function that combines the metaPrepare, synthesize and TSA function, then we can use the RTSA function. This function prints the outcome of the TSA function without the need to specify the metaPrepare function, as it is embedded in the RTSA function.
 
 ```{r}
-RTSA(data = perioOxy, outcome = "RR", mc = 0.9, side = 1, alpha = 0.025)
+RTSA(data = perioOxy, outcome = "RR", mc = 0.9, side = 2, alpha = 0.05)
 ```
 
 # Plotting in RTSA
 
-The RTSA function can be used as an input for plotting the traditional TSA plot. We might consider making a plot function for RTSA objects. 
+The RTSA function can be used as an input for plotting the traditional TSA plot. We might consider making a plot function for RTSA objects.
 
 ```{r}
-RTSAout = RTSA(data = perioOxy, outcome = "RR", mc = 0.9)
+RTSAout <- RTSA(data = perioOxy, outcome = "RR", mc = 0.7, side = 2, alpha = 0.05,
+                fixed = FALSE)
+plot(RTSAout)
+```
+
+```{r}
+RTSAout <- RTSA(data = coronary, outcome = "RR", mc = 0.8, side = 2, alpha = 0.05)
 plot(RTSAout)
 ```
 
 # Extra examples just for the heck of it (TODO)
 
-We show some more examples on other data sets. The next example shows that when the heterogeneity is estimated to 0, then the synout function will only print fixed-effect model results. 
+We show some more examples on other data sets. The next example shows that when the heterogeneity is estimated to 0, then the synout function will only print fixed-effect model results.
 
 ```{r}
 data("coronary")
@@ -193,16 +199,15 @@ synout = RTSA:::synthesize(mp, hksj = TRUE)
 synout
 ```
 
-
 # The history of the boundary calculation in RTSA
 
-Originally the implementation of the boundary calculation method started with following chapter 19 in Jennison, Christopher and Turnbull, Bruce W., 2000, "Group Sequential Methods with Applications to Clinical Trials" ISBN: 0-8493-0316-8. This implementation was then tested against the gsDesign package, where the results were identical. For now, we are sticking with the TSA implementation to calculate boundaries, but we might do a larger investigation on which implementation is preferable. 
+Originally the implementation of the boundary calculation method started with following chapter 19 in Jennison, Christopher and Turnbull, Bruce W., 2000, "Group Sequential Methods with Applications to Clinical Trials" ISBN: 0-8493-0316-8. This implementation was then tested against the gsDesign package, where the results were identical. For now, we are sticking with the TSA implementation to calculate boundaries, but we might do a larger investigation on which implementation is preferable.
 
 The next subsections are created as a smaller walk-through of the boundary calculation.
 
 ## Alpha-spending functions
 
-The TSA software uses the Lan and DeMets version of the O'Brien-Fleming boundaries. The calculation of the alpha spending is the first step to calculate the boundaries. These are dependent on the timing of the analyses *ti), the alpha level (alpha) and the side of the hypothesis test (side). 
+The TSA software uses the Lan and DeMets version of the O'Brien-Fleming boundaries. The calculation of the alpha spending is the first step to calculate the boundaries. These are dependent on the timing of the analyses \*ti), the alpha level (alpha) and the side of the hypothesis test (side).
 
 ```{r}
 ti = seq(0.1,1,0.1)
@@ -212,7 +217,7 @@ plot(y = 2*(1 - pnorm(qnorm(1-alpha/side/2)/sqrt(ti), mean = 0, sd = 1)), type =
      x = ti, ylab = expression(alpha), xlab = "timing")
 ```
 
-As seen from the plot, a characteristic of the Lan and DeMets version of O'Brien-Fleming boundaries is the low alpha spending in the start of the analysis compared to later analyses. 
+As seen from the plot, a characteristic of the Lan and DeMets version of O'Brien-Fleming boundaries is the low alpha spending in the start of the analysis compared to later analyses.
 
 ## Using alpha spending for calculating the boundaries
 
@@ -220,21 +225,24 @@ Calculating the first boundary for the first analysis is simple. For this reason
 
 The formula for calculating the first upper boundary is:
 
+```{=tex}
 \begin{align*}
 \psi_1(b_1 ;\theta) = \int^{\infty}_{b_1} f_1(z_1;\theta) dz_{1} 
 \end{align*}
-
-where $f_1(z_1;\theta) = \phi\left( z_1 - \theta \sqrt{I_1} \right) $ with $\phi(x)$ being the density of the standard normal distribution. The first boundary $b_1$ can be found by using the inverse cumulative function and setting $\psi_1(b_1 ;\theta) = \pi_1/2$. 
+```
+where $f_1(z_1;\theta) = \phi\left( z_1 - \theta \sqrt{I_1} \right)$ with $\phi(x)$ being the density of the standard normal distribution. The first boundary $b_1$ can be found by using the inverse cumulative function and setting $\psi_1(b_1 ;\theta) = \pi_1/2$.
 
 The next boundary becomes more complicated, as it conditions on the first boundary not being crossed:
 
+```{=tex}
 \begin{align*}
 \psi_k(a_1, & b_1, \dots, b_2 ;\theta)  = \int_{a_1}^{b_1} \int_{b_2}^{\infty} f(z_1;\theta) f(z_2, z_1; \theta) d_{z_2} dz_1 
 \end{align*}
-
+```
 which we can rewrite to:
 
+```{=tex}
 \begin{align*}
 \psi_2(a_1, b_1, b_2 ;\theta) = \int_{a_{1}}^{b_{1}} f_{1}(z_{1};\theta) \Phi\bigg( \frac{\theta\Delta_2+z_{1}\sqrt{I_{1}}-b_2\sqrt{I_2}}{\sqrt{\Delta_2}} \bigg) dz_{1}
 \end{align*}
-
+```

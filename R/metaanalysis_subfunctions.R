@@ -384,6 +384,7 @@ synthesize <- function(y,
         vw <- 1 / sum(w)
         D2 <- 1 - vw / vwR
 
+        #### default changes depending on the tau^2 value
         if(y$outcome %in% c("RR", "OR") & tau.ci.method == "BJ"){
           ci.tau <- confint.rma.uni(rma.uni(
             yi = log(te), sei = sig, method = "GENQ", weights = 1/sig^2))
