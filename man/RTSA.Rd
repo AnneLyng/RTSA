@@ -4,10 +4,27 @@
 \alias{RTSA}
 \title{RTSA}
 \usage{
-RTSA(data, outcome = "RR", mc, alpha = 0.05, beta = 0.2, fixed = FALSE, ...)
+RTSA(
+  data,
+  side,
+  outcome = "RR",
+  mc,
+  alpha = 0.05,
+  beta = 0.2,
+  fixed = FALSE,
+  method = "MH",
+  vartype = "equal",
+  sign = NULL,
+  fixedStudy = FALSE,
+  hksj = FALSE,
+  tau.ci.method = "BJ",
+  ...
+)
 }
 \arguments{
 \item{data}{A data set containing eI, eC, nI, nC or mI, mC, sdI, sdC, nI, nC}
+
+\item{side}{I or II sided hypothesis test}
 
 \item{outcome}{Outcome of interest, RR only possibility now}
 
@@ -29,5 +46,5 @@ RTSA
 }
 \examples{
 data(perioOxy)
-RTSA(data = perioOxy, outcome = "RR", mc = 0.9)
+RTSA(data = perioOxy, outcome = "RR", mc = 0.9, side = 2)
 }

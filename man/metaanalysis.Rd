@@ -7,12 +7,6 @@
 \usage{
 metaanalysis(
   data = NULL,
-  outcome = "RR",
-  vartype = "equal",
-  method = "MH",
-  fixedStudy = TRUE,
-  hksj = FALSE,
-  sign = NULL,
   study = NULL,
   mI = NULL,
   mC = NULL,
@@ -22,6 +16,14 @@ metaanalysis(
   nI = NULL,
   eC = NULL,
   nC = NULL,
+  outcome = "RR",
+  vartype = "equal",
+  method = "MH",
+  fixedStudy = TRUE,
+  hksj = FALSE,
+  sign = NULL,
+  alpha = 0.05,
+  tau.ci.method = "BJ",
   ...
 )
 }
@@ -30,26 +32,25 @@ metaanalysis(
 meta-analysis. Either `study`, `eI`, `eC`, `nC` or `nI` for discrete data, or, `study`, `mI`, `mC`, `sdI` and `sdC` for cont.
 See details. If a data frame is not provided, the columns must be set in the function.}
 
-\item{outcome}{Outcome metric for the studies. Choose between: cont, RR, RD or OR}
-
-\item{vartype}{Variance type for continuous outcomes. Choices are "equal" or "non-equal". Defaults to "equal".}
-
-\item{method}{Method for calculating weights. Options include: MH (Mantel-Haenzel), Inverse variance weighting (IV)
-or GLM}
-
-\item{fixedStudy}{TRUE or FALSE. For using GLM methods for the meta-analysis, should the study effect be
-fixed-effect. Defaults to TRUE.}
-
-\item{hksj}{TRUE or FALSE. Should the Hartung-Knapp-Sidik-Jonkman adjustment be used to the random-effects
-meta-analysis. Defaults to FALSE.}
-
-\item{sign}{TBA.}
-
 \item{study}{XXX.}
 
 \item{mI, mC, sdI, sdC}{See details.}
 
 \item{eI, nI, eC, nC}{See details.}
+
+\item{outcome}{Outcome metric for the studies. Choose between: cont, RR, RD or OR}
+
+\item{vartype}{Variance type for continuous outcomes. Choices are "equal" or "non-equal". Defaults to "equal".}
+
+\item{method}{Method for calculating weights. Options include: MH (Mantel-Haenzel), IV (Inverse variance weighting)
+or GLM}
+
+\item{fixedStudy}{TRUE or FALSE. For using GLM methods for the meta-analysis, should the study effect be
+fixed-effect. Defaults to TRUE.}
+
+\item{hksj}{TRUE or FALSE. Should the Hartung-Knapp-Sidik-Jonkman adjustment be used to the random-effects meta-analysis. Defaults to FALSE.}
+
+\item{sign}{TBA.}
 
 \item{...}{Additional variables. See Details.}
 }
@@ -64,4 +65,5 @@ metaanalysis
 \examples{
 data(perioOxy)
 metaanalysis(outcome = "RR", data = perioOxy, study = perioOxy$trial)
+
 }

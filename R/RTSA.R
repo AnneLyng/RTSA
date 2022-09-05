@@ -4,6 +4,7 @@
 #' @param outcome Outcome of interest, RR only possibility now
 #' @param mc minimum clinical relevant outcome
 #' @param alpha The type I error
+#' @param side I or II sided hypothesis test
 #' @param beta The type II error
 #' @param fixed Default is FALSE. Sets heterogeneity to 0 if TRUE.
 #' @param ... other arguments
@@ -14,13 +15,18 @@
 #'
 #' @examples
 #' data(perioOxy)
-#' RTSA(data = perioOxy, outcome = "RR", mc = 0.9)
-RTSA <- function(data, outcome = "RR", mc, alpha = 0.05, beta = 0.2, fixed = FALSE, ...){
+#' RTSA(data = perioOxy, outcome = "RR", mc = 0.9, side = 2)
+RTSA <- function(data, side, outcome = "RR", mc, alpha = 0.05, beta = 0.2, fixed = FALSE,
+                 method = "MH", vartype = "equal", sign = NULL,
+                 fixedStudy = FALSE,
+                 hksj = FALSE,
+                 tau.ci.method = "BJ",...){
   # calculate the meta-analysis
-  mp = RTSA:::metaPrepare(outcome = outcome, eI = data$eI, eC = data$eC,
-                         nI = data$nI, nC = data$nC)
+  mp = metaPrepare(outcome = outcome, data = data, method = method,
+                   vartype = vartype, alpha = alpha)
 
-  syn = RTSA:::synthesize(mp)
+  syn = synthesize(mp, sign = sign, hksj = hksj, tau.ci.method = tau.ci.method,
+                   fixedStudy = fixedStudy)
 
   # Calculate the cumulative number of participants
   subjects <- cumsum(data$nI+data$nC)
@@ -54,8 +60,11 @@ RTSA <- function(data, outcome = "RR", mc, alpha = 0.05, beta = 0.2, fixed = FAL
     timing[timing>1] = 1
   }
 
-  RTSAout = TSA(timing = timing, synth = mp, ana_time = 1:length(timing[timing <= 1]),
-                alpha = alpha, mc = mc, ...)
+  RTSAout = TSA(timing = timing, side = side, synth = mp, ana_time = 1:length(timing[timing <= 1]),
+                alpha = alpha, mc = mc, sign = sign,
+                fixedStudy = fixedStudy,
+                hksj = hksj,
+                tau.ci.method = tau.ci.method)
   RTSAout$orgTiming = orgTiming
   RTSAout$RIS = RIS
   class(RTSAout) <- c("list", "RTSA")

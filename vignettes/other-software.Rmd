@@ -53,8 +53,8 @@ A traditional meta-analysis (non-sequential meta-analysis) can be computed in RT
 In RTSA, we will be using the functions metaPrepare and synthesize to create a traditional meta-analysis. The function metaPrepare takes binary summary data (events and number of participants) as input and returns a list of trial specific treatment effects, confidence intervals and more. See Table \@ref(tab:trameta) for a presentation of some of the results from the metaPrepare function fit.
 
 ```{r}
-mp = RTSA:::metaPrepare(outcome = "RR", eI = perioOxy$eI, nI = perioOxy$nI,
-                 eC = perioOxy$eC, nC = perioOxy$nC, method = "IV")
+mp = RTSA:::metaPrepare(outcome = "RR", data = perioOxy, method = "IV",
+                        alpha = 0.05)
 ```
 
 The escalc function in the metafor package does essentially the same as the metaPrepare function. To compute confidence intervals per trial, the summary function can be used. The results from the escalc function can be seen in Table \@ref(tab:trameta).
@@ -73,7 +73,8 @@ knitr::kable(out.mat, caption = "Results from the metaPrepare and escalc functio
 The saved object from metaPrepare can then be used to compute a meta-analysis made by the function synthesize in RTSA. The function returns a list containing information about a fixed-effect meta-analysis, a random-effects meta-analysis and more. We will specifically be fitting a fixed-effect model (always fitted) and a random-effects model (fitted per default) using the DerSimonian-Laird estimator for the heterogeneity. We will be comparing the output of the synthesize function with the metafor package function rma. See Table \@ref(tab:trametaout).
 
 ```{r}
-sm = RTSA:::synthesize(mp) # RTSA function
+sm = RTSA:::synthesize(mp, sign = NULL, fixedStudy = FALSE, 
+                       hksj = FALSE, tau.ci.method = "BJ") # RTSA function
 out.mtFE = rma(yi, vi, data = me, method = "FE") # metafor function
 out.mtRE = rma(yi, vi, data = me, method = "DL") # metafor function
 ```
@@ -144,7 +145,7 @@ trials <- trials[trials[,2] > IFincrementThreshold,]
 
 # calculate the boundaries
 boundaries <- RTSA:::boundary(inf_frac = trials[,1],
-                 side = 2, alpha = 0.05, zninf = -8, tol = 1e-24)
+                 side = 2, alpha = 0.05, zninf = -8, tol = 1e-9)
 boundaries
 ```
 
@@ -193,9 +194,10 @@ We show some more examples on other data sets. The next example shows that when 
 
 ```{r}
 data("coronary")
-mp = RTSA:::metaPrepare(outcome = "OR", eI = coronary$eI, nI = coronary$nI,
-                 eC = coronary$eC, nC = coronary$nC, method = "MH")
-synout = RTSA:::synthesize(mp, hksj = TRUE)
+mp = RTSA:::metaPrepare(outcome = "OR", data = perioOxy, method = "MH",
+                        alpha = 0.05)
+synout = RTSA:::synthesize(mp, hksj = TRUE, sign = NULL, 
+                          fixedStudy = FALSE, tau.ci.method = "BJ")
 synout
 ```
 

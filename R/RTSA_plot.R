@@ -26,7 +26,7 @@ plot.RTSA = function(x, ...){
   andat <- data.frame(zval = c(0,zval),
                       infFrac = c(0,x$orgTiming))
   bounddat <- rbind(c(0,20,-20),data.frame(do.call(cbind, x$boundout)))
-  if(max(andat$infFrac) > max(bounddat$informationFractions)){
+  if(max(andat$infFrac) > max(bounddat$inf_frac)){
     bounddat <- rbind(bounddat, c(max(andat$infFrac), round(qnorm(1-x$alpha/x$side),2),
                                   -round(qnorm(1-x$alpha/x$side),2)))
   }
@@ -36,12 +36,12 @@ plot.RTSA = function(x, ...){
                               -round(qnorm(1-x$alpha/x$side),2), 0),
                cex = 0.25, col = c("green", "green", "gray")) +
     geom_vline(xintercept = 1, cex = 0.25, col = "black") +
-    geom_line(aes(x = informationFractions, y = alpha.boundaries.upper, col = "red"),
+    geom_line(aes(x = inf_frac, y = alpha.boundaries.upper, col = "red"),
               cex = 0.25) +
-    geom_point(aes(x = informationFractions, y = alpha.boundaries.upper), col = "red", cex = 1.25) +
-    {if(x$side == 2)geom_line(aes(x = informationFractions, y = alpha.boundaries.lower), col = "red",
+    geom_point(aes(x = inf_frac, y = alpha.boundaries.upper), col = "red", cex = 1.25) +
+    {if(x$side == 2)geom_line(aes(x = inf_frac, y = alpha.boundaries.lower), col = "red",
                                     cex = 0.25)} +
-    {if(x$side == 2)geom_point(aes(x = informationFractions,
+    {if(x$side == 2)geom_point(aes(x = inf_frac,
                                          y = alpha.boundaries.lower), col = "red", cex = 1.25)} +
     geom_line(data = andat, aes(x = infFrac,
                                 y = zval, col = "blue"), cex = 0.25) +
@@ -50,10 +50,10 @@ plot.RTSA = function(x, ...){
     theme(panel.border = element_blank()) +
     {if(x$side == 2)geom_ribbon(aes(ymax = alpha.boundaries.lower,
                                           ymin = -20,
-                                          x = informationFractions, fill = "red"), alpha = 0.25)} +
+                                          x = inf_frac, fill = "red"), alpha = 0.25)} +
     geom_ribbon(aes(ymax = alpha.boundaries.upper,
                     ymin = 20,
-                    x = informationFractions, fill = "green"), alpha = 0.25) +
+                    x = inf_frac, fill = "green"), alpha = 0.25) +
     xlab("Information fraction") + ylab("Cumulative Z-score")  +
     scale_x_continuous(expand = expansion(0)) +
     scale_y_continuous(expand = expansion(0)) +

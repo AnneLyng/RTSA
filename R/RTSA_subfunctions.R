@@ -398,14 +398,18 @@ getInnerWedge <- function(inf_frac, beta, delta = NULL, side, fakeIFY,
 TSA = function(timing,
                ana_time,
                synth,
-               side = 2,
+               side,
                alpha,
                mc,
                stopTime = NULL,
                confInt = TRUE,
                subjects,
                RIS,
-               hakn) {
+               hakn,
+               sign,
+               fixedStudy,
+               hksj,
+               tau.ci.method) {
 
   # if analysis times are not specified, analysis is performed at all timings.
   if(is.null(ana_time)){
@@ -433,12 +437,16 @@ TSA = function(timing,
   # calculate the cum. z-score (do we want this per study?)
   zout = lapply(ana_time[ana_time <= dim(synth$data)[1]],
                 function(x) {
-                  synout = RTSA:::synthesize(
-                    RTSA:::metaPrepare(
+                  synout = synthesize(
+                    metaPrepare(
                       data = synth$data[1:x,],
                       outcome = synth$outcome,
-                      method = synth$method
-                    )
+                      method = synth$method,
+                      alpha = alpha
+                    ), sign = sign,
+                    fixedStudy = fixedStudy,
+                    hksj = hksj,
+                    tau.ci.method = tau.ci.method
                   )
                   return(synout)
                 })
