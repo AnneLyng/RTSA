@@ -181,11 +181,15 @@ qpos <- function(xq, last, nint, i, zam1, zbm1, stdv, bs = bs, delta){
 
   for(j in 1:(nint+1)){
     grid3 <- (zam1 + hlast * (j-1))*stdv$sd_proc[i-1]
-    if(bs == TRUE){
+    if(bs == FALSE & delta != 0) {
+      fun1[j] <- last[j]*(pnorm((grid3-xq)/stdv$sd_incr[i], mean= -delta*stdv$sd_incr[i], sd = 1,
+                                lower.tail = TRUE))
+    }
+    else if(bs == TRUE){
       fun1[j] <- last[j]*(pnorm((xq-grid3)/stdv$sd_incr[i], mean= delta*stdv$sd_incr[i], sd = 1,
                                 lower.tail = TRUE))
     } else {
-      fun1[j] <- last[j]*(pnorm((grid3-xq)/stdv$sd_incr[i], mean= 0, sd = 1, lower.tail = TRUE))
+      fun1[j] <- last[j]*(pnorm((grid3-xq)/stdv$sd_incr[i], mean= delta*stdv$sd_incr[i], sd = 1, lower.tail = TRUE))
     }
   }
   return(trap(f = fun1, n = nint, h = hlast))
@@ -388,7 +392,7 @@ getInnerWedge <- function(inf_frac, beta, delta = NULL, side, fakeIFY,
   ret1 <- inf_frac
   ret2 <- info$sd_proc*delta
   return(list(ret1 = ret1, ret2 = ret2, betaValuesDelta = outbeta$betaValuesDelta, za = za, zb = zb,
-              ya = ya, yb = yb, drift = testDrift))
+              ya = ya, yb = yb, drift = testDrift, info = info))
 }
 
 

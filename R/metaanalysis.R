@@ -146,13 +146,20 @@ metaanalysis <- function(data = NULL,
     weightRandom <- rep(NA, length(mp$w))
   }
 
+  # if study name is not unique - add number and give warning:
+  if(length(unique(mp$data$study)) != length(mp$data$study)){
+    warning("Study names are not unique - change names of studies.")
+    dup <- duplicated(mp$data$study)
+    mp$data$study[dup] <- paste0(mp$data$study[dup], 1:length(sum(dup)))
+  }
+
   studyResults <- data.frame(
     study = mp$data$study,
     "ES" = mp$te,
     "stdError" = sqrt(mp$sig),
     "lowerCI" = mp$lower,
     "upperCI" = mp$upper,
-    weightFixed = mp$w,
+    weightFixed = sy$fw,
     weightRandom = weightRandom
   )
   colnames(studyResults)[2] <- outcome
@@ -199,7 +206,7 @@ metaPrepare <- function(data, outcome, method, vartype, alpha) {
 
     # Adding 0.5 if one of the event counts is zero
     if(sum(data$eI == 0 | data$eC == 0) > 0){
-      zc <- data$which(data$eI == 0 | data$eC == 0)
+      zc <- which(data$eI == 0 | data$eC == 0)
       data$eI[zc] <- data$eI[zc] + 0.5
       data$nI[zc] <- data$nI[zc] + 1
       data$eC[zc] <- data$eC[zc] + 0.5
@@ -418,6 +425,7 @@ synthesize <- function(y,sign,fixedStudy,hksj,tau.ci.method) {
       pval <- (1 - pnorm(abs(zval))) * 2
 
     } else if (y$method == "MH") {
+      rw <- w / sum(w)
       if(y$outcome == "RD"){
         vw <- pe[2]
         peF <- sum(te * w) / sum(w)
@@ -558,7 +566,7 @@ synthesize <- function(y,sign,fixedStudy,hksj,tau.ci.method) {
 
         synth <-
           list(
-            fw = round(rw * 100, 1),
+            fw = round(rw/sum(rw) * 100, 4),
             peF = c(peF, lci, uci, zval, pval, log(peF), vw),
             rwR = rwR * 100,
             peR = c(peR, lciR, uciR, zvalR, pvalR, vwR),
@@ -572,6 +580,7 @@ synthesize <- function(y,sign,fixedStudy,hksj,tau.ci.method) {
       } else {
         synth <-
           list(
+            fw = round(rw/sum(rw) * 100, 4),
             peF = c(peF, lci, uci, zval, pval, log(peF), vw),
             Q = c(Q, df, pQ),
             U = c(tau2, H, I2)
@@ -598,10 +607,10 @@ synthesize <- function(y,sign,fixedStudy,hksj,tau.ci.method) {
 
       synth <-
         list(
-          fw = round(w / sum(w) * 100, 1),
+          fw = round(w / sum(w) * 100, 4),
           peF = c(peF, vw, lci, uci, zval, pval),
           w = w,
-          rwR = round(rwR * 100, 1),
+          rwR = round(rwR * 100, 4),
           peR = c(peRest, vwR, lciR, uciR, zvalR, pvalR),
           Q = c(Q, df, pQ),
           U = c(tau2, H, I2, D2)
@@ -644,53 +653,54 @@ plot.metaanalysis <- function(x, type="both", ...){
 
   if(type=="both") cat("TOBEIMPLEMENTED")
 
-  plot <- merge(x$metaPrepare$data,x$studyResults)
+  # Anne: Changed name 'plot' to 'fplot'
+  fplot <- merge(x$metaPrepare$data,x$studyResults)
   results <- x$metaResults
   colnames(results)[1] <- "study"
-  results[,colnames(plot)[!(colnames(plot) %in% colnames(results))]] <- NA
+  results[,colnames(fplot)[!(colnames(fplot) %in% colnames(results))]] <- NA
   results$study[results$study == "Fixed"] <- "Fixed-effect"
   results$study[results$study == "Random"] <- "Random-effects"
 
-  plot <- rbind(plot, results[names(plot)])
-  plot <- cbind(nrow(plot):1,plot)
-  colnames(plot)[1] <- "yaxis"
+  fplot <- rbind(fplot, results[names(fplot)])
+  fplot <- cbind(nrow(fplot):1,fplot)
+  colnames(fplot)[1] <- "yaxis"
 
-  plot$eI[grepl("Fixed-ef|Random-ef",plot$study)] <- sum(plot$eI,na.rm=T)
-  plot$nI[grepl("Fixed-ef|Random-ef",plot$study)] <- sum(plot$nI,na.rm=T)
-  plot$eC[grepl("Fixed-ef|Random-ef",plot$study)] <- sum(plot$eC,na.rm=T)
-  plot$nC[grepl("Fixed-ef|Random-ef",plot$study)] <- sum(plot$nC,na.rm=T)
+  fplot$eI[grepl("Fixed-ef|Random-ef",fplot$study)] <- sum(fplot$eI,na.rm=T)
+  fplot$nI[grepl("Fixed-ef|Random-ef",fplot$study)] <- sum(fplot$nI,na.rm=T)
+  fplot$eC[grepl("Fixed-ef|Random-ef",fplot$study)] <- sum(fplot$eC,na.rm=T)
+  fplot$nC[grepl("Fixed-ef|Random-ef",fplot$study)] <- sum(fplot$nC,na.rm=T)
 
-  outcome <- colnames(plot)[8]
-  colnames(plot)[8] <- "outcome"
+  outcome <- colnames(x$studyResults)[2] # Anne: Changed to be more flexible
+  colnames(fplot)[which(colnames(fplot) == outcome)] <- "outcome" # Anne: Changed to be more flexible
 
-  plot$out_ci <- paste0(sprintf(plot$outcome, fmt = '%#.2f')," (",
-                        sprintf(plot$lowerCI, fmt = '%#.2f'),"-",
-                        sprintf(plot$upperCI, fmt = '%#.2f'),")")
-  plot$controls <- paste0(plot$eC,"/",plot$nC)
-  plot$controls[plot$controls == "NA/NA"] <- ""
-  plot$experimental <- paste0(plot$eI,"/",plot$nI)
-  plot$experimental[plot$experimental == "NA/NA"] <- ""
-  plot$wF <- round(plot$weightFixed)
-  plot$wF[plot$wF < 10 & !is.na(plot$wF)] <- round(plot$weightFixed[plot$wF <10 & !is.na(plot$wF)],1)
-  plot$wR <- round(plot$weightRandom)
-  plot$wR[plot$wR < 10 & !is.na(plot$wR)] <- round(plot$weightRandom[plot$wR <10 & !is.na(plot$wR)],1)
+  fplot$out_ci <- paste0(sprintf(fplot$outcome, fmt = '%#.2f')," (",
+                        sprintf(fplot$lowerCI, fmt = '%#.2f'),"-",
+                        sprintf(fplot$upperCI, fmt = '%#.2f'),")")
+  fplot$controls <- paste0(fplot$eC,"/",fplot$nC)
+  fplot$controls[fplot$controls == "NA/NA"] <- ""
+  fplot$experimental <- paste0(fplot$eI,"/",fplot$nI)
+  fplot$experimental[fplot$experimental == "NA/NA"] <- ""
+  fplot$wF <- round(fplot$weightFixed)
+  fplot$wF[fplot$wF < 10 & !is.na(fplot$wF)] <- round(fplot$weightFixed[fplot$wF <10 & !is.na(fplot$wF)],1)
+  fplot$wR <- round(fplot$weightRandom)
+  fplot$wR[fplot$wR < 10 & !is.na(fplot$wR)] <- round(fplot$weightRandom[fplot$wR <10 & !is.na(fplot$wR)],1)
 
-  shapes <- grepl("Fixed-ef|Random-ef",plot$study)*2+21
-  sizes <- (plot$weightRandom/100+0.5)*4
+  shapes <- grepl("Fixed-ef|Random-ef",fplot$study)*2+21
+  sizes <- (fplot$weightRandom/100+0.5)*4
   sizes[is.na(sizes)] <- 3
 
-  colors <- rep("black",nrow(plot))
-  colors[grepl("Fixed-ef",plot$study)] <- "#0053a3"
-  colors[grepl("Random-ef",plot$study)] <- "#b30000"
+  colors <- rep("black",nrow(fplot))
+  colors[grepl("Fixed-ef",fplot$study)] <- "#0053a3"
+  colors[grepl("Random-ef",fplot$study)] <- "#b30000"
 
-  nchar_n <- max(nchar(c(plot$nI,plot$nC)),na.rm=T)
+  nchar_n <- max(nchar(c(fplot$nI,fplot$nC)),na.rm=T)
 
-  xl <- list(`l0` = 10^(log10(min(plot$lowerCI))-0.9),
-             `l1` = 10^(log10(min(plot$lowerCI))-0.6),
-             `l2` = 10^(log10(min(plot$lowerCI))-0.1),
-             `r1` = 10^(log10(max(plot$upperCI))+0.9),
-             `r2` = 10^(log10(max(plot$upperCI))+1.3),
-             `r3` = 10^(log10(max(plot$upperCI))+1.6))
+  xl <- list(`l0` = 10^(log10(min(fplot$lowerCI))-0.9),
+             `l1` = 10^(log10(min(fplot$lowerCI))-0.6),
+             `l2` = 10^(log10(min(fplot$lowerCI))-0.1),
+             `r1` = 10^(log10(max(fplot$upperCI))+0.9),
+             `r2` = 10^(log10(max(fplot$upperCI))+1.3),
+             `r3` = 10^(log10(max(fplot$upperCI))+1.6))
 
   xl2 <- c(unlist(unname(xl[-1])),mean(c(xl$r2,xl$r3)))
   xl2 <- xl2[order(xl2)]
@@ -714,42 +724,43 @@ plot.metaanalysis <- function(x, type="both", ...){
       sprintf(x$metaResults[x$metaResults == "Random","pValue"], fmt = '%#.4f'),
       ")")
 
-  ggplot(plot,aes(x=outcome,xmin=lowerCI,xmax=upperCI,y=yaxis)) +
+  ggplot(fplot,aes(x=outcome,xmin=lowerCI,xmax=upperCI,y=yaxis)) +
     geom_vline(xintercept = 1, color="gray", linetype=3) +
-    geom_segment(aes(x=plot$outcome[grepl("Fixed-effect",plot$study)],
-                     xend=plot$outcome[grepl("Fixed-effect",plot$study)],
-                     y=Inf,yend=plot$yaxis[grepl("Fixed-effect",plot$study)]),
+    geom_segment(aes(x=fplot$outcome[grepl("Fixed-effect",fplot$study)],
+                     xend=fplot$outcome[grepl("Fixed-effect",fplot$study)],
+                     y=Inf,yend=fplot$yaxis[grepl("Fixed-effect",fplot$study)]),
                      color = "#7cbfff") +
-    geom_segment(aes(x=plot$outcome[grepl("Random-effect",plot$study)],
-                     xend=plot$outcome[grepl("Random-effect",plot$study)],
-                     y=Inf,yend=plot$yaxis[grepl("Random-effect",plot$study)]),
-                 color = "#ff8c8c") +
-     geom_segment(aes(x=min(plot$lowerCI),xend=max(plot$upperCI),y=-Inf,yend=-Inf)) +
-    annotate("text",x=xl$l1,y=plot$yaxis,label=plot$experimental,hjust=1) +
-    annotate("text",x=xl$l2,y=plot$yaxis,label=plot$control,hjust=1) +
-    annotate("text",x=xl$r1,y=plot$yaxis,label=plot$out_ci,hjust=1) +
-    annotate("text",x=xl$r2,y=plot$yaxis,label=plot$wR,hjust=1) +
-    annotate("text",x=xl$r3,y=plot$yaxis,label=plot$wF,hjust=1) +
-    geom_segment(aes(x=0,xend=xl$l2,
-                     y=plot$yaxis[plot$study == "Fixed-effect"]+0.5,
-                     yend=plot$yaxis[plot$study == "Fixed-effect"]+0.5),
+    {if(sum(grepl("Random-effect",fplot$study)) > 0) # ANNE: Changed to be if statement
+    geom_segment(aes(x=fplot$outcome[grepl("Random-effect",fplot$study)],
+                     xend=fplot$outcome[grepl("Random-effect",fplot$study)],
+                     y=Inf,yend=fplot$yaxis[grepl("Random-effect",fplot$study)]),
+                 color = "#ff8c8c")} +
+     geom_segment(aes(x=min(fplot$lowerCI),xend=max(fplot$upperCI),y=-Inf,yend=-Inf)) +
+    annotate("text",x=xl$l1,y=fplot$yaxis,label=fplot$experimental,hjust=1) +
+    annotate("text",x=xl$l2,y=fplot$yaxis,label=fplot$control,hjust=1) +
+    annotate("text",x=xl$r1,y=fplot$yaxis,label=fplot$out_ci,hjust=1) +
+    annotate("text",x=xl$r2,y=fplot$yaxis,label=fplot$wR,hjust=1) +
+    annotate("text",x=xl$r3,y=fplot$yaxis,label=fplot$wF,hjust=1) +
+    geom_segment(aes(x=0,xend=xl$l2, # dots before summary study side
+                     y=fplot$yaxis[fplot$study == "Fixed-effect"]+0.5,
+                     yend=fplot$yaxis[fplot$study == "Fixed-effect"]+0.5),
                  linetype=3) +
-    geom_segment(aes(x=max(plot$upperCI),xend=Inf,
-                     y=plot$yaxis[plot$study == "Fixed-effect"]+0.5,
-                     yend=plot$yaxis[plot$study == "Fixed-effect"]+0.5),
+    geom_segment(aes(x=max(fplot$upperCI),xend=Inf, # dots after
+                     y=fplot$yaxis[fplot$study == "Fixed-effect"]+0.5,
+                     yend=fplot$yaxis[fplot$study == "Fixed-effect"]+0.5),
                  linetype=3) +
     labs(tag=heterogen)+
     geom_point(shape = shapes, color = colors, fill = colors,size=sizes) +
-    geom_errorbar(color = colors, width=0) +
+    #geom_errorbar(color = colors, width=0) +
     theme_classic() +
     scale_colour_identity() +
     scale_x_continuous(trans="log10",
       sec.axis = sec_axis(~.,breaks = xl2,label=xlabs),
       limits=c(xl$l0,xl$r3), name="o\no",
-      breaks=c(((round(max(plot$upperCI))-1)/2+1)/10,1,(round(max(plot$upperCI))-1)/2+1)) +
-    scale_y_continuous(breaks=plot$yaxis, label=plot$study) +
+      breaks=c(((round(max(fplot$upperCI))-1)/2+1)/10,1,(round(max(fplot$upperCI))-1)/2+1)) + # ANNE: Lower bound cannot handle upper over 100
+    scale_y_continuous(breaks=fplot$yaxis, label=fplot$study) +
     theme(axis.title.y = element_blank(),
-           axis.line = element_blank(),
+          axis.line = element_blank(),
           axis.ticks.x.top = element_blank(), axis.line.y.left = element_blank(), axis.ticks.y.left = element_blank(),
           axis.title.x = element_text(color="white"),
           axis.text.x.top = element_text(hjust=1,color="black"),
