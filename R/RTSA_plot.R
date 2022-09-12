@@ -30,39 +30,51 @@ plot.RTSA = function(x, ...){
     bounddat <- rbind(bounddat, c(max(andat$infFrac), round(qnorm(1-x$alpha/x$side),2),
                                   -round(qnorm(1-x$alpha/x$side),2)))
   }
-  gplot <- ggplot(data = bounddat) +
-    coord_cartesian(ylim=c(-10, 10), xlim = c(0,max(x$orgTiming,1.1))) + theme_bw() +
-    geom_hline(yintercept = c(round(qnorm(1-x$alpha/x$side),2),
-                              -round(qnorm(1-x$alpha/x$side),2), 0),
-               cex = 0.25, col = c("green", "green", "gray")) +
+
+  bounddat$RIS <- round(c(0,x$boundout$inf_frac)*x$RIS)
+  bounddat$RIS[1:(nrow(bounddat)-2)] <- NA
+  bounddat$labels <- c(rep("",nrow(bounddat)-2),"AIS","DARIS")
+
+
+ggplot(data = bounddat) +
+    coord_cartesian(ylim=c(-10, 10), xlim = c(0,max(x$orgTiming,1.1))) +
+    geom_segment(x=0,xend=1, y=round(qnorm(1-x$alpha/x$side),2),
+      yend = round(qnorm(1-x$alpha/x$side),2), cex = 0.25,
+      col = "#006400", linetype="dashed") +
+    geom_segment(x=0,xend=1, y=-round(qnorm(1-x$alpha/x$side),2),
+      yend = -round(qnorm(1-x$alpha/x$side),2), cex = 0.25,
+      col = "#006400", linetype="dashed") +
+    geom_segment(x=0,xend=1, y=0, yend = 0,
+      cex = 0.25, col = "gray", linetype="solid") +
     geom_vline(xintercept = 1, cex = 0.25, col = "black") +
-    geom_line(aes(x = inf_frac, y = alpha.boundaries.upper, col = "red"),
-              cex = 0.25) +
-    geom_point(aes(x = inf_frac, y = alpha.boundaries.upper), col = "red", cex = 1.25) +
-    {if(x$side == 2)geom_line(aes(x = inf_frac, y = alpha.boundaries.lower), col = "red",
-                                    cex = 0.25)} +
-    {if(x$side == 2)geom_point(aes(x = inf_frac,
-                                         y = alpha.boundaries.lower), col = "red", cex = 1.25)} +
-    geom_line(data = andat, aes(x = infFrac,
-                                y = zval, col = "blue"), cex = 0.25) +
-    geom_point(data = andat, aes(x = infFrac,
-                                 y = zval), cex = 1.25) +
-    theme(panel.border = element_blank()) +
-    {if(x$side == 2)geom_ribbon(aes(ymax = alpha.boundaries.lower,
-                                          ymin = -20,
-                                          x = inf_frac, fill = "red"), alpha = 0.25)} +
-    geom_ribbon(aes(ymax = alpha.boundaries.upper,
-                    ymin = 20,
-                    x = inf_frac, fill = "green"), alpha = 0.25) +
-    xlab("Information fraction") + ylab("Cumulative Z-score")  +
-    scale_x_continuous(expand = expansion(0)) +
-    scale_y_continuous(expand = expansion(0)) +
-    scale_fill_identity(name = 'Stopping areas', guide = 'legend',labels = c('Benefit', 'Harm')) +
+    geom_line(aes(x = inf_frac, y = alpha.boundaries.upper, col = "red"), cex = 0.25) +
+    geom_point(aes(x = inf_frac, y = alpha.boundaries.upper), col = "black", cex = 1) +
+    geom_line(aes(x = inf_frac, y = alpha.boundaries.lower), col = "red", cex = 0.25) +
+    geom_point(aes(x = inf_frac,y = alpha.boundaries.lower), col = "black", cex = 1) +
+    geom_line(data = andat, aes(x = infFrac,y = zval, col = "blue"), cex = 0.25) +
+    geom_point(data = andat, aes(x = infFrac,y = zval), cex = 1.25) +
+    geom_label(aes(x=inf_frac, y=10, label=RIS),vjust=1,label.size=NA) +
+    scale_x_continuous(expand = expansion(0), name="Information fraction",
+                       sec.axis = sec_axis(~., breaks=bounddat$inf_frac,labels=bounddat$labels)) +
+    scale_y_continuous(expand = expansion(0), "Cumulative Z-score") +
     theme(legend.position = 'bottom',  legend.box="vertical") +
-    scale_colour_manual(name = 'Lines', values =c('blue'='blue', 'green'='green','red' = 'red', 'black' = 'black'),
-                        labels = c('Cumulative Z-score', 'Naive stopping boundaries', 'Sequential boundaries', 'RIS reached')) +
-    ggtitle(paste0("TSA plot - ", ifelse(x$side == 1, "one-sided ",
-                                         "two-sided "), ifelse(indi == 1, "fixed-effect ",
-                                                               "random-effects "), "model"))
-  gplot
+    scale_colour_manual(name = ' ', values =c('blue'='blue', 'green'='green','red' = 'red', 'black' = 'black'),
+                        labels = c('Z-score', 'Naive boundaries', 'Sequential boundaries', 'DARIS')) +
+    # labs(title=title, subtitle="Proportion in control group, ") +
+    theme_classic() +
+    theme(legend.position="bottom",
+          legend.title = element_blank(),
+          legend.margin = margin(),
+          legend.text = element_text(size=9),
+          plot.title = element_text(hjust = 0.5),
+          plot.title.position = "plot",
+          plot.subtitle = element_text(hjust=0.5),
+          axis.title.y = element_text(color="black",size=10),
+          axis.title.x = element_text(color="black",size=10),
+          axis.text.x = element_text(color="black"),
+          axis.text.y = element_text(color="black"),
+          axis.title.x.top = element_blank(),
+          axis.ticks.x.top = element_blank(),
+          axis.line.x.top = element_blank())
 }
+
