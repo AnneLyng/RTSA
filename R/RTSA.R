@@ -16,7 +16,8 @@
 #' @examples
 #' data(perioOxy)
 #' RTSA(data = perioOxy, outcome = "RR", mc = 0.9, side = 2)
-RTSA <- function(data, side, outcome = "RR", mc, alpha = 0.05, beta = 0.2, fixed = FALSE,
+RTSA <- function(data, side, outcome = "RR", mc, alpha = 0.05, beta = 0.2,
+                 futility = NULL, fixed = FALSE,
                  method = "MH", vartype = "equal", sign = NULL,
                  fixedStudy = FALSE,
                  hksj = FALSE,
@@ -39,15 +40,20 @@ RTSA <- function(data, side, outcome = "RR", mc, alpha = 0.05, beta = 0.2, fixed
   p0 = sum(data$eC+data$eI)/sum(data$nC+data$nI)
   pI = exp(log(p0)+log(mc)/2)
   pC = exp(log(p0)-log(mc)/2)
-  RIS = nRandom(alpha = alpha, beta = beta, pI = pI, pC = pC,
-                diversity = ifelse(fixed == TRUE | syn$U[1] == 0, 0, syn$U[4]))
   } else if(outcome == "OR"){
     p0 = sum(data$eC+data$eI)/sum(data$nC+data$nI)
     pI = invlogit(logit(p0)+log(mc)/2)
     pC = invlogit(logit(p0)-log(mc)/2)
+  }
+
+  if(side == 1){
+    RIS = nRandom(alpha = alpha*2, beta = beta, pI = pI, pC = pC,
+                diversity = ifelse(fixed == TRUE | syn$U[1] == 0, 0, syn$U[4]))
+  } else {
     RIS = nRandom(alpha = alpha, beta = beta, pI = pI, pC = pC,
                   diversity = ifelse(fixed == TRUE | syn$U[1] == 0, 0, syn$U[4]))
   }
+
 
   # Set the timings of the studies relative to the RIS and the number of subjects
   timing <- c(subjects/RIS)
@@ -61,12 +67,15 @@ RTSA <- function(data, side, outcome = "RR", mc, alpha = 0.05, beta = 0.2, fixed
   }
 
   RTSAout = TSA(timing = timing, side = side, synth = mp, ana_time = 1:length(timing[timing <= 1]),
-                alpha = alpha, mc = mc, sign = sign,
+                alpha = alpha, beta = beta, futility = futility, mc = mc, sign = sign,
                 fixedStudy = fixedStudy,
                 hksj = hksj,
                 tau.ci.method = tau.ci.method)
+  RTSAout$Pax <- list(RIS = RIS, p0 = p0, pI = pI, pC = pC)
   RTSAout$orgTiming = orgTiming
-  RTSAout$RIS = RIS
+  RTSAout$adjRIS = RIS*RTSAout$root
+  RTSAout$root = RTSAout$root
+  RTSAout$AIS = sum(data$nC+data$nI)
   class(RTSAout) <- c("list", "RTSA")
   return(RTSAout)
 }

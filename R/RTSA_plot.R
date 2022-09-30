@@ -25,19 +25,28 @@ plot.RTSA = function(x, ...){
 
   andat <- data.frame(zval = c(0,zval),
                       infFrac = c(0,x$orgTiming))
-  bounddat <- rbind(c(0,20,-20),data.frame(do.call(cbind, x$boundout)))
+
+  if(x$side == 2 | (x$side == 1 & !is.null(x$futility))){
+    bounddat <- rbind(c(0,-20,20),data.frame(inf_frac = x$boundout$inf_frac, alpha_ubound = -x$boundout$alpha_ubound,
+                                             alpha_lbound = -x$boundout$alpha_lbound))
+  } else {
+    bounddat <- rbind(c(0,-20),data.frame(inf_frac = x$boundout$inf_frac, alpha_ubound = -x$boundout$alpha_ubound))
+  }
+
   if(max(andat$infFrac) > max(bounddat$inf_frac)){
     bounddat <- rbind(bounddat, c(max(andat$infFrac), round(qnorm(1-x$alpha/x$side),2),
                                   -round(qnorm(1-x$alpha/x$side),2)))
   }
 
-  bounddat$RIS <- round(c(0,x$boundout$inf_frac)*x$RIS)
+  bounddat$RIS <- round(c(0,x$boundout$inf_frac)*x$adjRIS)
   bounddat$RIS[1:(nrow(bounddat)-2)] <- NA
+  bounddat$RIS[nrow(bounddat)-1] <- x$AIS
   bounddat$labels <- c(rep("",nrow(bounddat)-2),"AIS","DARIS")
 
 
 ggplot(data = bounddat) +
-    coord_cartesian(ylim=c(-10, 10), xlim = c(0,max(x$orgTiming,1.1))) +
+    coord_cartesian(xlim = c(0,max(inf_frac,1.1)),
+                    ylim =c(ifelse("alpha_lbound" %in% colnames(bounddat), bounddat$alpha_lbound[bounddat$alpha_lbound < 20], 2.5), -10)) +
     geom_segment(x=0,xend=1, y=round(qnorm(1-x$alpha/x$side),2),
       yend = round(qnorm(1-x$alpha/x$side),2), cex = 0.25,
       col = "#006400", linetype="dashed") +
@@ -47,19 +56,28 @@ ggplot(data = bounddat) +
     geom_segment(x=0,xend=1, y=0, yend = 0,
       cex = 0.25, col = "gray", linetype="solid") +
     geom_vline(xintercept = 1, cex = 0.25, col = "black") +
-    geom_line(aes(x = inf_frac, y = alpha.boundaries.upper, col = "red"), cex = 0.25) +
-    geom_point(aes(x = inf_frac, y = alpha.boundaries.upper), col = "black", cex = 1) +
-    geom_line(aes(x = inf_frac, y = alpha.boundaries.lower), col = "red", cex = 0.25) +
-    geom_point(aes(x = inf_frac,y = alpha.boundaries.lower), col = "black", cex = 1) +
+    geom_line(aes(x = inf_frac, y = alpha_ubound, col = "red"), cex = 0.25) +
+    geom_point(aes(x = inf_frac, y = alpha_ubound), col = "black", cex = 1) +
+  {if(x$side == 2)
+    geom_line(aes(x = inf_frac, y = alpha_lbound), col = "red", cex = 0.25)
+    } +
+  {if(x$side == 1 & !is.null(x$futility))
+    geom_line(aes(x = inf_frac, y = alpha_lbound), col = "red", cex = 0.25,
+              linetype = "dashed")
+  } +
+  {if(x$side == 2 | (x$side == 1 & !is.null(x$futility)))
+      geom_point(aes(x = inf_frac,y = alpha_lbound), col = "black", cex = 1)
+  } +
     geom_line(data = andat, aes(x = infFrac,y = zval, col = "blue"), cex = 0.25) +
     geom_point(data = andat, aes(x = infFrac,y = zval), cex = 1.25) +
-    geom_label(aes(x=inf_frac, y=10, label=RIS),vjust=1,label.size=NA) +
+    geom_label(aes(x=inf_frac, y=-10, label=RIS),vjust=1,label.size=NA) +
     scale_x_continuous(expand = expansion(0), name="Information fraction",
                        sec.axis = sec_axis(~., breaks=bounddat$inf_frac,labels=bounddat$labels)) +
-    scale_y_continuous(expand = expansion(0), "Cumulative Z-score") +
+    scale_y_reverse(expand = expansion(0), "Cumulative Z-score") +
     theme(legend.position = 'bottom',  legend.box="vertical") +
-    scale_colour_manual(name = ' ', values =c('blue'='blue', 'green'='green','red' = 'red', 'black' = 'black'),
+    scale_colour_manual(name = ' ', values =c('blue'='blue', '#006400'='#006400','red' = 'red', 'black' = 'black'),
                         labels = c('Z-score', 'Naive boundaries', 'Sequential boundaries', 'DARIS')) +
+  scale_linetype_manual(values = c("solid","dashed", "solid", "solid")) +
     # labs(title=title, subtitle="Proportion in control group, ") +
     theme_classic() +
     theme(legend.position="bottom",
@@ -77,4 +95,5 @@ ggplot(data = bounddat) +
           axis.ticks.x.top = element_blank(),
           axis.line.x.top = element_blank())
 }
+
 

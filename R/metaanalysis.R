@@ -172,6 +172,16 @@ metaanalysis <- function(data = NULL,
       "lowerCI" = c(sy$peF[2], sy$peR[2]),
       "upperCI" = c(sy$peF[3], sy$peR[3]),
       "pValue" = c(sy$peF[5], sy$peR[5]))
+
+    heteResults <- list(
+      "Q" = sy$Q[1],
+      "Q_df" = sy$Q[2],
+      "Q_pval" = sy$Q[3],
+      "tau2" = sy$U[1],
+      "I^2" = sy$U[3],
+      "D^2" = sy$U[4],
+      "CI_heterogen" = sy$ci.tau
+    )
   }else{
     metaResults = data.frame(
       type = c("Fixed"),
@@ -180,10 +190,14 @@ metaanalysis <- function(data = NULL,
       "lowerCI" = c(sy$peF[2]),
       "upperCI" = c(sy$peF[3]),
       "pValue" = c(sy$peF[5]))
+
+    heteResults = NULL
   }
   colnames(metaResults)[2] <- outcome
 
+
   out = list(studyResults = studyResults, metaResults = metaResults,
+             heteResults = heteResults,
              metaPrepare = mp, synthesize = sy, nonevent = nonevent,
              missing_vec = missing_vec)
   class(out) <- "metaanalysis"
@@ -635,10 +649,10 @@ print.metaanalysis <- function(x,...){
   if(x$metaPrepare$method == "GLM"){
     message("\n NB. Only fixed-effect is analysed since method is GLM")
   }
-  #ZERO TRIAL
   if(!is.null(x$missing_vec)){
     message("\n NB. Please provide a study vector to name studies.")
   }
+  #Total-zero trials
   if(!is.null(x$nonevent)){
     message(paste("\n NB.",x$nonevent,"was excluded from the analysis due to zero events, consider changing outcome to RD"))
   }
@@ -726,28 +740,28 @@ plot.metaanalysis <- function(x, type="both", ...){
 
   ggplot(fplot,aes(x=outcome,xmin=lowerCI,xmax=upperCI,y=yaxis)) +
     geom_vline(xintercept = 1, color="gray", linetype=3) +
-    geom_segment(aes(x=fplot$outcome[grepl("Fixed-effect",fplot$study)],
-                     xend=fplot$outcome[grepl("Fixed-effect",fplot$study)],
-                     y=Inf,yend=fplot$yaxis[grepl("Fixed-effect",fplot$study)]),
+    geom_segment(aes(x=outcome[grepl("Fixed-effect",study)],
+                     xend=outcome[grepl("Fixed-effect",study)],
+                     y=Inf,yend=yaxis[grepl("Fixed-effect",study)]),
                      color = "#7cbfff") +
     {if(sum(grepl("Random-effect",fplot$study)) > 0) # ANNE: Changed to be if statement
-    geom_segment(aes(x=fplot$outcome[grepl("Random-effect",fplot$study)],
-                     xend=fplot$outcome[grepl("Random-effect",fplot$study)],
-                     y=Inf,yend=fplot$yaxis[grepl("Random-effect",fplot$study)]),
+    geom_segment(aes(x=outcome[grepl("Random-effect",study)],
+                     xend=outcome[grepl("Random-effect",study)],
+                     y=Inf,yend=yaxis[grepl("Random-effect",study)]),
                  color = "#ff8c8c")} +
-     geom_segment(aes(x=min(fplot$lowerCI),xend=max(fplot$upperCI),y=-Inf,yend=-Inf)) +
+     geom_segment(aes(x=min(lowerCI),xend=max(upperCI),y=-Inf,yend=-Inf)) +
     annotate("text",x=xl$l1,y=fplot$yaxis,label=fplot$experimental,hjust=1) +
     annotate("text",x=xl$l2,y=fplot$yaxis,label=fplot$control,hjust=1) +
     annotate("text",x=xl$r1,y=fplot$yaxis,label=fplot$out_ci,hjust=1) +
     annotate("text",x=xl$r2,y=fplot$yaxis,label=fplot$wR,hjust=1) +
     annotate("text",x=xl$r3,y=fplot$yaxis,label=fplot$wF,hjust=1) +
     geom_segment(aes(x=0,xend=xl$l2, # dots before summary study side
-                     y=fplot$yaxis[fplot$study == "Fixed-effect"]+0.5,
-                     yend=fplot$yaxis[fplot$study == "Fixed-effect"]+0.5),
+                     y=yaxis[study == "Fixed-effect"]+0.5,
+                     yend=yaxis[study == "Fixed-effect"]+0.5),
                  linetype=3) +
-    geom_segment(aes(x=max(fplot$upperCI),xend=Inf, # dots after
-                     y=fplot$yaxis[fplot$study == "Fixed-effect"]+0.5,
-                     yend=fplot$yaxis[fplot$study == "Fixed-effect"]+0.5),
+    geom_segment(aes(x=max(upperCI),xend=Inf, # dots after
+                     y=yaxis[study == "Fixed-effect"]+0.5,
+                     yend=yaxis[study == "Fixed-effect"]+0.5),
                  linetype=3) +
     labs(tag=heterogen)+
     geom_point(shape = shapes, color = colors, fill = colors,size=sizes) +
