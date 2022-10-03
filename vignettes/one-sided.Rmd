@@ -152,3 +152,21 @@ Again, can we plot the RTSA object:
 plot(RTSAout_nb)
 ```
 
+Note that we require more participants in the non-binding futility design compared to the one-sided design with no futility. 
+
+## One-sided test and non-binding futility
+
+By using the same specifications as before but including `futility = "binding"`, we create a one-sided test design with binding futility. 
+
+```{r}
+RTSAout_b <- RTSA(data = perioOxy, outcome = "RR", mc = 0.65, side = side, alpha = alpha, 
+                   beta = beta, futility = "binding")
+```
+
+Again, can we plot the RTSA object: 
+
+```{r}
+plot(RTSAout_b)
+```
+
+Note that the DARIS is smaller for binding futility compared to non-binding futility. We also have less conservative tests as the $\alpha$ spending boundary is less extreme compared to both the non-binding futility design and the design completely without futility. 

@@ -484,20 +484,30 @@ TSA = function(timing,
                       side = side,
                       alpha = alpha, beta = beta)
 
+  # create power function (maybe move)
+  right_power <- function(x, inner, outer, theta){
+    info <- sd_inf(trials[,1]*x)
+    pwr <- ma_power(upper_bound = outer$alpha_ubound, theta = theta,
+                    info = info, za = inner)[[2]]
+    pwr - (1-beta)
+  }
+
+  # create warp function
+  getWarp <- function(x, outer){
+    a <- getInnerWedge(inf_frac = trials[, 1]*x, beta = beta,
+                       side = 1, zninf = -20, tol = 1e-13,
+                       outer_boundaries = outer,
+                       delta = NULL)$za[length(trials[, 1])]
+    outer$alpha_ubound[length(trials[, 1])] - a
+  }
+
+
   # calculate the power of the analysis
   if(side == 1 & is.null(futility)){
-    right_power <- function(x, inner, outer, theta){
-      info = sd_inf(trials[, 1]*x)
-      pwr <- ma_power(upper_bound = outer, theta = theta,
-                             info = info, za = inner)[[2]]
-      pwr - (1-beta)
-    }
-
     lb <- rep(-20,length(trials[, 1]))
 
     root <- uniroot(right_power, lower = 0.9, upper = 1.2, tol = 1e-9,
-                    inner = lb, outer = boundout$alpha_ubound, theta =
-                      boundout$delta)$root
+                    inner = lb, outer = boundout, theta = boundout$delta)$root
 
     info <- sd_inf(trials[, 1]*root)
     pwr <- ma_power(upper_bound = boundout$alpha_ubound, theta = boundout$delta,
@@ -510,14 +520,6 @@ TSA = function(timing,
                                outer_boundaries = boundout,
                                delta = NULL)
 
-    getWarp <- function(x, outer){
-      a <- getInnerWedge(inf_frac = trials[, 1]*x, beta = beta,
-                                side = 1, zninf = -20, tol = 1e-13,
-                                outer_boundaries = outer,
-                                delta = NULL)$za[length(trials[, 1])]
-      outer$alpha_ubound[length(trials[, 1])] - a
-    }
-
     root <- uniroot(getWarp, lower = 0.9, upper = 1.2, outer = boundout,
                     tol = 1e-9)$root
 
@@ -525,13 +527,6 @@ TSA = function(timing,
                                side = 1, zninf = -20, tol = 1e-13,
                                outer_boundaries = boundout,
                                delta = NULL)
-
-    right_power <- function(x, inner, outer, theta){
-      info <- sd_inf(trials[,1]*x)
-      pwr <- ma_power(upper_bound = outer$alpha_ubound, theta = theta,
-                             info = info, za = inner)[[2]]
-      pwr - (1-beta)
-    }
 
     root <- uniroot(right_power, lower = 0.9, upper = 1.2, tol = 1e-9,
                     inner = lb$za, outer = boundout, theta = boundout$delta)$root
@@ -542,6 +537,79 @@ TSA = function(timing,
     t1e <- ma_power(upper_bound = boundout$alpha_ubound, theta = 0,
                     info = info, za = lb$za)
     boundout$alpha_lbound <- lb$za
+  } else if(side == 1 & futility == "binding"){
+    warning("Binding futility takes some time to compute. We are working on a faster solution in C++.")
+    lb <- getInnerWedge(inf_frac = trials[,1], beta = beta,
+                               side = 1,zninf = -20, tol = 1e-13,
+                               outer_boundaries = boundout)
+
+    # get then the upper boundaries again
+    lb$alpha_ubound <- -lb$za
+    lb$alpha <- alpha
+    ub <- getInnerWedge(inf_frac = trials[,1], beta = alpha,
+                               side = 1,zninf = -20, tol = 1e-15,
+                               outer_boundaries = lb,
+                               delta = 0)
+
+    ub$alpha_ubound <- -ub$za
+    ub$alpha <- alpha
+
+    root <- uniroot(getWarp, lower = 0.9, upper = 1.2, outer = ub,
+                    tol = 1e-13)$root
+
+    lb <- getInnerWedge(inf_frac = trials[,1]*root, beta = beta,
+                               side = 1, zninf = -20, tol = 1e-15,
+                               outer_boundaries = ub,
+                               delta = NULL)
+
+    root <- uniroot(right_power, lower = 0.9, upper = 1.2, tol = 1e-13,
+                    inner = lb$za, outer = ub, theta = boundout$delta)$root
+
+    info <- sd_inf(trials[,1]*root)
+    t1e <- ma_power(upper_bound = -ub$za, theta = 0,
+                           info = info, za = lb$za)
+
+    while(abs(t1e[[2]] - alpha) > 1e-4){
+      if(abs(t1e[[2]] - alpha) < 1e-3){
+        scale <- 1 + c(alpha - t1e[[2]], 0.007)[which.max(abs(c(alpha - t1e[[2]], 0.007)))]
+      } else {
+        scale <- 1 + alpha - t1e[[2]]
+      }
+
+      lb$alpha_ubound <- -lb$za*scale
+      lb$alpha <- alpha
+      ub <- getInnerWedge(inf_frac = trials[,1]*root, beta = alpha,
+                                 side = 1, fakeIFY = 0,zninf = -20, tol = 1e-13,
+                                 outer_boundaries = lb,
+                                 delta = 0)
+
+      ub$alpha_ubound <- -ub$za
+      ub$alpha <- alpha
+
+      root <- uniroot(getWarp, lower = 0.9, upper = 1.2, outer = ub,
+                      tol = 1e-13)$root
+
+      lb <- getInnerWedge(inf_frac = trials[,1]*root, beta = beta,
+                                 side = 1, fakeIFY = 0,zninf = -20, tol = 1e-13,
+                                 outer_boundaries = ub,
+                                 delta = NULL)
+
+      root <- uniroot(right_power, lower = 0.9, upper = 1.2, tol = 1e-13,
+                      inner = lb$za, outer = ub, theta = boundout$delta)$root
+
+      info <- sd_inf(trials[,1]*root)
+      t1e <- ma_power(upper_bound = -ub$za, theta = 0,
+                             info = info, za = lb$za)
+
+    }
+
+    boundout$alpha_ubound <- -ub$za
+    boundout$alpha_lbound <- lb$za
+
+    pwr <- ma_power(upper_bound = boundout$alpha_ubound, theta = boundout$delta,
+                    info = info, za = lb$za)
+    t1e <- ma_power(upper_bound = boundout$alpha_ubound, theta = 0,
+                    info = info, za = lb$za)
   }
 
 
