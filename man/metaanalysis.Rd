@@ -52,6 +52,10 @@ fixed-effect. Defaults to TRUE.}
 
 \item{sign}{TBA.}
 
+\item{alpha}{Type-I-error.}
+
+\item{tau.ci.method}{Methods for computation of CI for tau.}
+
 \item{...}{Additional variables. See Details.}
 }
 \value{

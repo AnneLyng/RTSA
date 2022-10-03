@@ -9,9 +9,7 @@ Description: Frequentist meta-analysis and sequential meta-analysis based on
 License: GPL (>= 2)
 Imports:
     lme4,
-    graphics, 
     stats,
-    meta,
     metafor,
     ggplot2
 Encoding: UTF-8

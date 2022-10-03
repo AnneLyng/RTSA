@@ -16,6 +16,8 @@
 #' @param study XXX.
 #' @param mI,mC,sdI,sdC See details.
 #' @param eI,nI,eC,nC See details.
+#' @param alpha Type-I-error.
+#' @param tau.ci.method Methods for computation of CI for tau.
 #' @param ... Additional variables. See Details.
 #'
 #' @return A list object containing two data frames.
@@ -112,7 +114,7 @@ metaanalysis <- function(data = NULL,
     stop("`hksj` must be either TRUE or FALSE")
   }
   # check | alpha
-  if (class(alpha) != "numeric" & alpha < 1) {
+  if (!is.numeric(alpha) & alpha < 1) {
     stop("`alpha` must numeric and below 1")
   }
   # check | alpha
@@ -132,7 +134,7 @@ metaanalysis <- function(data = NULL,
 
   # Check for non-event studies
   if(!is.null(mp$nonevent)){
-    if(class(data$study[mp$nonevent]) == "integer"){
+    if(is.integer(data$study[mp$nonevent])){
       nonevent <- paste(paste("Study",data$study[mp$nonevent]),collapse=", ")
     }else{
       nonevent <- paste(data$study[mp$nonevent],collapse=", ")
@@ -661,6 +663,7 @@ print.metaanalysis <- function(x,...){
 
 # FUNCTION | plot metaanalysis ----
 #' @method plot metaanalysis
+#' @importFrom ggplot2 annotate labs scale_colour_identity
 #' @export
 plot.metaanalysis <- function(x, type="both", ...){
 #TODO: Size depending on weight, prioritise Random
@@ -738,7 +741,7 @@ plot.metaanalysis <- function(x, type="both", ...){
       sprintf(x$metaResults[x$metaResults == "Random","pValue"], fmt = '%#.4f'),
       ")")
 
-  ggplot(fplot,aes(x=outcome,xmin=lowerCI,xmax=upperCI,y=yaxis)) +
+  p <- ggplot(fplot,aes(x=outcome,xmin=lowerCI,xmax=upperCI,y=yaxis)) +
     geom_vline(xintercept = 1, color="gray", linetype=3) +
     geom_segment(aes(x=outcome[grepl("Fixed-effect",study)],
                      xend=outcome[grepl("Fixed-effect",study)],
@@ -769,10 +772,10 @@ plot.metaanalysis <- function(x, type="both", ...){
     theme_classic() +
     scale_colour_identity() +
     scale_x_continuous(trans="log10",
-      sec.axis = sec_axis(~.,breaks = xl2,label=xlabs),
+      sec.axis = sec_axis(~.,breaks = xl2,labels=xlabs),
       limits=c(xl$l0,xl$r3), name="o\no",
       breaks=c(((round(max(fplot$upperCI))-1)/2+1)/10,1,(round(max(fplot$upperCI))-1)/2+1)) + # ANNE: Lower bound cannot handle upper over 100
-    scale_y_continuous(breaks=fplot$yaxis, label=fplot$study) +
+    scale_y_continuous(breaks=fplot$yaxis, labels=fplot$study) +
     theme(axis.title.y = element_blank(),
           axis.line = element_blank(),
           axis.ticks.x.top = element_blank(), axis.line.y.left = element_blank(), axis.ticks.y.left = element_blank(),
@@ -780,5 +783,7 @@ plot.metaanalysis <- function(x, type="both", ...){
           axis.text.x.top = element_text(hjust=1,color="black"),
           axis.text.y = element_text(color="black",size=10,face="bold"),
           plot.tag.position = c(0,0), plot.tag = element_text(hjust=0, vjust=0, size=9))
+
+  return(p)
 
 }

@@ -19,7 +19,8 @@ plot.RTSA
 }
 \examples{
 data(perioOxy)
-outRTSA <- RTSA(data = perioOxy, outcome = "RR", mc = 0.7, side = 2, alpha = 0.05, fixed = FALSE)
+outRTSA <- RTSA(data = perioOxy, outcome = "RR", mc = 0.7, side = 2, alpha = 0.05,
+beta = 0.2, fixed = FALSE)
 plot(x = outRTSA)
 
 }

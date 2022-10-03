@@ -145,7 +145,7 @@ trials <- trials[trials[,2] > IFincrementThreshold,]
 
 # calculate the boundaries
 boundaries <- RTSA:::boundary(inf_frac = trials[,1],
-                 side = 2, alpha = 0.05, zninf = -8, tol = 1e-14)
+                 side = 2, alpha = 0.05, zninf = -8, tol = 1e-14, beta = 0.2)
 boundaries
 ```
 
@@ -170,7 +170,7 @@ To get an output with more informatin and less steps, we can use the RTSA functi
 If we want a function that combines the metaPrepare, synthesize and TSA function, then we can use the RTSA function. This function prints the outcome of the TSA function without the need to specify the metaPrepare function, as it is embedded in the RTSA function.
 
 ```{r}
-RTSA(data = perioOxy, outcome = "RR", mc = 0.9, side = 2, alpha = 0.05)
+RTSA(data = perioOxy, outcome = "RR", mc = 0.7, side = 2, alpha = 0.05, beta = 0.2)
 ```
 
 # Plotting in RTSA
@@ -179,14 +179,10 @@ The RTSA function can be used as an input for plotting the traditional TSA plot.
 
 ```{r}
 RTSAout <- RTSA(data = perioOxy, outcome = "RR", mc = 0.7, side = 2, alpha = 0.05,
-                fixed = FALSE)
+                fixed = FALSE, beta = 0.2)
 plot(RTSAout)
 ```
 
-```{r}
-RTSAout <- RTSA(data = coronary, outcome = "RR", mc = 0.8, side = 2, alpha = 0.05)
-plot(RTSAout)
-```
 
 # Extra examples just for the heck of it (TODO)
 

@@ -1,12 +1,19 @@
 #' RTSA
 #'
 #' @param data A data set containing eI, eC, nI, nC or mI, mC, sdI, sdC, nI, nC
+#' @param side I or II sided hypothesis test
 #' @param outcome Outcome of interest, RR only possibility now
 #' @param mc minimum clinical relevant outcome
 #' @param alpha The type I error
-#' @param side I or II sided hypothesis test
 #' @param beta The type II error
+#' @param futility Futility boundaries added to design. Default is "none".
 #' @param fixed Default is FALSE. Sets heterogeneity to 0 if TRUE.
+#' @param method Weighting method. Defaults to Mantel-Haenzel (MH).
+#' @param vartype TBD.
+#' @param sign TBD.
+#' @param fixedStudy TBD.
+#' @param hksj TBD.
+#' @param tau.ci.method TBD.
 #' @param ... other arguments
 #'
 #' @return A TSA object (list for now)
@@ -17,7 +24,7 @@
 #' data(perioOxy)
 #' RTSA(data = perioOxy, outcome = "RR", mc = 0.9, side = 2)
 RTSA <- function(data, side, outcome = "RR", mc, alpha = 0.05, beta = 0.2,
-                 futility = NULL, fixed = FALSE,
+                 futility = "none", fixed = FALSE,
                  method = "MH", vartype = "equal", sign = NULL,
                  fixedStudy = FALSE,
                  hksj = FALSE,

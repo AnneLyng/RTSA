@@ -11,6 +11,7 @@ RTSA(
   mc,
   alpha = 0.05,
   beta = 0.2,
+  futility = "none",
   fixed = FALSE,
   method = "MH",
   vartype = "equal",
@@ -34,7 +35,21 @@ RTSA(
 
 \item{beta}{The type II error}
 
+\item{futility}{Futility boundaries added to design. Default is "none".}
+
 \item{fixed}{Default is FALSE. Sets heterogeneity to 0 if TRUE.}
+
+\item{method}{Weighting method. Defaults to Mantel-Haenzel (MH).}
+
+\item{vartype}{TBD.}
+
+\item{sign}{TBD.}
+
+\item{fixedStudy}{TBD.}
+
+\item{hksj}{TBD.}
+
+\item{tau.ci.method}{TBD.}
 
 \item{...}{other arguments}
 }

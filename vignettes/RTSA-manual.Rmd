@@ -185,8 +185,8 @@ Before adding new studies to a meta-analysis, the researcher should consider whe
 Note that the studies with less than 1% information gain is still added to the meta-analysis, but the meta-analysis boundaries are not updated. This can be shown via the perioOxy example. 
 
 ```{r}
-outRTSA <- RTSA(data = perioOxy, outcome = "RR", mc = 0.9, side = 2, alpha = 0.05,
-                fixed = TRUE)
+outRTSA <- RTSA(data = perioOxy, outcome = "RR", mc = 0.7, side = 2, alpha = 0.05,
+                beta = 0.2)
 outRTSA$orgTiming # cumulative sum of information gain
 outRTSA$boundout # the analysis times for the boundary calculation
 ```
@@ -392,7 +392,8 @@ trials <- trials[trials[,2] > IFincrementThreshold,]
 
 # calculate the boundaries
 boundaries <- RTSA:::boundary(inf_frac = trials[,1],
-                 side = 1, alpha = 0.05, zninf = -8, tol = 1e-9)
+                 side = 1, alpha = 0.025, zninf = -8, tol = 1e-14,
+                 beta = 0.2)
 boundaries
 ```
 
@@ -403,7 +404,7 @@ library(gsDesign)
 gs = gsDesign(k = 7,
          n.I = trials[,3],
          test.type = 1,
-         alpha = 0.05, sfu = sfLDOF, sfl = sfLDOF)
+         alpha = 0.025, sfu = sfLDOF, sfl = sfLDOF)
 gs$upper$bound
 ```
 
@@ -411,13 +412,6 @@ gs$upper$bound
 
 Testing cont. outcome
 
-```{r}
-data("perioOxy")
-perioOxy[c(4,5),c(3,5)] <- 0
-#names(perioOxy)[1] <- "Col1"
-metaanalysis(outcome = "RR", data = perioOxy, 
-             method = "MH")
-```
 
 # Notation
 

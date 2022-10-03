@@ -153,6 +153,7 @@ boundary <- function(inf_frac, side, alpha, beta,
 
 # fcap ----
 # Quantify where boundaries will lie
+#' @importFrom stats dnorm
 fcab <- function(last, nint, zam1, zbm1, h, x,
                  stdv, delta, i, bs){
 
@@ -227,13 +228,13 @@ qpos <- function(xq, last, nint, i, zam1, zbm1, stdv, bs = bs, delta){
 
 # first ----
 # focus on the first trial
+#' @importFrom stats dnorm
 first <- function(za, zb, h, stdv, nints, delta, lnn, bs = bs){
   hh <- (zb - za)/nints[1]
 
   last <- numeric(length = lnn)
 
   for(j in 1:(nints[1])+1){
-    #last[j] <- gfunc(x = (ya+hh*(j-1))/stdv, delta = delta)/stdv #original
     last[j] <- dnorm(x = (za+hh*(j-1)))
     if(bs == TRUE) {last[j] <- dnorm(x = (za+hh*(j-1)), mean = delta*stdv)}
   }
@@ -356,7 +357,6 @@ getInnerWedge <- function(inf_frac, beta, delta = NULL, side, fakeIFY = 0,
   ya <- numeric(length = maxnn); yb <- numeric(length = maxnn)
   last <- numeric(length = lnn)
 
-  #beta_spend = RTSA:::betas_Obf(nn, beta, inf_frac = inf_frac/inf_frac[nn])
   beta_spend = obf_as(beta, side, inf_frac/inf_frac[nn])
   if(!is.null(rm_bs)){
     beta_spend = obf_as(beta, side, c(rep(0, max(rm_bs)),inf_frac[-c(1:rm_bs)]/inf_frac[nn]))
@@ -480,7 +480,7 @@ TSA = function(timing,
   trials[, 2] <- trials[, 1] - c(0, trials[, 1][-length(trials[, 1])])
 
   # calculate the boundaries
-  boundout = RTSA:::boundary(inf_frac = trials[, 1],
+  boundout = boundary(inf_frac = trials[, 1],
                       side = side,
                       alpha = alpha, beta = beta)
 
@@ -503,7 +503,7 @@ TSA = function(timing,
 
 
   # calculate the power of the analysis
-  if(side == 1 & is.null(futility)){
+  if(side == 1 & futility == "none"){
     lb <- rep(-20,length(trials[, 1]))
 
     root <- uniroot(right_power, lower = 0.9, upper = 1.2, tol = 1e-9,
@@ -610,6 +610,13 @@ TSA = function(timing,
                     info = info, za = lb$za)
     t1e <- ma_power(upper_bound = boundout$alpha_ubound, theta = 0,
                     info = info, za = lb$za)
+  } else {
+    root <- 1
+    info <- sd_inf(trials[,1]*root)
+    pwr <- ma_power(upper_bound = boundout$alpha_ubound, theta = boundout$delta,
+                    info = info, za = boundout$alpha_lbound)
+    t1e <- ma_power(upper_bound = boundout$alpha_ubound, theta = 0,
+                    info = info, za = boundout$alpha_lbound)
   }
 
 
