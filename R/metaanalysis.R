@@ -192,11 +192,10 @@ metaanalysis <- function(data = NULL,
       "lowerCI" = c(sy$peF[2]),
       "upperCI" = c(sy$peF[3]),
       "pValue" = c(sy$peF[5]))
-
+          
     heteResults = NULL
   }
   colnames(metaResults)[2] <- outcome
-
 
   out = list(studyResults = studyResults, metaResults = metaResults,
              heteResults = heteResults,
@@ -666,18 +665,21 @@ print.metaanalysis <- function(x,...){
 #' @importFrom ggplot2 annotate labs scale_colour_identity geom_errorbar
 #' @export
 plot.metaanalysis <- function(x, type="both", ...){
-#TODO: Size depending on weight, prioritise Random
 
-  if(type=="both") cat("TOBEIMPLEMENTED")
+  # FOR TESTING
+    x <- readRDS("C:/Oel/Artikler/CTU/CTU_RTSA/cord.Rdata")
+    x <- RTSA::metaanalysis(x)
+    type = "both"
+    xlims = NULL
+  # FOR TESTING
 
-  # Anne: Changed name 'plot' to 'fplot'
+  # Create dataframe for plot
   fplot <- merge(x$metaPrepare$data,x$studyResults)
   results <- x$metaResults
   colnames(results)[1] <- "study"
   results[,colnames(fplot)[!(colnames(fplot) %in% colnames(results))]] <- NA
   results$study[results$study == "Fixed"] <- "Fixed-effect"
   results$study[results$study == "Random"] <- "Random-effects"
-
   fplot <- rbind(fplot, results[names(fplot)])
   fplot <- cbind(nrow(fplot):1,fplot)
   colnames(fplot)[1] <- "yaxis"
@@ -687,12 +689,12 @@ plot.metaanalysis <- function(x, type="both", ...){
   fplot$eC[grepl("Fixed-ef|Random-ef",fplot$study)] <- sum(fplot$eC,na.rm=T)
   fplot$nC[grepl("Fixed-ef|Random-ef",fplot$study)] <- sum(fplot$nC,na.rm=T)
 
-  outcome <- colnames(x$studyResults)[2] # Anne: Changed to be more flexible
-  colnames(fplot)[which(colnames(fplot) == outcome)] <- "outcome" # Anne: Changed to be more flexible
+  outcome <- colnames(x$studyResults)[2]
+  colnames(fplot)[which(colnames(fplot) == outcome)] <- "outcome"
 
   fplot$out_ci <- paste0(sprintf(fplot$outcome, fmt = '%#.2f')," (",
-                        sprintf(fplot$lowerCI, fmt = '%#.2f'),"-",
-                        sprintf(fplot$upperCI, fmt = '%#.2f'),")")
+                         sprintf(fplot$lowerCI, fmt = '%#.2f'),"-",
+                         sprintf(fplot$upperCI, fmt = '%#.2f'),")")
   fplot$controls <- paste0(fplot$eC,"/",fplot$nC)
   fplot$controls[fplot$controls == "NA/NA"] <- ""
   fplot$experimental <- paste0(fplot$eI,"/",fplot$nI)
@@ -702,6 +704,14 @@ plot.metaanalysis <- function(x, type="both", ...){
   fplot$wR <- round(fplot$weightRandom)
   fplot$wR[fplot$wR < 10 & !is.na(fplot$wR)] <- round(fplot$weightRandom[fplot$wR <10 & !is.na(fplot$wR)],1)
 
+  #TODO: TYPE DEFINITION
+  # Ensure fixed effect model, if Tau = 0
+  if(x$synthesize$U[1]) type <- "fixed"; message <- "No heterogeneity, only fixed effect estimates presented"
+  if(type %in% c("both","fixed"))
+  if(type=="both") cat("TOBEIMPLEMENTED")
+  #TODO: ABOVE
+
+  #Define shapes and colors
   shapes <- grepl("Fixed-ef|Random-ef",fplot$study)*2+21
   sizes <- (fplot$weightRandom/100+0.5)*4
   sizes[is.na(sizes)] <- 3
@@ -710,14 +720,17 @@ plot.metaanalysis <- function(x, type="both", ...){
   colors[grepl("Fixed-ef",fplot$study)] <- "#0053a3"
   colors[grepl("Random-ef",fplot$study)] <- "#b30000"
 
-  nchar_n <- max(nchar(c(fplot$nI,fplot$nC)),na.rm=T)
+  # define x-axis
+  if(is.null(xlims)) xlims <- c(min(fplot$lowerCI),max(fplot$upperCI))
+  if(is.na(xlims[1])) xlims[1] <- min(fplot$lowerCI)
+  if(is.na(xlims[2])) xlims[2] <- max(fplot$upperCI)
 
-  xl <- list(`l0` = 10^(log10(min(fplot$lowerCI))-0.9),
-             `l1` = 10^(log10(min(fplot$lowerCI))-0.6),
-             `l2` = 10^(log10(min(fplot$lowerCI))-0.1),
-             `r1` = 10^(log10(max(fplot$upperCI))+0.9),
-             `r2` = 10^(log10(max(fplot$upperCI))+1.3),
-             `r3` = 10^(log10(max(fplot$upperCI))+1.6))
+  xl <- list(`l0` = 10^(log10(xlims[1])-0.9),
+             `l1` = 10^(log10(xlims[1])-0.6),
+             `l2` = 10^(log10(xlims[1])-0.1),
+             `r1` = 10^(log10(xlims[2])+0.9),
+             `r2` = 10^(log10(xlims[2])+1.3),
+             `r3` = 10^(log10(xlims[2])+1.6))
 
   xl2 <- c(unlist(unname(xl[-1])),mean(c(xl$r2,xl$r3)))
   xl2 <- xl2[order(xl2)]
@@ -741,41 +754,41 @@ plot.metaanalysis <- function(x, type="both", ...){
       sprintf(x$metaResults[x$metaResults == "Random","pValue"], fmt = '%#.4f'),
       ")")
 
-  p <- ggplot(fplot,aes(x=outcome,xmin=lowerCI,xmax=upperCI,y=yaxis)) +
+  ggplot(fplot,aes(x=outcome,xmin=lowerCI,xmax=upperCI,y=yaxis)) +
     geom_vline(xintercept = 1, color="gray", linetype=3) +
-    geom_segment(aes(x=outcome[grepl("Fixed-effect",study)],
-                     xend=outcome[grepl("Fixed-effect",study)],
-                     y=Inf,yend=yaxis[grepl("Fixed-effect",study)]),
+    geom_segment(aes(x=fplot$outcome[grepl("Fixed-effect",fplot$study)],
+                     xend=fplot$outcome[grepl("Fixed-effect",fplot$study)],
+                     y=Inf,yend=fplot$yaxis[grepl("Fixed-effect",fplot$study)]),
                      color = "#7cbfff") +
     {if(sum(grepl("Random-effect",fplot$study)) > 0) # ANNE: Changed to be if statement
-    geom_segment(aes(x=outcome[grepl("Random-effect",study)],
-                     xend=outcome[grepl("Random-effect",study)],
-                     y=Inf,yend=yaxis[grepl("Random-effect",study)]),
+    geom_segment(aes(x=fplot$outcome[grepl("Random-effect",fplot$study)],
+                     xend=fplot$outcome[grepl("Random-effect",fplot$study)],
+                     y=Inf,yend=fplot$yaxis[grepl("Random-effect",fplot$study)]),
                  color = "#ff8c8c")} +
-     geom_segment(aes(x=min(lowerCI),xend=max(upperCI),y=-Inf,yend=-Inf)) +
+     geom_segment(aes(x=xlims[1],xend=xlims[2],y=-Inf,yend=-Inf)) +
     annotate("text",x=xl$l1,y=fplot$yaxis,label=fplot$experimental,hjust=1) +
     annotate("text",x=xl$l2,y=fplot$yaxis,label=fplot$control,hjust=1) +
     annotate("text",x=xl$r1,y=fplot$yaxis,label=fplot$out_ci,hjust=1) +
     annotate("text",x=xl$r2,y=fplot$yaxis,label=fplot$wR,hjust=1) +
     annotate("text",x=xl$r3,y=fplot$yaxis,label=fplot$wF,hjust=1) +
     geom_segment(aes(x=0,xend=xl$l2, # dots before summary study side
-                     y=yaxis[study == "Fixed-effect"]+0.5,
-                     yend=yaxis[study == "Fixed-effect"]+0.5),
+                     y=fplot$yaxis[fplot$study == "Fixed-effect"]+0.5,
+                     yend=fplot$yaxis[fplot$study == "Fixed-effect"]+0.5),
                  linetype=3) +
-    geom_segment(aes(x=max(upperCI),xend=Inf, # dots after
-                     y=yaxis[study == "Fixed-effect"]+0.5,
-                     yend=yaxis[study == "Fixed-effect"]+0.5),
+    geom_segment(aes(x=xlims[2],xend=Inf, # dots after
+                     y=fplot$yaxis[fplot$study == "Fixed-effect"]+0.5,
+                     yend=fplot$yaxis[fplot$study == "Fixed-effect"]+0.5),
                  linetype=3) +
     labs(tag=heterogen)+
     geom_point(shape = shapes, color = colors, fill = colors,size=sizes) +
     geom_errorbar(color = colors, width=0) +
     theme_classic() +
     scale_colour_identity() +
-    scale_x_continuous(trans="log",
-      sec.axis = sec_axis(~.,breaks = xl2,labels=xlabs),
+    scale_x_continuous(trans="log10",
+      sec.axis = sec_axis(~.,breaks = xl2,label=xlabs),
       limits=c(xl$l0,xl$r3), name="o\no",
-      breaks=c(((round(max(fplot$upperCI))-1)/2+1)/10,1,(round(max(fplot$upperCI))-1)/2+1)) + # ANNE: Lower bound cannot handle upper over 100
-    scale_y_continuous(breaks=fplot$yaxis, labels=fplot$study) +
+      breaks=c(((round(xlims[2])-1)/2+1)/10,1,(round(xlims[2])-1)/2+1)) + 
+    scale_y_continuous(breaks=fplot$yaxis, label=fplot$study) +
     theme(axis.title.y = element_blank(),
           axis.line = element_blank(),
           axis.ticks.x.top = element_blank(), axis.line.y.left = element_blank(), axis.ticks.y.left = element_blank(),
@@ -783,7 +796,5 @@ plot.metaanalysis <- function(x, type="both", ...){
           axis.text.x.top = element_text(hjust=1,color="black"),
           axis.text.y = element_text(color="black",size=10,face="bold"),
           plot.tag.position = c(0,0), plot.tag = element_text(hjust=0, vjust=0, size=9))
-
-  return(p)
 
 }
