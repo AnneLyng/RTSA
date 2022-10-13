@@ -21,7 +21,9 @@ plot.RTSA = function(x, ...){
     zval <- x$zvalues
   } else {
     indi <- 2
-    zval <- x$zvalues[2,]
+    zval <- numeric(dim(x$zvalues)[2])
+    zval[!is.na(x$zvalues[2,])] <- x$zvalues[2,][!is.na(x$zvalues[2,])]
+    zval[is.na(x$zvalues[2,])] <- x$zvalues[1,][is.na(x$zvalues[2,])]
   }
 
   andat <- data.frame(zval = c(0,zval),

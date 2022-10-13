@@ -24,7 +24,7 @@
 #' data(perioOxy)
 #' RTSA(data = perioOxy, outcome = "RR", mc = 0.9, side = 2)
 RTSA <- function(data, side, outcome = "RR", mc, alpha = 0.05, beta = 0.2,
-                 futility = "none", fixed = FALSE,
+                 futility = "none", fixed = FALSE, anaTimes = NULL,
                  method = "MH", vartype = "equal", sign = NULL,
                  fixedStudy = FALSE,
                  hksj = FALSE,
@@ -57,7 +57,7 @@ RTSA <- function(data, side, outcome = "RR", mc, alpha = 0.05, beta = 0.2,
     RIS = nRandom(alpha = alpha*2, beta = beta, pI = pI, pC = pC,
                 diversity = ifelse(fixed == TRUE | syn$U[1] == 0, 0, syn$U[4]))
   } else {
-    RIS = nRandom(alpha = alpha, beta = beta, pI = pI, pC = pC,
+    RIS = RTSA:::nRandom(alpha = alpha, beta = beta, pI = pI, pC = pC,
                   diversity = ifelse(fixed == TRUE | syn$U[1] == 0, 0, syn$U[4]))
   }
 
@@ -73,7 +73,11 @@ RTSA <- function(data, side, outcome = "RR", mc, alpha = 0.05, beta = 0.2,
     timing[timing>1] = 1
   }
 
-  RTSAout = TSA(timing = timing, side = side, synth = mp, ana_time = 1:length(timing[timing <= 1]),
+  if(is.null(anaTimes)){
+    anaTimes <- 1:length(timing[timing <= 1])
+  }
+
+  RTSAout = TSA(timing = timing, side = side, synth = mp, ana_time = anaTimes,
                 alpha = alpha, beta = beta, futility = futility, mc = mc, sign = sign,
                 fixedStudy = fixedStudy,
                 hksj = hksj,

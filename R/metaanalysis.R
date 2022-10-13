@@ -663,7 +663,7 @@ print.metaanalysis <- function(x,...){
 
 # FUNCTION | plot metaanalysis ----
 #' @method plot metaanalysis
-#' @importFrom ggplot2 annotate labs scale_colour_identity
+#' @importFrom ggplot2 annotate labs scale_colour_identity geom_errorbar
 #' @export
 plot.metaanalysis <- function(x, type="both", ...){
 #TODO: Size depending on weight, prioritise Random
@@ -768,10 +768,10 @@ plot.metaanalysis <- function(x, type="both", ...){
                  linetype=3) +
     labs(tag=heterogen)+
     geom_point(shape = shapes, color = colors, fill = colors,size=sizes) +
-    #geom_errorbar(color = colors, width=0) +
+    geom_errorbar(color = colors, width=0) +
     theme_classic() +
     scale_colour_identity() +
-    scale_x_continuous(trans="log10",
+    scale_x_continuous(trans="log",
       sec.axis = sec_axis(~.,breaks = xl2,labels=xlabs),
       limits=c(xl$l0,xl$r3), name="o\no",
       breaks=c(((round(max(fplot$upperCI))-1)/2+1)/10,1,(round(max(fplot$upperCI))-1)/2+1)) + # ANNE: Lower bound cannot handle upper over 100

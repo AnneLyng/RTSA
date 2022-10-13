@@ -72,7 +72,7 @@ A forest-plot can be generated for the meta-analysis output:
 plot(ma)
 ```
 
-# TSA: Trial sequential meta-analysis
+# TSA: Trial sequential analysis
 
 Suppose that the meta-analysis above was not performed once, but repeatedly as the trials were reported. In a naive analysis, the type-1-error would be inflated had the meta-analysis been calculated sequentially. To control type-1-error, one can impose a sequential design. TSA can illustrate whether we would have had the same conclusion had the hypothesis test been made in a sequential design. 
 
@@ -113,11 +113,9 @@ inf_frac <- c(count/RIS,1)
 inf_frac
 ```
 
-## One-sided designs
-
 We will consider three different one-sided designs. These are respectively: One-sided testing wit no futility, one-sided testing with non-binding futility and one-sided testing with binding futility. 
 
-### One-sided testing with no futility
+## One-sided test with no futility
 
 By specifying `side = 1`, we have a one-sided test. Per default does the `RTSA` function assume no futility boundaries. 
 
@@ -132,7 +130,7 @@ RTSAout$zvalues
 
 We can also plot the one-sided TSA:
 
-```{r}
+```{r fig.align = 'center'}
 plot(RTSAout)
 ```
 
@@ -148,13 +146,13 @@ RTSAout_nb <- RTSA(data = perioOxy, outcome = "RR", mc = 0.65, side = side, alph
 
 Again, can we plot the RTSA object: 
 
-```{r}
+```{r fig.align = 'center'}
 plot(RTSAout_nb)
 ```
 
 Note that we require more participants in the non-binding futility design compared to the one-sided design with no futility. 
 
-## One-sided test and non-binding futility
+## One-sided test and binding futility
 
 By using the same specifications as before but including `futility = "binding"`, we create a one-sided test design with binding futility. 
 
@@ -165,7 +163,7 @@ RTSAout_b <- RTSA(data = perioOxy, outcome = "RR", mc = 0.65, side = side, alpha
 
 Again, can we plot the RTSA object: 
 
-```{r}
+```{r fig.align = 'center'}
 plot(RTSAout_b)
 ```
 

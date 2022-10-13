@@ -484,7 +484,7 @@ TSA = function(timing,
                       side = side,
                       alpha = alpha, beta = beta)
 
-  # create power function (maybe move)
+  # create power function
   right_power <- function(x, inner, outer, theta){
     info <- sd_inf(trials[,1]*x)
     pwr <- ma_power(upper_bound = outer$alpha_ubound, theta = theta,
@@ -492,12 +492,12 @@ TSA = function(timing,
     pwr - (1-beta)
   }
 
-  # create warp function
-  getWarp <- function(x, outer){
+  # make futility boundaries meet alpha spending boundaries
+  getWarp <- function(x, outer, rm_bs = NULL){
     a <- getInnerWedge(inf_frac = trials[, 1]*x, beta = beta,
                        side = 1, zninf = -20, tol = 1e-13,
                        outer_boundaries = outer,
-                       delta = NULL)$za[length(trials[, 1])]
+                       delta = NULL, rm_bs = rm_bs)$za[length(trials[, 1])]
     outer$alpha_ubound[length(trials[, 1])] - a
   }
 
@@ -600,8 +600,89 @@ TSA = function(timing,
       info <- sd_inf(trials[,1]*root)
       t1e <- ma_power(upper_bound = -ub$za, theta = 0,
                              info = info, za = lb$za)
+      pwr <- ma_power(upper_bound = -ub$za, theta = boundout$delta,
+                      info = info, za = lb$za)
+
+      boundout$alpha_ubound <- -ub$za
+      boundout$alpha_lbound <- lb$za
 
     }
+
+    } else if(side == 2 & futility == "none"){
+
+      root <- uniroot(right_power, lower = 0.9, upper = 1.5, tol = 1e-13,
+                      inner = boundout$alpha_lbound, outer = boundout,
+                      theta = boundout$delta)$root
+
+      info <- sd_inf(timing*root)
+      pwr <- ma_power(upper_bound = boundout$alpha_ubound, theta = boundout$delta,
+                      info = info, za = boundout$alpha_lbound)
+      t1e <- ma_power(upper_bound = boundout$alpha_ubound, theta = 0,
+                      info = info, za = boundout$alpha_lbound)
+
+
+      } else if(side == 2 & futility == "non-binding"){
+      lb <- RTSA:::getInnerWedge(inf_frac = timing, beta = beta,
+                                 side = 2, fakeIFY = 0,zninf = -20, tol = 1e-13,
+                                 outer_boundaries = boundout,
+                                 delta = NULL)
+
+      getWarp <- function(x, outer){
+        a <- RTSA:::getInnerWedge(inf_frac = timing*x, beta = beta,
+                                  side = 2, zninf = -20, tol = 1e-13,
+                                  outer_boundaries = outer,
+                                  delta = NULL)$za[length(timing)]
+        outer$alpha_ubound[length(timing)] - a
+      }
+
+      root <- uniroot(getWarp, lower = 0.9, upper = 1.5, outer = boundout,
+                      tol = 1e-13)$root
+
+      lb <- RTSA:::getInnerWedge(inf_frac = timing*root, beta = beta,
+                                 side = 2,zninf = -20, tol = 1e-13,
+                                 outer_boundaries = boundout,
+                                 delta = NULL)
+
+      lb <- RTSA:::getInnerWedge(inf_frac = timing*root, beta = beta,
+                                 side = 2,zninf = -20, tol = 1e-13,
+                                 outer_boundaries = boundout,
+                                 delta = NULL, rm_bs = 3)
+
+      getWarp <- function(x, outer){
+        a <- RTSA:::getInnerWedge(inf_frac = timing*x, beta = beta,
+                                  side = 2, zninf = -20, tol = 1e-13,
+                                  outer_boundaries = outer,
+                                  delta = NULL, rm_bs = 3)$za[length(timing)]
+        outer$alpha_ubound[length(timing)] - a
+      }
+
+      root <- uniroot(getWarp, lower = 0.9, upper = 1.5, outer = boundout,
+                      tol = 1e-13)$root
+
+      lb <- RTSA:::getInnerWedge(inf_frac = timing*root, beta = beta,
+                                 side = 2,zninf = -20, tol = 1e-13,
+                                 outer_boundaries = boundout,
+                                 delta = NULL, rm_bs = 3)
+
+      right_power <- function(x, inner, outer, theta){
+        info = RTSA:::sd_inf(timing*x)
+        pwr <- RTSA:::ma_power(upper_bound = outer$alpha_ubound, theta = theta,
+                               info = info, za = inner)[[2]]
+        pwr - (1-beta)
+      }
+
+
+      root <- uniroot(right_power, lower = 0.9, upper = 1.2, tol = 1e-13,
+                      inner = lb$za, outer = boundout, theta = boundout$delta)$root
+
+      info = RTSA:::sd_inf(timing*root)
+      RTSA:::ma_power(upper_bound = boundout$alpha_ubound, theta = boundout$delta,
+                      info = info, za = lb$za)
+      RTSA:::ma_power(upper_bound = boundout$alpha_ubound, theta = 0,
+                      info = info, za = lb$za)
+
+
+    } else if(side == 2 & futility == "binding"){
 
     boundout$alpha_ubound <- -ub$za
     boundout$alpha_lbound <- lb$za
@@ -610,21 +691,14 @@ TSA = function(timing,
                     info = info, za = lb$za)
     t1e <- ma_power(upper_bound = boundout$alpha_ubound, theta = 0,
                     info = info, za = lb$za)
-  } else {
-    root <- 1
-    info <- sd_inf(trials[,1]*root)
-    pwr <- ma_power(upper_bound = boundout$alpha_ubound, theta = boundout$delta,
-                    info = info, za = boundout$alpha_lbound)
-    t1e <- ma_power(upper_bound = boundout$alpha_ubound, theta = 0,
-                    info = info, za = boundout$alpha_lbound)
   }
 
 
   # calculate the cum. z-score (do we want this per study?)
-  zout = lapply(ana_time[ana_time <= dim(synth$data)[1]],
+  zout = lapply(1:dim(synth$data)[1], #ana_time[ana_time <= dim(synth$data)[1]],
                 function(x) {
-                  synout = synthesize(
-                    metaPrepare(
+                  synout = RTSA:::synthesize(
+                    RTSA:::metaPrepare(
                       data = synth$data[1:x,],
                       outcome = synth$outcome,
                       method = synth$method,
@@ -637,17 +711,19 @@ TSA = function(timing,
                   return(synout)
                 })
 
-  names(zout) = ana_time[ana_time <= dim(synth$data)[1]]
+  names(zout) = 1:dim(synth$data)[1]
   if("1" %in% names(zout) &
      length(grep("peR", names(unlist(zout)))) > 0){
     zout[["1"]]$peR <- c(0, 0, 0, zout[["1"]]$peF[4])
   }
 
-  zvalues = sapply(names(zout), function(x){c(zout[[x]]$peF[4], zout[[x]]$peR[4])})
+  length(grep("peR", names(unlist(zout[["6"]]))))
+
+  zvalues = sapply(names(zout), function(x){c(zout[[x]]$peF[4], ifelse(length(grep("peR", names(unlist(zout[[x]]))))!=0,zout[[x]]$peR[4], NA))})
 
   if (confInt == TRUE) {
     if(is.null(stopTime)){ stopTime =
-      as.character(max(ana_time[ana_time <= dim(synth$data)[1]]))}
+      as.character(dim(synth$data)[1])} #max(ana_time[ana_time <= dim(synth$data)[1]])
     naiveCI = list(CIfixed = zout[[stopTime]]$peF[c(2, 3)],
                    CIrandom = zout[[stopTime]]$peR[c(2, 3)])
     adjCI = list(
