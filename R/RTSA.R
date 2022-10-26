@@ -22,10 +22,10 @@
 #'
 #' @examples
 #' data(perioOxy)
-#' RTSA(data = perioOxy, outcome = "RR", mc = 0.9, side = 2)
+#' RTSA(data = perioOxy, outcome = "RR", mc = 0.7, side = 2, alpha = 0.05, beta = 0.2)
 RTSA <- function(data, side, outcome = "RR", mc, alpha = 0.05, beta = 0.2,
-                 futility = "none", fixed = FALSE, anaTimes = NULL,
-                 method = "MH", vartype = "equal", sign = NULL,
+                 futility = "none", fixed = FALSE, ana_time = NULL,
+                 method = "IV", vartype = "equal", sign = NULL,
                  fixedStudy = FALSE,
                  hksj = FALSE,
                  tau.ci.method = "BJ",...){
@@ -57,7 +57,7 @@ RTSA <- function(data, side, outcome = "RR", mc, alpha = 0.05, beta = 0.2,
     RIS = nRandom(alpha = alpha*2, beta = beta, pI = pI, pC = pC,
                 diversity = ifelse(fixed == TRUE | syn$U[1] == 0, 0, syn$U[4]))
   } else {
-    RIS = RTSA:::nRandom(alpha = alpha, beta = beta, pI = pI, pC = pC,
+    RIS = nRandom(alpha = alpha, beta = beta, pI = pI, pC = pC,
                   diversity = ifelse(fixed == TRUE | syn$U[1] == 0, 0, syn$U[4]))
   }
 
@@ -73,18 +73,19 @@ RTSA <- function(data, side, outcome = "RR", mc, alpha = 0.05, beta = 0.2,
     timing[timing>1] = 1
   }
 
-  if(is.null(anaTimes)){
-    anaTimes <- 1:length(timing[timing <= 1])
+  if(is.null(ana_time)){
+    ana_time <- 1:length(timing[timing <= 1])
   }
 
-  RTSAout = TSA(timing = timing, side = side, synth = mp, ana_time = anaTimes,
+  RTSAout = TSA(timing = timing, side = side, synth = mp, ana_time = ana_time,
                 alpha = alpha, beta = beta, futility = futility, mc = mc, sign = sign,
                 fixedStudy = fixedStudy,
                 hksj = hksj,
                 tau.ci.method = tau.ci.method)
-  RTSAout$Pax <- list(RIS = RIS, p0 = p0, pI = pI, pC = pC)
+  RTSAout$Pax <- list(RIS = RIS, p0 = p0, pI = pI, pC = pC, subjects = subjects)
   RTSAout$orgTiming = orgTiming
   RTSAout$adjRIS = RIS*RTSAout$root
+  RTSAout$adjTiming <- c(subjects/RTSAout$adjRIS)
   RTSAout$root = RTSAout$root
   RTSAout$AIS = sum(data$nC+data$nI)
   class(RTSAout) <- c("list", "RTSA")

@@ -3,6 +3,7 @@ title: "Calculating required sample size and required number of trials"
 output: 
   bookdown::html_document2:
     fig_caption: yes
+bibliography: /home/anne/Documents/PhD/packages/RTSA/phd.bib
 vignette: >
   %\VignetteIndexEntry{required-sample-size}
   %\VignetteEncoding{UTF-8}
@@ -19,17 +20,12 @@ options(rmarkdown.html_vignette.check_title = FALSE)
 
 # Introduction
 
-RTSA is intended as a tool for sequential meta-analysis using Trial Sequential Analysis (TSA) in statistical software R. This vignette will explore the different methods for calculating the required sample size and the required number of trials to achieve a specific power in a meta-analysis. All methods are implemented in the RTSA package. 
+This vignette will explore the different methods for calculating the required sample size and the required number of trials to achieve a specific power in a meta-analysis. All methods are implemented in the `RTSA` package. The sample size calculations are intended for meta-analyses and not single studies. 
 
-Note that we will not consider meta-analyses in a sequential setting in this vignette. All simulation results are conducted on non-sequential meta-analyses.
-
-# Setup 
-
-To use the functions in this vignette, are the following packages needed:
+The methods for calculating sample size in a meta-analysis, which we call required information size (or required number of participants) differ depending on whether or not there is heterogeneity present. We will present required information size methods for meta-analyses with and without heterogeneity. 
 
 ```{r setup}
 library(RTSA)
-library(bookdown)
 ```
 
 ```{r, echo = FALSE}
@@ -37,34 +33,55 @@ library(grid)
 library(tiff)
 ```
 
-# Methods
+## Java implementation vs `RTSA`
 
-Some of the methods presented in this vignette are implemented in the original TSA software, where others are only available in the RTSA package. 
+Some of the methods presented in this vignette are implemented in the original TSA software, where others are only available in the `RTSA` package. 
 
-The methods for calculating sample size in a meta-analysis, which we call required information size (or required number of participants) differ depending on whether or not there is heterogeneity present. We will present required information size methods for meta-analyses with and without heterogeneity. 
+# Estimation of heterogeneity
+
+We will be considering heterogeneity a lot in this vignette. When heterogeneity is expected or present, we need to adjust our meta-analysis to accommodate this extra source of variation. When there is heterogeneity present in a meta-analysis, we use either $\tau^2$, $I^2$ (inconsistency) or $D^2$ (diversity) to try an quantify the level of heterogeneity. These metrics are however quite difficult to estimate in most meta-analyses and are often very uncertain. This is especially true for small meta-analyses, which do not include many studies. Heterogeneity has an impact on both the interpretation of the meta-analysis results and on the power calculation as described in @Ioannidis2007. It is strongly recommended that this uncertainty must be reported and taken into consideration when both interpreting the results of the meta-analysis and when conducting the sample size calculation. The `RTSA` package includes confidence intervals and standard errors on the measures of heterogeneity: $\tau^2, I^2$ and $Q^2$. These intervals calculated via the `confint.rma.uni()` function from the `metafor` package in `R`.
+
+We will see in this vignette how to incorporate the estimation uncertainty when doing a sample size calculation. The original sample size calculation in TSA did not incorporate the uncertainty.
+
+We start however with considering scenarios without heterogeneity. 
+
+# Prospective meta-analysis
+
+When the sample size calculation isn't based on an existing meta-analysis, we are considering a prospective meta-analysis. This section is about the power of yet to be conducted meta-analyses. We are investigating how many participants and trials we need for a prospective meta-analysis. 
+
+To use a current meta-analysis for calculating how many more participants and trials are needed for achieving a specific level of power is investigated in the Retrospective section \@ref(retro). We recommend that one reads the prospective section before looking at the retrospective section.  
 
 ## No heterogeneity
 
-For meta-analyses without heterogeneity, we will be fitting fixed-effect models, whereas we will be fitting random-effects models for meta-analyses with heterogeneity. 
+For meta-analyses without heterogeneity, we will be fitting fixed-effect meta-analysis models, whereas we will be fitting random-effects meta-analysis models for meta-analyses with heterogeneity. 
 
-For a fixed-effect model we will use the sample size formula for a single trial with a normally distributed outcome. The required information size (RIS) is presented as the total number of participants needed to achieve a specific power. The total number of participants counts both the number of participants in the control and the intervention group.
+For a fixed-effect meta-analysis we will use the sample size formula for a single trial with a normally distributed outcome. The required information size (RIS) is presented as the total number of participants needed to achieve a specific power. The total number of participants counts both the number of participants in the control and the intervention group. The formula is defined as:
 
-\begin{align} \label{fixedRIS}
-RIS = 4 \cdot (z_{1-\alpha/2} + z_\beta)^2 \cdot \frac{\nu}{\theta^2}.
+\begin{align} 
+RIS = 4 \cdot (z_{1-\alpha/side} + z_\beta)^2 \cdot \frac{\nu}{\theta^2}. (\#eq:fixedRIS)
 \end{align}
 
-For binary data is $\nu = p_0\cdot(1-p_0)$ with $p_0 = (p_I + p_C)/2$ and $\theta = p_C - p_I$ where $p_I$ is the proportion of events in the intervention group and $p_C$ is the proportion of events in the control group. For continuous data $\theta$ is an a priori estimate of the difference in means between the two treatment groups and $\nu$ is the assumed variance.
+For binary data is $\nu = p_0\cdot(1-p_0)$ with $p_0 = (p_I + p_C)/2$ and $\theta = p_C - p_I$ where $p_I$ is the proportion of events in the intervention group and $p_C$ is the proportion of events in the control group. For continuous data $\theta$ is an a priori estimate of the difference in means between the two treatment groups and $\nu$ is the assumed variance. 
 
-Suppose we assume an effect of intervention compared to control resulting in a risk ratio of $RR = 0.9$ with a common probability of event being $p_0 = 0.1$. We can then set $p_I = \exp(\log(p_0)+\log(RR)/2)$ and $p_C = \exp(\log(p_0)-\log(RR)/2)$. To calculate the number of required participants, we use the RTSA function nFixed.
+What we need to define in order to make the sample size calculation differs depending on whether our outcome is risk ratios (RR), odds ratios (OR), risk differences (RD) or mean differences (cont). For mean differences, we need specification of: 
+
+- The minimum clinically relevant difference $\delta$.
+- Its expected standard deviation $s.e.(\delta)$
+- test type (one- or two-sided), type-I-error and type-II error levels
+
+For RR, OR or RD, we need specification of:
+
+- The minimum clinically relevant difference $\delta$
+- Common probability of event $p_0$
+- test type (one- or two-sided), type-I-error and type-II error levels
+
+Suppose we assume an effect of intervention compared to control resulting in a risk ratio of $RR = 0.9$ with a common probability of event being $p_0 = 0.1$. To calculate the number of required participants, we use the RTSA function `ris()`. `alpha` and `beta` have default values of 0.05 and 0.2 and we consider a two-sided test, hence `side = 2`, which is also the default value. 
 
 ```{r}
-log.RR = log(0.9); log.p0 = log(0.1)
-pI = exp(log.p0+log.RR/2)
-pC = exp(log.p0-log.RR/2)
-RTSA:::nFixed(alpha = 0.05, beta = 0.2, pI = pI, pC = pC, binary = TRUE)
+ris(outcome = "RR", delta = 0.9, p0 = 0.1)
 ```
 
-We investigate via simulation if the RIS estimated provide the correct power. In the simulation study we let the number of participants in the meta-analysis range from around 2500 to 25000 which were split over 10 trials equally. Hence for a meta-analysis of 2500, the number of participants per trial is 250. For each considered number of participants in the meta-analysis, we run 10000 simulations, thus 10000 meta-analyses. For each meta-analysis, we set the $RR=0.9$ and the common event of probability to $0.1$. We fit one fixed-effect model and two random-effects models using either DerSimonian-Laird (DL) or Hartung-Knapp-Sidik-Jonkman (HKSJ) per simulated meta-analysis. For a visualization of the effect of increasing the number of participants, see Figure \@ref(fig:powerFixed). 
+We investigate via simulation if the RIS estimated provide the correct power. In the simulation study we let the number of participants in the meta-analysis range from around 2500 to 25000. The participants were equally split over 10 trials. Hence for a meta-analysis of 2500, the number of participants per trial is 250. For each considered number of participants in the meta-analysis, we run 10000 simulations, thus 10000 meta-analyses. For each meta-analysis, we set the $RR=0.9$ and the common event of probability to $0.1$. We fit one fixed-effect model and two random-effects models using either DerSimonian-Laird (DL) or Hartung-Knapp-Sidik-Jonkman (HKSJ) per simulated meta-analysis. For a visualization of the effect of increasing the number of participants, see Figure \@ref(fig:powerFixed). 
 
 ```{r fixed-power-code, include = FALSE, eval = FALSE}
 outl = matrix(NA, ncol = 3, nrow = 10)
@@ -127,17 +144,11 @@ From Figure \@ref(fig:powerFixed), we see that the RIS estimated, provide the co
 
 ## Heterogeneity
 
-We will be fitting random-effects models for meta-analyses with heterogeneity. 
-
-In the original TSA software is the required sample size for models with heterogeneity a scaled version of the sample size calculation for a fixed-effect model. The required information size is scaled based on a formula depending on $\tau^2$ which increases the number of required participants. 
-
-The original TSA formulas do not give an estimate of the required number of trials to achieve a specific power. Recent papers have shown a need for a minimum number of trials to achieve a specific power when heterogeneity is present. We will present a method for calculating the required number of trials in this section.
-
-We start with presenting the methods implemented in the original TSA software before presenting the newly added methods that calculate the required number of trials.
-
 ### Sample size estimation in TSA 
 
-For the required sample size calculation, TSA uses the following formulas depending on the choice of using either diversity $D^2$ or inconsistency $I^2$. 
+The original TSA formulas do not give an estimate of the required number of trials to achieve a specific power. Recent papers have shown a need for a minimum number of trials to achieve a specific power when heterogeneity is present @Kulinskaya2013. We will present a method for calculating the required number of trials in this section.
+
+We start with presenting the methods implemented in the original TSA software before presenting the newly added methods that calculate the required number of trials. For the required sample size calculation, TSA uses the following formulas depending on the choice of using either diversity $D^2$ or inconsistency $I^2$. 
 
 \begin{align}
 RIS_{D^2} = \frac{1}{1-D^2}\cdot 4 \cdot (z_{1-\alpha/2} + z_\beta)^2 \cdot \frac{\nu}{\theta^2}.
@@ -152,17 +163,15 @@ where $D^2$ is the diversity, $I^2$ is the inconsistency. Diversity and Inconsis
 D^2 = \frac{\tau^2}{\tau^2 + \sigma^2_D}, \quad I^2 = \frac{\tau^2}{\tau^2 + \sigma^2_M}.
 \end{align*}
 
-An example of calculating RIS using RIS based on Diversity is given below.
+For more information about the two formulas see @Wetterslev2009. 
+
+An example of calculating RIS using RIS based on diversity ($D^2$) or inconsistency ($I^2$) is given below.
 
 ```{r}
-log.RR = log(0.9); log.p0 = log(0.1)
-pI = exp(log.p0+log.RR/2)
-pC = exp(log.p0-log.RR/2)
-RTSA:::nRandom(alpha = 0.05, beta = 0.2, pI = pI, pC = pC, diversity = 0.77)
+ris(outcome = "RR", delta = 0.9, p0 = 0.2, random = TRUE, I2 = 0.2, D2 = 0.3)
 ```
 
-
-To investigate if the method will provide an RIS to achieve sufficient power, we make a simulation study. Consider a scenario where $RR = 0.9$ with a $p_0 = 0.1$ and $\tau^2=0.05$. Each $RIS$ formula is depending on $D^2$ or $I^2$, so we need a guess or an estimate of $\tau$ and an guess or estimate of $\sigma_D$ or $\sigma_M$. We choose to use estimates. For each simulation we make an initial meta-analysis of 10 studies where each study has 500 participants. From the meta-analyses we estimate $\tau$, $\sigma_D$ and $\sigma_D$. From these estimates, we can calculate $RIS_{D^2}$ and $RIS_{I^2}$ providing us with the needed number of participants. An additional trial is then added to achieve the RIS. Redoing this 10000 times, we wish to see how many times the null hypothesis is rejected to investigate if we on average achieve the right power. 
+To investigate if the method will provide an RIS to achieve sufficient power, we make a simulation study. Consider a scenario where $RR = 0.9$ with a $p_0 = 0.1$ and $\tau^2=0.05$. Each $RIS$ formula is depending on $D^2$ or $I^2$, so we need a guess or an estimate of $\tau$ and an estimate of $\sigma_D$ or $\sigma_M$. For each simulation we make an initial meta-analysis of 10 studies where each study has 500 participants. From the meta-analyses we estimate $\tau$, $\sigma_D$ and $\sigma_M$. From these estimates, we can calculate $RIS_{D^2}$ and $RIS_{I^2}$ providing us with the needed number of participants. An additional trial is then added to achieve the RIS. Redoing this 10000 times, we wish to see how many times the null hypothesis is rejected to investigate if we on average achieve the right power. 
 
 To investigate the effect of more trials, we increase the number of added trials to the meta-analysis from 1 to 10. 
 
@@ -284,9 +293,13 @@ knitr::kable(outm, caption = "Power per model as a function of number of extra t
 ```
 We see that we do not reach 80% power, and that we need an estimate for the number of trials, to be able to reach a given power with certainty. 
 
+```{r}
+ris(outcome = "RR", delta = 0.9, p0 = 0.2, tau2 = 0.01, random = TRUE)
+```
+
 ### Newly added methods to RTSA
 
-We have looked at the power of non-sequential meta-analyses given heterogeneity $\tau^2$. It was clear that to achieve the wanted level of power, there is an required minimum of trials needed. We will now give the formula for calculating the minimum number of required trials. Let $\tilde{\theta}$ be the intervention effect, which will be the $\log(RR)$ in our case, $\alpha$ and $\beta$ are respectively the type-1 and type 2 error rates and $z_{x}$ is the quantile from the normal distribution at $x$. Then we will need to fulfill the following equation, to ensure that we have the right error rates.
+We have looked at the power of meta-analyses given heterogeneity $\tau^2$. It was clear that to achieve the wanted level of power, there is an required minimum of trials needed. We will now give the formula for calculating the minimum number of required trials. Let $\tilde{\theta}$ be the intervention effect, which will be the $\log(RR)$ in our case, $\alpha$ and $\beta$ are respectively the type-1 and type 2 error rates and $z_{x}$ is the quantile from the normal distribution at $x$. Then we will need to fulfill the following equation, to ensure that we have the right error rates @Kulinskaya2013.
 
 $$\frac{\tilde{\theta}}{\sqrt{\text{Var}(\tilde{\theta})}} =
 z_{1-\alpha/2}+z_{1-\beta}, \quad \text{where} \quad
@@ -312,16 +325,10 @@ K}{\left(z_{1-\alpha/2}+z_{1-\beta}\right)^2} - \tau^2}.
 
 We wish to compare the methods originally implemented in the TSA software with the new methods for calculating both the required number of participants and the required number of trials. 
 
-We set $RR = 0.9$, $p_0 = 0.1$ and $\tau^2 = 0.05$. With these values we get the following minimum number of required trials:
+We set $RR = 0.9$, $p_0 = 0.1$ and $\tau^2 = 0.01$. With these values we get the following minimum number of required trials:
 
 ```{r}
-minTrial(metric = "RR", value = 0.9, tau2 = 0.05)
-```
-
-With this number of trials and under some simplifying assumptions the number of participants per trial can be calculated as: 
-
-```{r}
-minTrial(metric = "RR", value = 0.9, tau2 = 0.05, p0 = 0.1, verbose = TRUE)
+ris(outcome = "RR", delta = 0.9, random = TRUE, tau2 = 0.01, p0 = 0.3)
 ```
 
 The wanted level of power is reached for each of the combinations of the number of trials and required participants per trial, as seen in Table \@ref(tab:random). The results are based on 10000 simulated meta-analyses. The calculated power is shown for a fixed-effect model and two random-effects models where one is using the DerSimonian-Laird estimator (DL) for heterogeneity and the other is adjusted with the Hartung-Knapp-Sidik-Jonkman(HKSJ) adjustment. 
@@ -337,7 +344,7 @@ theta = round(pC - pI,4)
 nsim = 10000
 tau2 = 0.05
 
-trial.out = minTrial(metric = "RR", value = 0.9, tau2 = 0.05, p0 = 0.1, verbose = TRUE)
+trial.out = minTrial(outcome = "RR", delta = 0.9, tau2 = 0.05, p0 = 0.1)
 
 outtau = numeric(nsim)
 outpvalue = matrix(NA, ncol = 3, nrow = nsim)
@@ -388,24 +395,76 @@ load("random-effects.Rda")
 knitr::kable(outl[,c(4,5,1,2,3)], caption = "Power per model as a function of number of trials and number of participants per trial")
 ```
 
-## Application 
+# Reactive (retrospective) meta-analysis {#retro}
 
-We will see how many trials are required in the `perioOxy` data set if we use a random effects model. We can for now only calculate the min number of trials for RR. We will need an estimate for $\tau^2$, the common probability of event `p0` and a minimum clinically relevant value for RR. We set the latter to 0.9. 
+When we are making a meta-analysis, we might be interested in the following:
 
-```{r}
-tau2 <- metaanalysis(data = perioOxy, outcome = "RR")$synthesize$U[1]
-pC <- (sum(perioOxy$eI)+sum(perioOxy$eC))/(sum(perioOxy$nI)+sum(perioOxy$nC))
-minTrial(metric = "RR", tau2 = tau2, p0 = pC, value = 0.9)
-```
-We will need 74 trials - depressing .... Changing the minimum clincally value of RR to 0.8:
+1. Is the current meta-analysis underpowered?
+2. How much more information do I need to achieve a certain level of power in a subsequent meta-analysis? 
 
-```{r}
-minTrial(metric = "RR", tau2 = tau2, p0 = pC, value = 0.8)
-```
-Gives a smaller number of required trials. And had the heterogeneity been half of the estimated value, we get:
+Trying to answer either of the two points can be problematic in terms of introducing bias. Hence doing a retrospective analysis requires attention to the fact that the results should be interpreted carefully and should not be judged naively. We will explain this in more detail throughout this section. 
+
+## Current power of meta-analysis
+
+We can calculate the current power of the meta-analysis by defining the minimal clinically relevant value called `delta` in the `metaanalysis` function. We use the formulas presented in @Jackson2017 to calculate the current power for respectively a fixed- and random-effects meta-analysis.
 
 ```{r}
-minTrial(metric = "RR", tau2 = tau2/2, p0 = pC, value = 0.9)
+ma <- metaanalysis(data = perioOxy, outcome = "RR", delta = 0.9)
+ma$pwr_fe # power of the fixed-effect model
+ma$pwr_re # power of the random-effects model
+```
+Note that the formula for the power calculation of the random-effects meta-analysis required an estimate of $\tau^2$. Due to the uncertainty of the estimate, the power might be very different depending on the true value of $\tau^2$. We will look more into how to handle the uncertainty about $\tau^2$ in the following sections. 
+
+## No heterogeneity
+
+We can calculate in a fixed-effects meta-analysis the extra number of required participants using equation \@ref(eq:fixedRIS). By subtracting the number of acquired participants, we have an estimate for how many more participants we need to have a well-powered meta-analysis. As it is believed in the fixed-effect meta-analysis that the effect of interest is identical across trials, there is no requirement for the power to be achieved to make multiple additional studies. One suffices if it has the right sample size. 
+
+```{r}
+ma <- metaanalysis(data = perioOxy, outcome = "RR", delta = 0.8, beta = 0.1,
+                   p0 = 0.15, power_calc = TRUE)
+ma$out_ris
 ```
 
-That 37 trials are needed. 
+As seen in the example we need 244 more participants for a fixed-effect meta-analysis with 90% power. 
+
+## Heterogeneity
+
+We use an updated version of the formulas used for prospective meta-analyses. Again we use the formulas from @Kulinskaya2013. Using the following inequality we can find the remaining number of trials: 
+
+\begin{align}
+\tau^2 < \frac{K}{\left(z_{1-\alpha/2}+z_{1-\beta}\right)^2/\hat{\theta}^2-1/\sigma^2_{R}}
+\end{align}
+
+Under simplifying assumptions, such as assuming all trials have the same variation of the estimated treatment effect and they are all of the same size, we can then calculate the number of participants to:
+
+\begin{align}
+RIS_{New} = \frac{2\cdot \sigma^2}{\frac{
+K}{\left(z_{1-\alpha/2}+z_{1-\beta}\right)^2/\tilde{\theta}^2-1/\sigma^2_{R}} - \tau^2}.
+\end{align}
+
+In both formulas are the $\sigma^2_{R}$ the current estimate of the variance of the pooled effect in the random-effects meta-analysis. 
+
+```{r}
+ma <- metaanalysis(data = perioOxy, outcome = "RR", delta = 0.8, beta = 0.1,
+                   p0 = 0.15, power_calc = TRUE)
+ma$out_ris
+```
+
+Here we find that we additionally need 22836 participants over 22 trials to have sufficient power given the estimate of $\tau^2$. 
+
+If we take into consideration the uncertainty of the $\tau^2$ estimate, we can compute the additional number of participants and trials given the lower and upper limit of the $\tau^2$ estimate. For the lower limit of $\tau^2$, we have that we need at minimum 3 more trials with 5034 particpants per trial:
+```{r}
+ma$out_ris$NR_bc
+```
+If we increase the number of additional trials to 6, we need 1049 per trial.
+
+In the worst case scenario we need way more. Here the minimum number of required trials are 185 additionally. This shows that we have a lot of uncertainty about the $\tau^2$ estimate. 
+```{r}
+ma$out_ris$NR_wc
+```
+
+# Sequential meta-analysis power calculation
+
+The sample size and number of trials requirements for sufficient power in a sequential meta-analysis are close to the requirements of a non-sequential meta-analysis. There will however be a small adjustment of the number of participants due to multiple looks/testing. 
+
+# References

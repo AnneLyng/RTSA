@@ -86,6 +86,8 @@
     "veroniki2015"
     "jackson2013"
     "Jennison1999"
-    "demets1994"))
- :bibtex)
+    "demets1994"
+    "Jackson2017"
+    "Hedges2001"))
+ '(or :bibtex :latex))
 

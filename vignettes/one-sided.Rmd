@@ -93,7 +93,6 @@ Our required information size (RIS) is calculated to:
 ```{r}
 # Calculate the cumulative number of participants
 count <- cumsum(perioOxy$nI+perioOxy$nC)
-
 # Calculate the RIS 
 mcv_RR = 0.65
 p0 = sum(perioOxy$eC+perioOxy$eI)/sum(perioOxy$nC+perioOxy$nI)

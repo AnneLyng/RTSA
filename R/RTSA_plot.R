@@ -27,7 +27,7 @@ plot.RTSA = function(x, ...){
   }
 
   andat <- data.frame(zval = c(0,zval),
-                      infFrac = c(0,x$orgTiming))
+                      infFrac = c(0,x$adjTiming))
 
   if(x$side == 2 | (x$side == 1 & x$futility != "none")){
     bounddat <- rbind(c(0,-20,20),data.frame(inf_frac = x$boundout$inf_frac, alpha_ubound = -x$boundout$alpha_ubound,
@@ -41,10 +41,14 @@ plot.RTSA = function(x, ...){
                                   -round(qnorm(1-x$alpha/x$side),2)))
   }
 
-  bounddat$RIS <- round(c(0,x$boundout$inf_frac)*x$adjRIS)
-  bounddat$RIS[1:(nrow(bounddat)-2)] <- NA
-  bounddat$RIS[nrow(bounddat)-1] <- x$AIS
+  #bounddat$RIS <- round(c(0,x$boundout$inf_frac)*x$adjRIS)
+  #bounddat$RIS[1:(nrow(bounddat)-2)] <- NA
+  #bounddat$RIS[nrow(bounddat)-1] <- x$AIS
   bounddat$labels <- c(rep("",nrow(bounddat)-2),"AIS","DARIS")
+
+  ris <- data.frame(ais_daris = c(x$Pax$subjects[length(x$Pax$subjects)],round(x$adjRIS)), y = c(-10,-10),
+                    labels = c("AIS", "DARIS"))
+  ris$inf_frac <- ris$ais_daris/x$adjRIS
 
 
  p <- ggplot(data = bounddat) +
@@ -73,9 +77,11 @@ plot.RTSA = function(x, ...){
   } +
     geom_line(data = andat, aes(x = infFrac,y = zval, col = "blue"), cex = 0.25) +
     geom_point(data = andat, aes(x = infFrac,y = zval), cex = 1.25) +
-    geom_label(aes(x=inf_frac, y=-10, label=RIS),vjust=1,label.size=NA) +
+    #geom_label(aes(x=inf_frac, y=-10, label=RIS),vjust=1,label.size=NA) +
+    geom_label(data = ris, aes(x=inf_frac, y=y, label=ais_daris),vjust=2,label.size=NA) +
+    geom_label(data = ris, aes(x=inf_frac, y=y, label=labels),vjust=1,label.size=NA) +
     scale_x_continuous(expand = expansion(0), name="Information fraction",
-                       sec.axis = sec_axis(~., breaks=bounddat$inf_frac,labels=bounddat$labels)) +
+                       sec.axis = sec_axis(~., breaks=bounddat$inf_frac, labels = NULL)) + #,labels=bounddat$labels
     scale_y_reverse(expand = expansion(0), "Cumulative Z-score") +
     theme(legend.position = 'bottom',  legend.box="vertical") +
     scale_colour_manual(name = ' ', values =c('blue'='blue', '#006400'='#006400','red' = 'red', 'black' = 'black'),

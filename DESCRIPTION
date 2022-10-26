@@ -11,7 +11,9 @@ Imports:
     lme4,
     stats,
     metafor,
-    ggplot2
+    ggplot2,
+    Rcpp (>= 0.11.0)
+LinkingTo: Rcpp
 Encoding: UTF-8
 Depends: R (>= 3.5.0)
 LazyData: true

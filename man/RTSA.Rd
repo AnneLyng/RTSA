@@ -13,7 +13,8 @@ RTSA(
   beta = 0.2,
   futility = "none",
   fixed = FALSE,
-  method = "MH",
+  ana_time = NULL,
+  method = "IV",
   vartype = "equal",
   sign = NULL,
   fixedStudy = FALSE,
@@ -61,5 +62,5 @@ RTSA
 }
 \examples{
 data(perioOxy)
-RTSA(data = perioOxy, outcome = "RR", mc = 0.9, side = 2)
+RTSA(data = perioOxy, outcome = "RR", mc = 0.7, side = 2, alpha = 0.05, beta = 0.2)
 }

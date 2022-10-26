@@ -3,24 +3,31 @@
 \docType{data}
 \name{eds}
 \alias{eds}
-\title{A dataset containing data on ...}
+\title{Early supported discharge services}
 \format{
 A data frame with 9 studies and 8 variables:
-\describe{
-  \item{study}{Name of the city of the study}
-  \item{year}{Year of the trial}
-  \item{mI}{Mean ESD in intervention group}
-  \item{mC}{Mean ESD in control group}
-  \item{sdI}{SD in intervention group}
-  \item{sdC}{SD in control group}
-  \item{nI}{Number of participants in the intervention group}
-  \item{nC}{Number of participants in the control group}
-}
 }
 \usage{
 eds
 }
 \description{
-A dataset containing data on ...
+A dataset containing data on the length of hospital stay when receiving early
+supported discharge (ESD) service versus conventional care. The outcome is
+length of initial hospital stay counted in days.
+}
+\details{
+\itemize{
+  \item study. Name of the city of the study
+  \item year. Year of the trial
+  \item mI. Mean duration at hospital in intervention (ESD) group
+  \item mC. Mean duration at hospital in control group
+  \item sdI. Standard deviation of intervention (ESD) estimate
+  \item sdC. Standard deviation of control estimate
+  \item nI. Number of participants in the intervention (ESD) group
+  \item nC. Number of participants in the control group
+}
+}
+\references{
+Fearon P, Langhorne P. Services for reducing duration of hospital care for acute stroke patients. Cochrane Database of Systematic Reviews 2012, Issue 9. Art. No.: CD000443. DOI: 10.1002/14651858.CD000443.pub3. Accessed 17 October 2022.
 }
 \keyword{datasets}

@@ -17,7 +17,11 @@
 #' @param mI,mC,sdI,sdC See details.
 #' @param eI,nI,eC,nC See details.
 #' @param alpha Type-I-error.
+#' @param beta Type-II-error. Not used unless we want to make a sample size calculation.
 #' @param tau.ci.method Methods for computation of CI for tau.
+#' @param delta Minimum clinically relevant value
+#' @param z_thres Threshold value for z-score
+#' @param power_calc Sample size calculation for fixed-effect and random-effects meta-analysis.
 #' @param ... Additional variables. See Details.
 #'
 #' @return A list object containing two data frames.
@@ -43,12 +47,16 @@ metaanalysis <- function(data = NULL,
                          eC = NULL, nC = NULL,
                          outcome = "RR",
                          vartype = "equal",
-                         method = "MH",
+                         method = "IV",
                          fixedStudy = TRUE,
                          hksj = FALSE,
                          sign = NULL,
                          alpha = 0.05,
+                         beta = 0.2,
                          tau.ci.method = "BJ",
+                         delta = NULL,
+                         z_thres = NULL,
+                         power_calc = FALSE,
                          ...) {
 
   # Check inputs ----
@@ -67,7 +75,7 @@ metaanalysis <- function(data = NULL,
     }else{
       if(list(NULL) %in% list(eI,nI,eC,nC)){
         stop("'eI','nI','eC','nC' must all be provided
-           if `data` is not provided.")
+           if `data` is not provided. If outcome is continuous, set outcome = 'cont'")
       }
       data <- data.frame(eI=eI, nI=nI, eC=eC, nC=nC)
     }
@@ -78,7 +86,7 @@ metaanalysis <- function(data = NULL,
             colnames(data))){
       stop("`data` must have the following columns:
            'mI','mC','sdI,'sdC','nI', and 'nC'.")
-    }else if(!all(c("eI","nI","eC","nC") %in%
+    }else if(outcome != "cont" & !all(c("eI","nI","eC","nC") %in%
                   colnames(data))){
       stop("`data` must have the following columns:
            'eI','nI,'eC', and 'nC'.")
@@ -192,21 +200,54 @@ metaanalysis <- function(data = NULL,
       "lowerCI" = c(sy$peF[2]),
       "upperCI" = c(sy$peF[3]),
       "pValue" = c(sy$peF[5]))
-          
+
     heteResults = NULL
   }
+
   colnames(metaResults)[2] <- outcome
 
-  out = list(studyResults = studyResults, metaResults = metaResults,
+  out <- list(studyResults = studyResults, metaResults = metaResults,
              heteResults = heteResults,
              metaPrepare = mp, synthesize = sy, nonevent = nonevent,
              missing_vec = missing_vec)
+
+  if(power_calc){
+    if(outcome %in% c("RR", "OR")){
+      if(!is.null(sy$peR)){out_ris <- ris(outcome = outcome, delta = delta, data = data,
+                                          alpha = alpha, beta = beta, random = TRUE,
+                                          var_random = sy$peR[6], type = "retrospective",
+                                          ...)}
+      out_ris$NF <- out_ris$NF - (sum(data$nI)+sum(data$nC))
+      out_ris$NR_inc <- out_ris$NR_inc - (sum(data$nI)+sum(data$nC))
+      out_ris$NR_div <- out_ris$NR_div - (sum(data$nI)+sum(data$nC))
+      out <- append(out, list(out_ris = out_ris))
+    } else {
+      # TODO
+      ris(outcome = outcome, delta = 0.7, data = perioOxy, alpha = alpha,
+          beta = beta, random = TRUE)
+    }
+  }
+
+  if(!is.null(delta)){
+    if(is.null(z_thres)) z_thres <- 1.96
+    if(outcome %in% c("RR", "OR"))  delta <- log(delta)
+    z_score_fe <- delta/sqrt(sy$peF[7])
+    pwr_fe <- 1-pnorm(z_thres - z_score_fe)+pnorm(-z_thres - z_score_fe)
+
+    if(!is.null(sy$peR)){z_score_re <- delta/sqrt(sy$peR[6])
+    pwr_re <- 1-pnorm(z_thres - z_score_re)+pnorm(-z_thres - z_score_re)
+    out <- append(out, list(pwr_re = pwr_re))
+    }
+
+    out <- append(out, list(pwr_fe = pwr_fe))
+  }
+
   class(out) <- "metaanalysis"
   return(out)
 }
 
 # Define - metaprepare ----
-metaPrepare <- function(data, outcome, method, vartype, alpha) {
+metaPrepare <- function(data, outcome, method, vartype, alpha, nonevent = NULL) {
 
   #Prepare dichotomous outcomes.
   if(outcome %in% c("OR", "RR", "RD")){
@@ -346,10 +387,6 @@ synthesize <- function(y,sign,fixedStudy,hksj,tau.ci.method) {
   sig <- y$sig
   te <- y$te
   pe <- y$pe
-  # eI <- y$eI
-  # eC <- y$eC
-  # nI <- y$nI
-  # nC <- y$nC
   df <- length(w) - 1
   data <- y$data
   ci.tau <- ""
@@ -423,12 +460,11 @@ synthesize <- function(y,sign,fixedStudy,hksj,tau.ci.method) {
   } else {
     ### NOT GLM
 
-    if (y$method != "MH")
-      w <- 1 / (sig ^ 2) # weight inverse variance
+    if (y$method != "MH") w <- 1 / (sig ^ 2) # weight inverse variance
     rw <- w / sum(w) # relative weight
     vw <- 1 / sum(w) # variance of pooled effect
 
-    if (y$method == "cont") {
+    if (y$outcome == "cont") {
       peF <- sum(w * te) / sum(w)
       lci <- peF - 1.96 * sqrt(vw)
       uci <- peF + 1.96 * sqrt(vw)
@@ -466,7 +502,7 @@ synthesize <- function(y,sign,fixedStudy,hksj,tau.ci.method) {
 
       pval <- (1 - pnorm(abs(zval))) * 2
 
-    }else{
+    }else {
       # if IV
       if(y$outcome == "RD"){
         peF <- sum(te * rw) # fixed effect log pooled estimate
@@ -492,7 +528,7 @@ synthesize <- function(y,sign,fixedStudy,hksj,tau.ci.method) {
 
     }
 
-    if(y$method != "cont"){
+    if(y$outcome != "cont"){
       w <- 1 / (sig ^ 2)
       if(y$outcome == "RD"){
         Q <- sum(w * te ^ 2) - (sum(w * te)) ^ 2 / sum(w)
@@ -620,15 +656,25 @@ synthesize <- function(y,sign,fixedStudy,hksj,tau.ci.method) {
       I2 <- (Q - df) / Q
       D2 <- (1 - vw / vwR)
 
+      if(tau.ci.method == "BJ"){
+        ci.tau <- metafor::confint.rma.uni(metafor::rma.uni(
+          yi = te, sei = sig, method = "GENQ", weights = 1/sig^2))
+      }
+
+      if(tau.ci.method == "QP"){
+        ci.tau <- metafor::confint.rma.uni(metafor::rma.uni(
+          yi = te, sei = sig, method = "DL"))
+      }
+
       synth <-
         list(
           fw = round(w / sum(w) * 100, 4),
-          peF = c(peF, vw, lci, uci, zval, pval),
-          w = w,
+          peF = c(peF, lci, uci, zval, pval, NA, vw),
           rwR = round(rwR * 100, 4),
-          peR = c(peRest, vwR, lciR, uciR, zvalR, pvalR),
+          peR = c(peRest, lciR, uciR, zvalR, pvalR, vwR),
           Q = c(Q, df, pQ),
-          U = c(tau2, H, I2, D2)
+          U = c(tau2, H, I2, D2),
+          ci.tau = ci.tau
         )
       class(synth) <- "synthesized"
       return(synth)
@@ -667,10 +713,13 @@ print.metaanalysis <- function(x,...){
 plot.metaanalysis <- function(x, type="both", ...){
 
   # FOR TESTING
-    x <- readRDS("C:/Oel/Artikler/CTU/CTU_RTSA/cord.Rdata")
-    x <- RTSA::metaanalysis(x)
-    type = "both"
-    xlims = NULL
+  x <- readRDS("C:/Oel/Artikler/CTU/CTU_RTSA/cord.Rdata")
+  x <- metaanalysis(x)
+  type = "both"
+  library(ggplot2)
+  x <- get(load("C:/Oel/Artikler/CTU/CTU_RTSA/RTSA/data/perioOxy.RData"))
+  x <- metaanalysis(x)
+  type = "random"
   # FOR TESTING
 
   # Create dataframe for plot
@@ -681,6 +730,10 @@ plot.metaanalysis <- function(x, type="both", ...){
   results$study[results$study == "Fixed"] <- "Fixed-effect"
   results$study[results$study == "Random"] <- "Random-effects"
   fplot <- rbind(fplot, results[names(fplot)])
+
+  if(type=="fixed"){fplot <- fplot[!grepl("Random-ef",fplot$study),]}
+  if(type=="random"){fplot <- fplot[!grepl("Fixed-ef",fplot$study),]}
+
   fplot <- cbind(nrow(fplot):1,fplot)
   colnames(fplot)[1] <- "yaxis"
 
@@ -704,12 +757,9 @@ plot.metaanalysis <- function(x, type="both", ...){
   fplot$wR <- round(fplot$weightRandom)
   fplot$wR[fplot$wR < 10 & !is.na(fplot$wR)] <- round(fplot$weightRandom[fplot$wR <10 & !is.na(fplot$wR)],1)
 
-  #TODO: TYPE DEFINITION
   # Ensure fixed effect model, if Tau = 0
-  if(x$synthesize$U[1]) type <- "fixed"; message <- "No heterogeneity, only fixed effect estimates presented"
-  if(type %in% c("both","fixed"))
-  if(type=="both") cat("TOBEIMPLEMENTED")
-  #TODO: ABOVE
+  if(x$synthesize$U[1] == 0) type <- "fixed"; message <- "No heterogeneity, only fixed effect estimates presented"
+
 
   #Define shapes and colors
   shapes <- grepl("Fixed-ef|Random-ef",fplot$study)*2+21
@@ -731,53 +781,69 @@ plot.metaanalysis <- function(x, type="both", ...){
              `r1` = 10^(log10(xlims[2])+0.9),
              `r2` = 10^(log10(xlims[2])+1.3),
              `r3` = 10^(log10(xlims[2])+1.6))
+  if(type=="random"){ xl$r3 <- xl$r2; xl$r2 <- NULL }
+  if(type=="fixed") xl$r3 <- NULL
 
-  xl2 <- c(unlist(unname(xl[-1])),mean(c(xl$r2,xl$r3)))
+  xl2 <- c(unlist(unname(xl[-1])),mean(c(xl$r2,xl$r3),na.rm=T))
   xl2 <- xl2[order(xl2)]
-  xlabs <- c("Experimental","Control",paste0("",outcome,"(95% CI)"),"Random","Weights (%)\n","Fixed")
 
+  #Axis text
+  xlabs <- c("Experimental","Control",paste0("",outcome,"(95% CI)"),
+             if(type!="fixed"){"Random"},"Weights (%)\n",
+             if(type!="random"){"Fixed"})
+
+  #Lower left text
   heterogen <- paste0("Heterogeneity: Tau² = ",
-      sprintf(x$synthesize$U[1], fmt = '%#.2f'), " (",
-      sprintf(x$synthesize$ci.tau$random["tau^2","ci.lb"], fmt = '%#.2f'),"-",
-      sprintf(x$synthesize$ci.tau$random["tau^2","ci.ub"], fmt = '%#.2f'),")",
-      ", Q = ", sprintf(x$synthesize$Q[1], fmt = '%#.1f'),
-      ", df = ", round(x$synthesize$Q[2]),
-      ", I² = ", round(x$synthesize$U[3]*100),
-      "%\n",
-      "Overall effect: Fixed-effect, z = ",
-      sprintf(x$synthesize$peF[4], fmt = '%#.2f'),
-      " (p = ",
-      sprintf(x$metaResults[x$metaResults == "Fixed","pValue"], fmt = '%#.4f'),
-      "); Random-effects, z = ",
-      sprintf(x$synthesize$peR[4], fmt = '%#.2f'),
-      " (p = ",
-      sprintf(x$metaResults[x$metaResults == "Random","pValue"], fmt = '%#.4f'),
-      ")")
+                      sprintf(x$synthesize$U[1], fmt = '%#.2f'), " (",
+                      sprintf(x$synthesize$ci.tau$random["tau^2","ci.lb"], fmt = '%#.2f'),"-",
+                      sprintf(x$synthesize$ci.tau$random["tau^2","ci.ub"], fmt = '%#.2f'),")",
+                      ", Q = ", sprintf(x$synthesize$Q[1], fmt = '%#.1f'),
+                      ", df = ", round(x$synthesize$Q[2]),
+                      ", I² = ", round(x$synthesize$U[3]*100),
+                      "%\n")
+  if(type!="random"){
+    heterogen <- paste0(heterogen,"Overall effect: Fixed-effect, z = ",
+                        sprintf(x$synthesize$peF[4], fmt = '%#.2f'),
+                        " (p = ",
+                        sprintf(x$metaResults[x$metaResults == "Fixed","pValue"], fmt = '%#.4f'),
+                        ")")
+  }
+  if(type!="fixed"){
+    heterogen <- paste0(heterogen,"; Random-effects, z = ",
+                        sprintf(x$synthesize$peR[4], fmt = '%#.2f'),
+                        " (p = ",
+                        sprintf(x$metaResults[x$metaResults == "Random","pValue"], fmt = '%#.4f'),
+                        ")")
+  }
 
+  #The plot
   ggplot(fplot,aes(x=outcome,xmin=lowerCI,xmax=upperCI,y=yaxis)) +
     geom_vline(xintercept = 1, color="gray", linetype=3) +
-    geom_segment(aes(x=fplot$outcome[grepl("Fixed-effect",fplot$study)],
-                     xend=fplot$outcome[grepl("Fixed-effect",fplot$study)],
-                     y=Inf,yend=fplot$yaxis[grepl("Fixed-effect",fplot$study)]),
-                     color = "#7cbfff") +
-    {if(sum(grepl("Random-effect",fplot$study)) > 0) # ANNE: Changed to be if statement
-    geom_segment(aes(x=fplot$outcome[grepl("Random-effect",fplot$study)],
-                     xend=fplot$outcome[grepl("Random-effect",fplot$study)],
-                     y=Inf,yend=fplot$yaxis[grepl("Random-effect",fplot$study)]),
-                 color = "#ff8c8c")} +
-     geom_segment(aes(x=xlims[1],xend=xlims[2],y=-Inf,yend=-Inf)) +
+    geom_segment(aes(x=xlims[1],xend=xlims[2],y=-Inf,yend=-Inf)) +
     annotate("text",x=xl$l1,y=fplot$yaxis,label=fplot$experimental,hjust=1) +
     annotate("text",x=xl$l2,y=fplot$yaxis,label=fplot$control,hjust=1) +
+
+    #Confidence intervals
+    {if(type!="fixed")
+      geom_segment(aes(x=fplot$outcome[grepl("Random-effect",fplot$study)],
+                       xend=fplot$outcome[grepl("Random-effect",fplot$study)],
+                       y=Inf,yend=fplot$yaxis[grepl("Random-effect",fplot$study)]),
+                   color = "#ff8c8c")} +
+    {if(type!="random") geom_segment(aes(x=fplot$outcome[grepl("Fixed-effect",fplot$study)],
+                                         xend=fplot$outcome[grepl("Fixed-effect",fplot$study)],
+                                         y=Inf,yend=fplot$yaxis[grepl("Fixed-effect",fplot$study)]),
+                                     color = "#7cbfff")} +
+
     annotate("text",x=xl$r1,y=fplot$yaxis,label=fplot$out_ci,hjust=1) +
-    annotate("text",x=xl$r2,y=fplot$yaxis,label=fplot$wR,hjust=1) +
-    annotate("text",x=xl$r3,y=fplot$yaxis,label=fplot$wF,hjust=1) +
+    {if(type!="fixed") annotate("text",x=xl$r3,y=fplot$yaxis,label=fplot$wR,hjust=1) } +
+    {if(type!="random") annotate("text",x=xl$r2,y=fplot$yaxis,label=fplot$wF,hjust=1) } +
     geom_segment(aes(x=0,xend=xl$l2, # dots before summary study side
-                     y=fplot$yaxis[fplot$study == "Fixed-effect"]+0.5,
-                     yend=fplot$yaxis[fplot$study == "Fixed-effect"]+0.5),
+                     y=max(fplot$yaxis[grepl("Fixed-ef|Random-ef",fplot$study)])+0.5,
+                     yend=max(fplot$yaxis[grepl("Fixed-ef|Random-ef",fplot$study)])+0.5),
                  linetype=3) +
     geom_segment(aes(x=xlims[2],xend=Inf, # dots after
-                     y=fplot$yaxis[fplot$study == "Fixed-effect"]+0.5,
-                     yend=fplot$yaxis[fplot$study == "Fixed-effect"]+0.5),
+                     y=max(fplot$yaxis[grepl("Fixed-ef|Random-ef",fplot$study)])+0.5,
+                     yend=max(fplot$yaxis[grepl("Fixed-ef|Random-ef",fplot$study)])+0.5),
                  linetype=3) +
     labs(tag=heterogen)+
     geom_point(shape = shapes, color = colors, fill = colors,size=sizes) +
@@ -785,9 +851,9 @@ plot.metaanalysis <- function(x, type="both", ...){
     theme_classic() +
     scale_colour_identity() +
     scale_x_continuous(trans="log10",
-      sec.axis = sec_axis(~.,breaks = xl2,label=xlabs),
-      limits=c(xl$l0,xl$r3), name="o\no",
-      breaks=c(((round(xlims[2])-1)/2+1)/10,1,(round(xlims[2])-1)/2+1)) + 
+                       sec.axis = sec_axis(~.,breaks = xl2,label=xlabs),
+                       limits=c(xl$l0,if(type!="fixed"){xl$r3}else{xl$r2}), name="o\no",
+                       breaks=c(round(1/((xlims[2]-1)/2),nchar(round(xlims[2]))),1,round((xlims[2]-1)/2,nchar(round(xlims[2]))))) + # ANNE: Lower bound cannot handle upper over 100
     scale_y_continuous(breaks=fplot$yaxis, label=fplot$study) +
     theme(axis.title.y = element_blank(),
           axis.line = element_blank(),
@@ -796,5 +862,8 @@ plot.metaanalysis <- function(x, type="both", ...){
           axis.text.x.top = element_text(hjust=1,color="black"),
           axis.text.y = element_text(color="black",size=10,face="bold"),
           plot.tag.position = c(0,0), plot.tag = element_text(hjust=0, vjust=0, size=9))
+
+
+  if(nchar(message) > 0){message(message)}
 
 }

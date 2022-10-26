@@ -36,16 +36,15 @@ ma_power <- function(upper_bound, theta, info, za = rep(-20, length(upper_bound)
   if(length(upper_bound) > 1){
     lnn <- 5000
     nints[1] <- round((abs(za[1] - upper_bound[1])/0.05*info$sd_incr[1])) + 1 # how many splits of the integral
-    last <- first(za = za[1], zb = upper_bound[1], h = 0.05, stdv = info$sd_incr[1],
-                         nints = nints, delta = theta, lnn = lnn, bs = TRUE)
-    p_cross <- c(p_cross,qpos(xq = upper_bound[2]*info$sd_proc[2], last = last, i = 2, nint = nints[1], zam1 = za[1],
-                                     zbm1 = upper_bound[1], stdv = info, bs = FALSE, delta = theta))
+    last <- first(za, upper_bound, info$sd_incr, nints, theta, bs = TRUE)
+    p_cross <- c(p_cross,qpos(xq = upper_bound[2]*info$sd_proc[2], last = last, k = 2, nint = nints[1], zam1 = za[1],
+                                     zbm1 = upper_bound[1], stdv = matrix(unlist(info), ncol = 2), bs = FALSE, delta = theta))
     if(length(upper_bound) > 2){
     for(i in 2:(length(upper_bound)-1)){
       nints[i] <- round(abs(upper_bound[i]-za[i])/0.05*info$sd_incr[i])+1
-      last <- other(za[1:(i+1)], upper_bound[1:(i+1)], i, stdv = info, h = 0.05, last = last, nints, delta = theta, bs = TRUE)
-      p_cross <- c(p_cross, qpos(xq = upper_bound[i+1]*info$sd_proc[i+1], last = last, i = (i+1), nint = nints[i], zam1 = za[i],
-                                        zbm1 = upper_bound[i], stdv = info, bs = FALSE, delta = theta))
+      last <- other(za[1:(i+1)], upper_bound[1:(i+1)], i, stdv = matrix(unlist(info),ncol = 2), last = last, nints, delta = theta, bs = TRUE)
+      p_cross <- c(p_cross, qpos(xq = upper_bound[i+1]*info$sd_proc[i+1], last = last, k = (i+1), nint = nints[i], zam1 = za[i],
+                                        zbm1 = upper_bound[i], stdv = matrix(unlist(info), ncol = 2), bs = FALSE, delta = theta))
     }
     }
   }
@@ -55,8 +54,8 @@ ma_power <- function(upper_bound, theta, info, za = rep(-20, length(upper_bound)
 # boundary ----
 # Calculate boundaries for sequential meta-analysis.
 boundary <- function(inf_frac, side, alpha, beta,
-                     zninf = -20, tol = 1e-13, delta = NULL, bs = FALSE,
-                     tol_alpha = 1e-16){
+                     zninf = -20, tol = 1e-15, delta = NULL, bs = FALSE,
+                     tol_alpha = 1e-15){
   # set nuissance variables
   # TODO: see if next 6 times can be moved to other function or to more
   # meaningfull section
@@ -72,9 +71,9 @@ boundary <- function(inf_frac, side, alpha, beta,
   nints <- numeric(length = maxnn)
 
   # calculate the alpha spending
-  alpha_spend <- obf_as(alpha = alpha, side = side, ti = inf_frac)
+  alpha_spend <- RTSA:::obf_as(alpha = alpha, side = side, ti = inf_frac)
   # change in information
-  info <- sd_inf(ti = inf_frac)
+  info <- RTSA:::sd_inf(ti = inf_frac)
 
   # set criteria for first spending (not under 0, not over alpha)
   alpha_spend$as_incr[1] <- pmin(alpha, alpha_spend$as_incr[1])
@@ -98,13 +97,11 @@ boundary <- function(inf_frac, side, alpha, beta,
     ya[1] <- -yb[1]
   }
 
-  # why this definition? (what is h and why this formula)
   nints[1] <- round((abs(zb[1] - za[1])/h*info$sd_incr[1])) + 1
 
   for(i in 2:nn){
     if(i == 2){
-      last <- first(za = za[1], zb = zb[1], h = h, stdv = info$sd_incr[1],
-                    nints = nints, delta = 0, lnn = lnn, bs = bs)
+      last <- RTSA:::first(za, zb, info$sd_incr, nints, 0, bs)
     }
     if(alpha_spend$as_incr[i] <= 0 || alpha_spend$as_incr[i] >= 1){
       alpha_spend$as_incr[i] <- min(c(1, alpha_spend$as_incr[i]))
@@ -112,28 +109,29 @@ boundary <- function(inf_frac, side, alpha, beta,
     }
     if(alpha_spend$as_incr[i] < tol_alpha){
       zb[i] <- -zninf
-      yb[i] <- zb[i]*info$sd_incr[i]
+      yb[i] <- zb[i]*info$sd_proc[i]
     } else if(alpha_spend$as_incr[i] == 1){
       zb[i] <- 0
-      yb[i] <- zb[i]*info$sd_incr[i]
-    } else {
-      zb[i] <- searchfunc(last = last, nints = nints, i = i,
-                          as = alpha_spend$as_incr[i]/side,
-                          stdv = info, za = za, zb = zb, bs = bs, tol = tol, delta = 0) # delta = delta
       yb[i] <- zb[i]*info$sd_proc[i]
-      if(side == 1){
-        ya[i] = zninf*info$sd_proc[i] # should this be incr?
-        za[i] = zninf
-      } else {
-        ya[i] = -yb[i]
-        za[i] = -zb[i]
-      }
+    } else {
+      zb[i] <- RTSA:::searchfunc(last = last, nints = nints, i = i,
+                          as = alpha_spend$as_incr[i]/side,
+                          stdv = matrix(unlist(info), ncol = 2), za = za,
+                          zb = zb, bs = bs, tol = tol, delta = 0) # delta = delta
+      yb[i] <- zb[i]*info$sd_proc[i]
+    }
+    if(side == 1){
+      ya[i] = zninf*info$sd_proc[i]
+      za[i] = zninf
+    } else {
+      ya[i] = -yb[i]
+      za[i] = -zb[i]
     }
     nints[i] <- round((zb[i]-za[i])/h*info$sd_incr[i])+1
 
     if(i != nn){
-      last <- other(za = za, zb = zb, i = i, stdv = info, h = h,
-                    last = last, nints = nints, delta = 0, bs = bs) # delta = delta
+      last <- RTSA:::other(za = za, zb = zb, k = i, stdv = matrix(unlist(info),ncol = 2),
+                     last = last, nints = nints, delta = 0, bs = bs) # delta = delta
     }
   }
 
@@ -154,7 +152,7 @@ boundary <- function(inf_frac, side, alpha, beta,
 # fcap ----
 # Quantify where boundaries will lie
 #' @importFrom stats dnorm
-fcab <- function(last, nint, zam1, zbm1, h, x,
+fcab2 <- function(last, nint, zam1, zbm1, h, x,
                  stdv, delta, i, bs){
 
   nlim <- 5000
@@ -170,76 +168,77 @@ fcab <- function(last, nint, zam1, zbm1, h, x,
         dnorm((grid2-x)/stdv$sd_incr[i], mean = delta*stdv$sd_incr[i]) # check if should be delta*stdv
     }
   }
-  return(trap(f = f, n = nint, h = h))
+  return(trap2(f = f, n = nint, h = h))
 }
 
 #other ----
-other <- function(za, zb, i, stdv, h, last, nints, delta, bs){
-  nlim <- 5000
-  fn <- numeric(length = nlim)
-  hh <- (zb[i] - za[i])/nints[i]
-  hlast <- (zb[i-1] - za[i-1])/nints[i-1]
-
-  for(j in 1:(nints[i]+1)){
-    grid1 <- (za[i] + hh*(j-1))*stdv$sd_proc[i] # renamed to grid1 from grid
-    fn[j] <- fcab(last = last, nint = nints[i-1], zam1 = za[i-1], zbm1 = zb[i-1],
-                  h = hlast, x = grid1, stdv = stdv, delta = delta, i = i,
-                  bs = bs)
-  }
-  last <- fn
-  return(last)
-}
-
-# trap ----
-trap <- function(f, n, h){
-  sum1 = f[1] # rename from sum to sum1
-
-  for(j in 2:n){
-    sum1 <- sum1 + 2*f[j]
-  }
-  sum1 <- sum1 + f[n + 1]
-
-  return(h/2*sum1)
-}
-
-# qpos ----
-# reverse integrals
-#' @importFrom stats pnorm
-qpos <- function(xq, last, nint, i, zam1, zbm1, stdv, bs = bs, delta){
-  nwork <- 5000
-  fun1 <- numeric(length = nwork)
-  hlast <- (zbm1 - zam1)/nint
-
-  for(j in 1:(nint+1)){
-    grid3 <- (zam1 + hlast * (j-1))*stdv$sd_proc[i-1]
-    if(bs == FALSE & delta != 0) {
-      fun1[j] <- last[j]*(pnorm((grid3-xq)/stdv$sd_incr[i], mean= -delta*stdv$sd_incr[i], sd = 1,
-                                lower.tail = TRUE))
-    }
-    else if(bs == TRUE){
-      fun1[j] <- last[j]*(pnorm((xq-grid3)/stdv$sd_incr[i], mean= delta*stdv$sd_incr[i], sd = 1,
-                                lower.tail = TRUE))
-    } else {
-      fun1[j] <- last[j]*(pnorm((grid3-xq)/stdv$sd_incr[i], mean= delta*stdv$sd_incr[i], sd = 1, lower.tail = TRUE))
-    }
-  }
-  return(trap(f = fun1, n = nint, h = hlast))
-}
-
-# first ----
-# focus on the first trial
-#' @importFrom stats dnorm
-first <- function(za, zb, h, stdv, nints, delta, lnn, bs = bs){
-  hh <- (zb - za)/nints[1]
-
-  last <- numeric(length = lnn)
-
-  for(j in 1:(nints[1])+1){
-    last[j] <- dnorm(x = (za+hh*(j-1)))
-    if(bs == TRUE) {last[j] <- dnorm(x = (za+hh*(j-1)), mean = delta*stdv)}
-  }
-  return(last)
-}
+#' other2 <- function(za, zb, i, stdv, h, last, nints, delta, bs){
+#'   nlim <- 5000
+#'   fn <- numeric(length = nlim)
+#'   hh <- (zb[i] - za[i])/nints[i]
+#'   hlast <- (zb[i-1] - za[i-1])/nints[i-1]
+#'
+#'   for(j in 1:(nints[i]+1)){
+#'     grid1 <- (za[i] + hh*(j-1))*stdv$sd_proc[i] # renamed to grid1 from grid
+#'     fn[j] <- fcab2(last = last, nint = nints[i-1], zam1 = za[i-1], zbm1 = zb[i-1],
+#'                   h = hlast, x = grid1, stdv = stdv, delta = delta, i = i,
+#'                   bs = bs)
+#'   }
+#'   last <- fn
+#'   return(last)
+#' }
+#'
+#' # trap ----
+#' trap2 <- function(f, n, h){
+#'   sum1 = f[1] # rename from sum to sum1
+#'
+#'   for(j in 2:n){
+#'     sum1 <- sum1 + 2*f[j]
+#'   }
+#'   sum1 <- sum1 + f[n + 1]
+#'
+#'   return(h/2*sum1)
+#' }
+#'
+#' # qpos ----
+#' # reverse integrals
+#' #' @importFrom stats pnorm
+#' qpos2 <- function(xq, last, nint, i, zam1, zbm1, stdv, bs = bs, delta){
+#'   nwork <- 5000
+#'   fun1 <- numeric(length = nwork)
+#'   hlast <- (zbm1 - zam1)/nint
+#'
+#'   for(j in 1:(nint+1)){
+#'     grid3 <- (zam1 + hlast * (j-1))*stdv$sd_proc[i-1]
+#'     if(bs == FALSE & delta != 0) {
+#'       fun1[j] <- last[j]*(pnorm((grid3-xq)/stdv$sd_incr[i], mean= -delta*stdv$sd_incr[i], sd = 1,
+#'                                 lower.tail = TRUE))
+#'     }
+#'     else if(bs == TRUE){
+#'       fun1[j] <- last[j]*(pnorm((xq-grid3)/stdv$sd_incr[i], mean= delta*stdv$sd_incr[i], sd = 1,
+#'                                 lower.tail = TRUE))
+#'     } else {
+#'       fun1[j] <- last[j]*(pnorm((grid3-xq)/stdv$sd_incr[i], mean= delta*stdv$sd_incr[i], sd = 1, lower.tail = TRUE))
+#'     }
+#'   }
+#'   return(trap(f = fun1, n = nint, h = hlast))
+#' }
+#'
+#' # first ----
+#' # focus on the first trial
+#' #' @importFrom stats dnorm
+#' first2 <- function(za, zb, stdv, nints, delta, bs = bs){
+#'   hh <- (zb - za)/nints[1]
+#'
+#'   #last <- numeric(length = lnn)
+#'   last <- numeric(length = (nints[1])+1)
+#'
+#'   for(j in 1:((nints[1])+1)){
+#'     last[j] <- dnorm(x = (za+hh*(j-1)))
+#'     if(bs == TRUE) {last[j] <- dnorm(x = (za+hh*(j-1)), mean = delta*stdv)}
+#'   }
+#'   return(last)
+#' }
 
 # obf_as ----
 # Alpha spending boundaries
@@ -261,24 +260,6 @@ obf_as <- function(alpha, side, ti){
   return(list(as_cum = as_cum, as_incr = as_incr))
 }
 
-#betas_Obf ----
-#betas_Obf <- function(beta, side, inf_frac){
-#  bs_cum <- numeric(length(inf_frac))
-#  bs_incr <- numeric(length(inf_frac))
-
-#  for(i in 1:length(inf_frac)){
-#    pn_betaSpend[i] <- 2*(1 - pnorm(qnorm(1-beta/2)/sqrt(inf_frac[i]), mean = 0, sd = 1))
-#    if(i == 1){
-#      pn_betaSpendDelta[i] <- pn_betaSpend[i]
-#    } else {
-#      pn_betaSpendDelta[i] <- pn_betaSpend[i] - pn_betaSpend[i-1]
-#    }
-#    if(pn_betaSpendDelta[i] < tol){
-#      pn_betaSpendDelta[i] <- 0 }
-#  }
-#  return(list(as_cum = pn_betaSpend, as_incr = pn_betaSpendDelta))
-#}
-
 # sd_inf ----
 # Ratio of how much information is available
 # original: sdfunc
@@ -289,14 +270,16 @@ sd_inf <- function(ti){
   return(list(sd_incr = sd_incr, sd_proc = sd_proc))
 }
 
+# something goes wrong with qpos
+
 #searchfunc ----
 # Readjusting RIS based on the number of interim-analyses
 # TODO: Talk with CG, should it be implemented
 searchfunc <- function(last, nints, i, as, stdv, za, zb, tol, bs, delta){
-  maxnn <- max(c(length(nints), 50)); upper <- zb[i - 1]*stdv$sd_proc[i]
-  if(bs == TRUE) upper <- za[i - 1]*stdv$sd_proc[i]
+  maxnn <- max(c(length(nints), 50)); upper <- zb[i - 1]*stdv[i,2]
+  if(bs == TRUE) upper <- za[i - 1]*stdv[i,2]
   del <- 10
-  qout <- qpos(xq = upper, last = last, i = i, nint = nints[i-1], zam1 = za[i-1],
+  qout <- RTSA:::qpos(xq = upper, last = last, k = i, nint = nints[i-1], zam1 = za[i-1],
                zbm1 = zb[i-1], stdv = stdv, bs = bs, delta = delta)
 
   cond <- TRUE
@@ -311,7 +294,7 @@ searchfunc <- function(last, nints, i, as, stdv, za, zb, tol, bs, delta){
       for(k in 1:maxnn){
         if(bs == TRUE) { upper <- upper - 2*del }
         upper <- upper + del
-        qout <- qpos(xq = upper, last = last, i = i, nint = nints[i-1], zam1 = za[i-1],
+        qout <- RTSA:::qpos(xq = upper, last = last, k = i, nint = nints[i-1], zam1 = za[i-1],
                      zbm1 = zb[i-1], stdv = stdv, bs = bs, delta = delta)
         if( qout <= as + tol){
           break
@@ -323,7 +306,7 @@ searchfunc <- function(last, nints, i, as, stdv, za, zb, tol, bs, delta){
       for(k in 1:maxnn){
         if(bs == TRUE) { upper <- upper + 2*del }
         upper <- upper - del
-        qout <- qpos(xq = upper, last = last, i = i, nint = nints[i-1], zam1 = za[i-1],
+        qout <- RTSA:::qpos(xq = upper, last = last, k = i, nint = nints[i-1], zam1 = za[i-1],
                      zbm1 = zb[i-1], stdv = stdv, bs = bs, delta = delta)
         if( qout >= as - tol){
           break
@@ -331,7 +314,7 @@ searchfunc <- function(last, nints, i, as, stdv, za, zb, tol, bs, delta){
       }
     }
   }
-  return(upper/stdv$sd_proc[i])
+  return(upper/stdv[i,2])
 }
 
 #getInnerWedge ----
@@ -357,7 +340,7 @@ getInnerWedge <- function(inf_frac, beta, delta = NULL, side, fakeIFY = 0,
   ya <- numeric(length = maxnn); yb <- numeric(length = maxnn)
   last <- numeric(length = lnn)
 
-  beta_spend = obf_as(beta, side, inf_frac/inf_frac[nn])
+  beta_spend = RTSA:::obf_as(beta, side, inf_frac/inf_frac[nn])
   if(!is.null(rm_bs)){
     beta_spend = obf_as(beta, side, c(rep(0, max(rm_bs)),inf_frac[-c(1:rm_bs)]/inf_frac[nn]))
   }
@@ -367,7 +350,7 @@ getInnerWedge <- function(inf_frac, beta, delta = NULL, side, fakeIFY = 0,
     beta_spend$as_incr <- beta_spend$as_incr/2
   }
 
-  info = sd_inf(ti = inf_frac)
+  info = RTSA:::sd_inf(ti = inf_frac)
 
   if(beta_spend$as_incr[1] <= 0 || beta_spend$as_incr[1] >= beta){
     beta_spend$as_incr[1] <- pmin(beta, beta_spend$as_incr[1])
@@ -399,8 +382,7 @@ getInnerWedge <- function(inf_frac, beta, delta = NULL, side, fakeIFY = 0,
   nints[1] <- round((abs(za[1] - zb[1])/h*info$sd_incr[1])) + 1 # how many splits of the integral
   for(i in 2:nn){
     if(i == 2){
-      last <- first(za = za[1], zb = zb[1], h = h, stdv = info$sd_incr[1],
-                    nints = nints, delta = delta, lnn = lnn, bs = TRUE)
+      last <- RTSA:::first(za, zb, info$sd_incr, nints, 0, bs = TRUE)
     }
     if(beta_spend$as_incr[i] <= 0 || beta_spend$as_incr[i] >= 1){
       beta_spend$as_incr[i] <- min(c(1, beta_spend$as_incr[i]))
@@ -413,22 +395,26 @@ getInnerWedge <- function(inf_frac, beta, delta = NULL, side, fakeIFY = 0,
       za[i] <- 0
       ya[i] <- za[i]*info$sd_incr[i]
     } else {
-      za[i] <- searchfunc(last = last, nints = nints,
+      za[i] <- RTSA:::searchfunc(last = last, nints = nints,
                           i = i, as = beta_spend$as_incr[i],
-                          stdv = info, za = za, zb = zb, tol = tol, bs =TRUE,
+                          stdv = matrix(unlist(info), ncol = 2),
+                          za = za, zb = zb, tol = tol, bs =TRUE,
                           delta = delta)
       ya[i] <- za[i]*info$sd_proc[i]
-      #if(side == 1){
-      #  zb[i] = outer_bound[i]
-      #  yb[i] = zb[i]*info$sd_proc[i]
-      #} else {
-      #  yb[i] = -ya[i]
-      #  zb[i] = -za[i]
-      #}
     }
+
+    #if(side == 1){
+    #  zb[i] = outer_bound[i]
+    #  yb[i] = zb[i]*info$sd_proc[i]
+    #} else {
+    #  yb[i] = -ya[i]
+    #  zb[i] = -za[i]
+    #}
+
     nints[i] <- round(abs(zb[i]-za[i])/h*info$sd_incr[i])+1
     if(i != nn){
-      last <- other(za, zb, i, stdv = info, h, last, nints, delta = delta, bs = TRUE)
+      last <- other(za, zb, i, matrix(unlist(info), ncol = 2),
+                    last, nints, delta = delta, bs = TRUE)
     }
   }
   testDrift <- fakeIFY + abs(ya[length(inf_frac)])
@@ -461,11 +447,7 @@ TSA = function(timing,
                hksj,
                tau.ci.method) {
 
-  # if analysis times are not specified, analysis is performed at all timings.
-  if(is.null(ana_time)){
-    ana_time = 1:length(timing)
-  }
-
+  # Anne TODO: Maybe move the lines until boundary calculation to RTSA
   # reduce analysis to analysis times
   timing = timing[ana_time]
 
@@ -495,7 +477,7 @@ TSA = function(timing,
   # make futility boundaries meet alpha spending boundaries
   getWarp <- function(x, outer, rm_bs = NULL){
     a <- getInnerWedge(inf_frac = trials[, 1]*x, beta = beta,
-                       side = 1, zninf = -20, tol = 1e-13,
+                       side = 1, zninf = -20, tol = 1e-15,
                        outer_boundaries = outer,
                        delta = NULL, rm_bs = rm_bs)$za[length(trials[, 1])]
     outer$alpha_ubound[length(trials[, 1])] - a
@@ -506,7 +488,7 @@ TSA = function(timing,
   if(side == 1 & futility == "none"){
     lb <- rep(-20,length(trials[, 1]))
 
-    root <- uniroot(right_power, lower = 0.9, upper = 1.2, tol = 1e-9,
+    root <- uniroot(right_power, lower = 0.9, upper = 1.2, tol = 1e-15,
                     inner = lb, outer = boundout, theta = boundout$delta)$root
 
     info <- sd_inf(trials[, 1]*root)
@@ -516,11 +498,11 @@ TSA = function(timing,
                     info = info, za = lb)
   } else if(side == 1 & futility == "non-binding"){
     lb <- getInnerWedge(inf_frac = trials[, 1], beta = beta,
-                               side = 1, fakeIFY = 0,zninf = -20, tol = 1e-13,
+                               side = 1, fakeIFY = 0,zninf = -20, tol = 1e-15,
                                outer_boundaries = boundout,
                                delta = NULL)
 
-    root <- uniroot(getWarp, lower = 0.9, upper = 1.2, outer = boundout,
+    root <- uniroot(getWarp, lower = 0.9, upper = 1.5, outer = boundout,
                     tol = 1e-9)$root
 
     lb <- getInnerWedge(inf_frac = trials[,1]*root, beta = beta,
@@ -528,7 +510,7 @@ TSA = function(timing,
                                outer_boundaries = boundout,
                                delta = NULL)
 
-    root <- uniroot(right_power, lower = 0.9, upper = 1.2, tol = 1e-9,
+    root <- uniroot(right_power, lower = 0.9, upper = 1.5, tol = 1e-15,
                     inner = lb$za, outer = boundout, theta = boundout$delta)$root
 
     info <- sd_inf(trials[,1]*root)
@@ -538,9 +520,8 @@ TSA = function(timing,
                     info = info, za = lb$za)
     boundout$alpha_lbound <- lb$za
   } else if(side == 1 & futility == "binding"){
-    warning("Binding futility takes some time to compute. We are working on a faster solution in C++.")
     lb <- getInnerWedge(inf_frac = trials[,1], beta = beta,
-                               side = 1,zninf = -20, tol = 1e-13,
+                               side = 1,zninf = -20, tol = 1e-15,
                                outer_boundaries = boundout)
 
     # get then the upper boundaries again
@@ -554,15 +535,15 @@ TSA = function(timing,
     ub$alpha_ubound <- -ub$za
     ub$alpha <- alpha
 
-    root <- uniroot(getWarp, lower = 0.9, upper = 1.2, outer = ub,
-                    tol = 1e-13)$root
+    root <- uniroot(getWarp, lower = 0.9, upper = 1.5, outer = ub,
+                    tol = 1e-15)$root
 
     lb <- getInnerWedge(inf_frac = trials[,1]*root, beta = beta,
                                side = 1, zninf = -20, tol = 1e-15,
                                outer_boundaries = ub,
                                delta = NULL)
 
-    root <- uniroot(right_power, lower = 0.9, upper = 1.2, tol = 1e-13,
+    root <- uniroot(right_power, lower = 0.9, upper = 1.5, tol = 1e-15,
                     inner = lb$za, outer = ub, theta = boundout$delta)$root
 
     info <- sd_inf(trials[,1]*root)
@@ -579,22 +560,22 @@ TSA = function(timing,
       lb$alpha_ubound <- -lb$za*scale
       lb$alpha <- alpha
       ub <- getInnerWedge(inf_frac = trials[,1]*root, beta = alpha,
-                                 side = 1, fakeIFY = 0,zninf = -20, tol = 1e-13,
+                                 side = 1, fakeIFY = 0,zninf = -20, tol = 1e-15,
                                  outer_boundaries = lb,
                                  delta = 0)
 
       ub$alpha_ubound <- -ub$za
       ub$alpha <- alpha
 
-      root <- uniroot(getWarp, lower = 0.9, upper = 1.2, outer = ub,
+      root <- uniroot(getWarp, lower = 0.9, upper = 1.5, outer = ub,
                       tol = 1e-13)$root
 
       lb <- getInnerWedge(inf_frac = trials[,1]*root, beta = beta,
-                                 side = 1, fakeIFY = 0,zninf = -20, tol = 1e-13,
+                                 side = 1, fakeIFY = 0,zninf = -20, tol = 1e-15,
                                  outer_boundaries = ub,
                                  delta = NULL)
 
-      root <- uniroot(right_power, lower = 0.9, upper = 1.2, tol = 1e-13,
+      root <- uniroot(right_power, lower = 0.9, upper = 1.5, tol = 1e-15,
                       inner = lb$za, outer = ub, theta = boundout$delta)$root
 
       info <- sd_inf(trials[,1]*root)
@@ -610,11 +591,11 @@ TSA = function(timing,
 
     } else if(side == 2 & futility == "none"){
 
-      root <- uniroot(right_power, lower = 0.9, upper = 1.5, tol = 1e-13,
+      root <- uniroot(right_power, lower = 0.9, upper = 1.5, tol = 1e-15,
                       inner = boundout$alpha_lbound, outer = boundout,
                       theta = boundout$delta)$root
 
-      info <- sd_inf(timing*root)
+      info <- sd_inf(trials[,1]*root)
       pwr <- ma_power(upper_bound = boundout$alpha_ubound, theta = boundout$delta,
                       info = info, za = boundout$alpha_lbound)
       t1e <- ma_power(upper_bound = boundout$alpha_ubound, theta = 0,
@@ -622,63 +603,42 @@ TSA = function(timing,
 
 
       } else if(side == 2 & futility == "non-binding"){
-      lb <- RTSA:::getInnerWedge(inf_frac = timing, beta = beta,
-                                 side = 2, fakeIFY = 0,zninf = -20, tol = 1e-13,
+      lb <- RTSA:::getInnerWedge(inf_frac = trials[,1], beta = beta,
+                                 side = 2, fakeIFY = 0,zninf = -20, tol = 1e-15,
                                  outer_boundaries = boundout,
                                  delta = NULL)
 
       getWarp <- function(x, outer){
-        a <- RTSA:::getInnerWedge(inf_frac = timing*x, beta = beta,
-                                  side = 2, zninf = -20, tol = 1e-13,
+        a <- RTSA:::getInnerWedge(inf_frac = trials[,1]*x, beta = beta,
+                                  side = 2, zninf = -20, tol = 1e-15,
                                   outer_boundaries = outer,
-                                  delta = NULL)$za[length(timing)]
-        outer$alpha_ubound[length(timing)] - a
+                                  delta = NULL)$za[length(trials[,1])]
+        outer$alpha_ubound[length(trials[,1])] - a
       }
 
       root <- uniroot(getWarp, lower = 0.9, upper = 1.5, outer = boundout,
-                      tol = 1e-13)$root
+                      tol = 1e-15)$root
 
-      lb <- RTSA:::getInnerWedge(inf_frac = timing*root, beta = beta,
-                                 side = 2,zninf = -20, tol = 1e-13,
+      lb <- RTSA:::getInnerWedge(inf_frac = trials[,1]*root, beta = beta,
+                                 side = 2,zninf = -20, tol = 1e-15,
                                  outer_boundaries = boundout,
                                  delta = NULL)
-
-      lb <- RTSA:::getInnerWedge(inf_frac = timing*root, beta = beta,
-                                 side = 2,zninf = -20, tol = 1e-13,
-                                 outer_boundaries = boundout,
-                                 delta = NULL, rm_bs = 3)
-
-      getWarp <- function(x, outer){
-        a <- RTSA:::getInnerWedge(inf_frac = timing*x, beta = beta,
-                                  side = 2, zninf = -20, tol = 1e-13,
-                                  outer_boundaries = outer,
-                                  delta = NULL, rm_bs = 3)$za[length(timing)]
-        outer$alpha_ubound[length(timing)] - a
-      }
-
-      root <- uniroot(getWarp, lower = 0.9, upper = 1.5, outer = boundout,
-                      tol = 1e-13)$root
-
-      lb <- RTSA:::getInnerWedge(inf_frac = timing*root, beta = beta,
-                                 side = 2,zninf = -20, tol = 1e-13,
-                                 outer_boundaries = boundout,
-                                 delta = NULL, rm_bs = 3)
 
       right_power <- function(x, inner, outer, theta){
-        info = RTSA:::sd_inf(timing*x)
+        info = RTSA:::sd_inf(trials[,1]*x)
         pwr <- RTSA:::ma_power(upper_bound = outer$alpha_ubound, theta = theta,
                                info = info, za = inner)[[2]]
         pwr - (1-beta)
       }
 
 
-      root <- uniroot(right_power, lower = 0.9, upper = 1.2, tol = 1e-13,
+      root <- uniroot(right_power, lower = 0.9, upper = 1.5, tol = 1e-15,
                       inner = lb$za, outer = boundout, theta = boundout$delta)$root
 
-      info = RTSA:::sd_inf(timing*root)
-      RTSA:::ma_power(upper_bound = boundout$alpha_ubound, theta = boundout$delta,
+      info = RTSA:::sd_inf(trials[,1]*root)
+      pwr <- RTSA:::ma_power(upper_bound = boundout$alpha_ubound, theta = boundout$delta,
                       info = info, za = lb$za)
-      RTSA:::ma_power(upper_bound = boundout$alpha_ubound, theta = 0,
+      t1e <- RTSA:::ma_power(upper_bound = boundout$alpha_ubound, theta = 0,
                       info = info, za = lb$za)
 
 

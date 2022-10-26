@@ -5,19 +5,20 @@
 \title{minTrial}
 \usage{
 minTrial(
-  metric,
-  value,
+  outcome,
+  delta,
   tau2,
   alpha = 0.05,
   beta = 0.2,
   p0 = NULL,
-  verbose = FALSE
+  var_delta = NULL,
+  var_random = NULL
 )
 }
 \arguments{
-\item{metric}{Metric of interest, options include only risk ratio (RR) for now}
+\item{outcome}{Metric of interest, options include only risk ratio (RR) for now}
 
-\item{value}{Value of minimum relevant difference}
+\item{delta}{Value of minimum relevant difference}
 
 \item{tau2}{Heterogeneity estimate}
 
@@ -25,12 +26,12 @@ minTrial(
 
 \item{beta}{Type 2 error}
 
-\item{p0}{If verbose i set to TRUE and metric is set to RR (risk ration),
+\item{p0}{If verbose i set to TRUE and outcome is set to RR (risk ration),
 define common probability of event p0}
 
-\item{verbose}{TRUE or FALSE. If the number of required participants per
-trial is wanted as well, a matrix with the number of trials and the number
-of required participants per trial is printed.}
+\item{var_delta}{Variance of the estimated effect}
+
+\item{var_random}{Estimated variance from the random-effects meta-analysis}
 }
 \value{
 Either a number (minimum required trials) or the minimum required
@@ -42,6 +43,6 @@ Calculate minimum number of trials for wanted power in a meta-analysis with
 heterogeneity
 }
 \examples{
-minTrial(metric = "RR", value = 0.7, tau2 = 0.05)
+minTrial(outcome = "RR", delta = 0.7, tau2 = 0.05)
 
 }

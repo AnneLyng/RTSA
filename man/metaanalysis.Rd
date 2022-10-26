@@ -18,12 +18,16 @@ metaanalysis(
   nC = NULL,
   outcome = "RR",
   vartype = "equal",
-  method = "MH",
+  method = "IV",
   fixedStudy = TRUE,
   hksj = FALSE,
   sign = NULL,
   alpha = 0.05,
+  beta = 0.2,
   tau.ci.method = "BJ",
+  delta = NULL,
+  z_thres = NULL,
+  power_calc = FALSE,
   ...
 )
 }
@@ -54,7 +58,15 @@ fixed-effect. Defaults to TRUE.}
 
 \item{alpha}{Type-I-error.}
 
+\item{beta}{Type-II-error. Not used unless we want to make a sample size calculation.}
+
 \item{tau.ci.method}{Methods for computation of CI for tau.}
+
+\item{delta}{Minimum clinically relevant value}
+
+\item{z_thres}{Threshold value for z-score}
+
+\item{power_calc}{Sample size calculation for fixed-effect and random-effects meta-analysis.}
 
 \item{...}{Additional variables. See Details.}
 }
