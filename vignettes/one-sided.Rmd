@@ -18,37 +18,37 @@ knitr::opts_chunk$set(
 
 # Introduction
  
-This vignette is a supporting guide for boundaries in the RTSA package for one-sided tests. We will focus on $\alpha$-spending boundaries with and without $\beta$-spending boundaries. No $\beta$-spending boundaries means no futility boundaries. Including $\beta$-spending boundaries means adding either: binding or non-binding futility boundaries. There will be an example of a one-sided TSA in the end of the vignette.
+Here, we describe a supporting guide for boundaries in the `RTSA`-package for one-sided tests. We will focus on $\alpha$-spending boundaries with and without $\beta$-spending boundaries. No $\beta$-spending boundaries means no futility boundaries. Including $\beta$-spending boundaries means adding either: binding or non-binding futility boundaries. There will be an example of a one-sided TSA in the end of the vignette.
 
 As TSA combines meta-analysis with group sequential methods, we start with producing a one-sided meta-analysis. After, we will introduce the different sequential designs to consider when creating a sequential one-sided testing scheme. 
 
 # Setup
 
-We need the following two libraries for this vignette. 
+We need the following two libraries. 
 
 ```{r message=FALSE}
 library(RTSA)
 library(ggplot2)
 ```
 
-We will use a data example which is included in the RTSA package called perioOxy. TODO: more about the example.
+We will use a data example which is included in the `RTSA`-package called `perioOxy`. **[TODO: more about the example. <- Skal dette stadig stå der?]**
 
 ```{r}
 data("perioOxy")
 head(perioOxy)
 ```
 
-# Traditional meta-analysis 
+# Traditional non-sequential meta-analysis 
 
-A traditional meta-analysis (non-sequential meta-analysis) can be computed in RTSA. Besides providing the trials to be synthesized, we specify the kind of test, type-1- and type-2-error levels etc. In our example, we have the following set-up: 
+A traditional meta-analysis (non-sequential meta-analysis) can be computed in the `RTSA`-package. Besides providing the trials to be synthesized, we specify the kind of test, type-1 and type-2 error levels etc. In our example, we have the following set-up: 
 
 - One-sided test
-- Outcome metric is Relative Risk/Risk Ratio (RR)
+- Outcome metric is Relative Risk (RR)
 - Method of weighting is Inverse Variance (IV)
-- $\alpha=0.025$, which is the default type-1-error with one-sided testing
-- $\beta=0.2$, which is the default type-2-error
+- $\alpha=0.025$, which is the default type-1 error with one-sided testing
+- $\beta=0.2$, which is the default type-2 error
 
-We will need to specify the decided test type, the type-1-error level $\alpha$ and type-2-error level $\beta$ often. We define the variables globally. 
+We will need to specify the decided test type, the type-1 error level $\alpha$ and type-2 error level $\beta$ often. Thus, we define the variables globally. 
 
 ```{r}
 side <- 1
@@ -56,7 +56,7 @@ alpha <- 0.025
 beta <- 0.2
 ```
 
-The function `metaanalysis` in `RTSA` calculates a standard meta-analysis. The function returns study level statistics such as study specific estimates, confidence intervals etc. It also returns the meta-analysis statistics. The results are shown in the default print but can also be printed separately. For the results on the heterogeneity such as $\tau^2$ it is located in `heteResults`, which can be extracted from the meta-analysis object. Note that if `heteResults` is NULL, we were not able to estimate any heterogeneity. 
+The function `metaanalysis` in `RTSA` calculates a standard non-sequential meta-analysis. The function returns study level statistics such as study specific estimates and confidence intervals. It also returns the meta-analysis statistics. The results are shown in the default print but can also be printed separately. For the results on the heterogeneity such as $\tau^2$ it is located in `heteResults`, which can be extracted from the meta-analysis object. Note that if `heteResults` is NULL, we were not able to estimate any heterogeneity. 
 
 ```{r}
 metaanalysis(outcome = "RR", method = "IV", side = side, alpha = alpha, beta = beta, data = perioOxy)
@@ -72,21 +72,21 @@ A forest-plot can be generated for the meta-analysis output:
 plot(ma)
 ```
 
-# TSA: Trial sequential analysis
+# Trial sequential analysis
 
-Suppose that the meta-analysis above was not performed once, but repeatedly as the trials were reported. In a naive analysis, the type-1-error would be inflated had the meta-analysis been calculated sequentially. To control type-1-error, one can impose a sequential design. TSA can illustrate whether we would have had the same conclusion had the hypothesis test been made in a sequential design. 
+Suppose that the traditional meta-analysis above was not performed once, but repeatedly as more  trials were published. In a naive analysis, the type-1 error would be inflated had the meta-analysis been calculated sequentially. To control type-1 error, one can impose a sequential design. Trial sequential analysis (TSA) can illustrate whether we would have had the same conclusion had the hypothesis test been made in a sequential design. 
 
-Some things to consider before creating TSA are the type of test, definition of the information size and timing of meta-analyses. These three will be explained in more detail in the other vignettes. Below are some summarized points.
+Some things to consider before creating TSA are the type of test, definition of the information size and timing of meta-analyses. These three will be explained in more detail in other vignettes. Below are some summarized points.
 
-- Type of test
+- **Type of test**
 
-We use the same kind of test with specified error rates as before in the traditional meta-analysis. However, we can also decide on whether we would like to have futility boundaries. See the vignette, "Futility", for more information about futility boundaries. 
+We use the same kind of test with specified error rates as before in the traditional meta-analysis. However, we can also decide on whether we would like to have futility boundaries. See the "Futility"-vignette**[HUSK LINK]**, for more information about futility boundaries. 
 
-- Definition of the information size
+- **Definition of the information size**
 
-The sequential analysis divides the type-1-error across an interval ranging from of the first meta-analysis to a final cumulative meta-analysis. Here the final cumulative meta-analysis refers to a meta-analysis achieving the specified level of power. The range is often defined by the sample size accrued over the repeated meta-analysis. The scale of the interval is in TSA, and many other sequential methods, defined from 0 to 1. Here 0 could be equal to a sample size of 0 and 1 would then be the required information/sample size for a certain level of power. When defined from 0 to 1, the interval can be denoted as the information fraction accrued during the cumulative meta-analysis. 
+The sequential analysis divides the type-1 error across an interval ranging from of the first meta-analysis to a final cumulative meta-analysis. Here the final cumulative meta-analysis refers to a meta-analysis achieving the specified level of power. The range is often defined by the sample size accrued over the repeated meta-analysis. The scale of the interval is in TSA, and many other sequential methods, defined from 0 to 1. Here 0 could be equal to a sample size of 0 and 1 would then be the required information/sample size for a certain level of power. When defined from 0 to 1, the interval can be denoted as the information fraction accrued during the cumulative meta-analysis. 
 
-The naive or traditional meta-analysis of the data example provides information about a fixed-effect and random-effects meta-analysis. It does however not mention the level of power or if the meta-analysis reaches the sample size requirement. If you are interested in power calculations and required information size. We recommend that you read the vignette: "Calculating required sample size and required number of trials". 
+The naive or traditional meta-analysis of the data example provides information about a fixed-effect and random-effects meta-analysis. However, it does not mention the level of power or if the meta-analysis reaches the sample size requirement. If you are interested in power calculations and required information size. We recommend that you read the vignette: "Calculating required sample size and required number of trials" **[HUSK LINK]**. 
 
 Our required information size (RIS) is calculated to:
 
@@ -102,7 +102,8 @@ RIS = RTSA:::nRandom(alpha = alpha*2/side, beta = 0.2, pI = pI, pC = pC,
                      diversity = 0.79)
 ceiling(RIS)
 ```
-- Timing of the meta-analyses
+
+- **Timing of the meta-analyses**
 
 Based on RIS, we set the information fractions to the fraction of number of participants per meta-analysis out of RIS.
 
@@ -133,8 +134,7 @@ We can also plot the one-sided TSA:
 plot(RTSAout)
 ```
 
-
-## One-sided test and non-binding futility
+## One-sided test with non-binding futility
 
 By using the same specifications as before but including `futility = "non-binding"`, we create a one-sided test design with non-binding futility. 
 
@@ -151,7 +151,7 @@ plot(RTSAout_nb)
 
 Note that we require more participants in the non-binding futility design compared to the one-sided design with no futility. 
 
-## One-sided test and binding futility
+## One-sided test with binding futility
 
 By using the same specifications as before but including `futility = "binding"`, we create a one-sided test design with binding futility. 
 
@@ -166,4 +166,4 @@ Again, can we plot the RTSA object:
 plot(RTSAout_b)
 ```
 
-Note that the DARIS is smaller for binding futility compared to non-binding futility. We also have less conservative tests as the $\alpha$ spending boundary is less extreme compared to both the non-binding futility design and the design completely without futility. 
+Note that the diveristy-adjusted requires information size (DARIS) is smaller for binding futility compared to non-binding futility. We also have less conservative tests as the $\alpha$ spending boundary is less extreme compared to both the non-binding futility design and the design completely without futility. 
