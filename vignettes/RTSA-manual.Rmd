@@ -1,0 +1,38 @@
+---
+title: "RTSA-manual"
+output: 
+  bookdown::html_document2:
+    toc: true
+    toc_depth: 2
+    fig_caption: yes
+vignette: >
+  %\VignetteIndexEntry{rtsa-manual}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r, include=FALSE}
+library(dplyr)
+library(knitr)
+library(kableExtra)
+library(RTSA)
+```
+
+# Introduction to Trial Sequential Analysis
+
+Trial Sequential Analysis (TSA) is a method for conducting sequential meta-analysis.
+
+The purpose of this manual is to function as a working manual for both statisticians and non-statisticians. It contains information about most of the key statistical methods behind TSA. For tutorials on how to use RTSA, we recommend reading the vignettes to this package. 
+
+This manual will start with a short introduction to when a sequential meta-analysis should be considered before moving to main section of this manual about the statistical background. The statistical background section will touch upon hypothesis testing, type I and type II errors and more. 
+
+This is a work in progress. Please refer to the original TSA manual at: 
+https://ctu.dk/wp-content/uploads/2021/03/2017-10-10-TSA-Manual-ENG_ER.pdf
+

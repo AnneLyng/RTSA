@@ -1,0 +1,40 @@
+Package: RTSA
+Type: Package
+Title: 'Trial Sequential Analysis' for Error Control and Inference in Sequential Meta-Analyses
+Authors@R: c(person(given = "Anne", family = "Lyngholm Soerensen", email = "lynganne@gmail.com", role = c('aut', 'cre', 'trl')), person(given = "Markus", family = "Harboe Olsen", email = "markus.harboe.olsen@regionh.dk", role = c('aut')))
+Version: 0.1.0
+Description: Frequentist meta-analysis and sequential meta-analysis based on 
+    'Trial Sequential Analysis' (TSA) by Copenhagen Trial Unit (CTU). Primary 
+    usage is the calculation of group sequential designs for meta-analysis to be
+    used for planning and analysis of both prospective and retrospective 
+    sequential meta-analyses to preserve type-I-error control under sequential 
+    testing. 'RTSA' includes tools for sample and trial size calculation for 
+    meta-analysis and core meta-analyses methods such as fixed-effect and 
+    random-effects models and forest plots. TSA is described in Wetterslev et. 
+    al (2008) <doi:10.1016/j.jclinepi.2007.03.013>. The methods for deriving the
+    group sequential designs are based on Jennison and Turnbull (1999,
+    ISBN:9780849303166).
+License: GPL (>= 2)
+Imports:
+    stats,
+    metafor,
+    ggplot2,
+    scales,
+    Rcpp (>= 0.11.0)
+LinkingTo: Rcpp
+Encoding: UTF-8
+Depends: R (>= 3.5.0)
+LazyData: true
+RoxygenNote: 7.2.3
+Suggests: 
+    gsDesign,
+    CompQuadForm,
+    dplyr,
+    kableExtra,
+    rmarkdown,
+    knitr,
+    bookdown,
+    gridExtra
+VignetteBuilder: 
+    knitr, 
+    bookdown

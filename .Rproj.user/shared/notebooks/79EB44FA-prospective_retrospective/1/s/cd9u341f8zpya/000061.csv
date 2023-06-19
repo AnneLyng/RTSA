@@ -1,0 +1,5 @@
+"0","eds <- eds[order(eds$year),]"
+"0","ex_retro_rtsa <- RTSA(type = ""analysis"", data = eds, side = 2, outcome = ""MD"","
+"0","                      alpha = 0.05, beta = 0.1, futility = ""none"", "
+"0","                      fixed = FALSE, es_alpha = ""esOF"", mc = -2,"
+"0","                      ana_time = c(3,6))"

@@ -1,0 +1,28 @@
+"1","lci is the lower limit of the confidence interval. uci is the upper limit of the confidence interval."
+"1","
+
+Meta-analysis results:
+"
+"1","Fixed Pooled effect (MD): -0.34 (95% TSA-adjusted CI: -0.95-0.27); naive p-value: 0.0967
+Random Pooled effect (MD): -0.34 (95% TSA-adjusted CI: -0.95-0.27); naive p-value: 0.0967
+
+Heterogeneity results:
+tau^2: 0.00; I^2: 0.0%; D^2: 0.0%; Heterogeneity p-value: 1.0000"
+"1","
+
+Please note the following warnings:
+"
+"1","-"
+"1"," "
+"1","The order of the Trial Sequential Analysis will be based on the order of the studies in the data-set. Please add a 'order' column in the data-set to specify the order."
+"1"," "
+"1","
+
+"
+"1","-"
+"1"," "
+"1","Standard deviation is set to1"
+"1"," "
+"1","
+
+"

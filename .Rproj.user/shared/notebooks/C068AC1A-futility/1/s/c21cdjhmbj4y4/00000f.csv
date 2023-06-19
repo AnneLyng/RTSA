@@ -1,0 +1,7 @@
+"0","library(ggplot2)"
+"0","library(gridExtra)"
+"0","grid.arrange(plot(bound_none)+ggtitle(""a) One-sided - no futility""),"
+"0","             plot(bound_bind)+ggtitle(""b) One-sided - bind. futility""),"
+"0","             plot(bound_none2)+ggtitle(""c) Two-sided - no futility""),"
+"0","             plot(bound_bind2)+ggtitle(""d) Two-sided - bind. futility""),"
+"0","             ncol = 2)"

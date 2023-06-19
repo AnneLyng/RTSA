@@ -1,0 +1,136 @@
+---
+title: "Prospective and retrospective sequential meta-analysis"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Prospective and retrospective sequential meta-analysis}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+# Purpose
+
+This vignette is used to introduce two types of meta-analyses: prospective and retrospective. It will also describe how the different types of meta-analysis will be handled in a sequential setting using `RTSA`. 
+
+# Introduction
+
+We will in this section briefly describe the difference between prospective and retrospective meta-analysis. For more information and a rich description on prospective meta-analysis, the Cochrane Methods section on prospective meta-analysis is must-read and can be found [here](https://methods.cochrane.org/pma/).
+
+## When is the meta-analysis prospective
+
+For a meta-analysis to be prospective, all of the study results, which are intended to be used in the meta-analysis, must be unknown. If this criteria is fulfilled the research hypotheses and design of the meta-analysis must also be made prior to knowing the results of the studies. If any are known, the knowledge can influence the design of the meta-analysis and cause bias. For a guide on how to make a prospective meta-analysis, see Seidler et al 2019 (https://doi.org/10.1136/bmj.l5342).
+
+If any study results are known or the protocol/design of the meta-analysis is based on knowledge from related studies, the meta-analysis is retrospective.
+
+## Prospective > retrospective
+
+If meta-analysis is the gold standard of evidence, then the prospective meta-analysis must be the diamond standard of evidence. One should aim for being as close to a prospective meta-analysis as possible. This protects from several potential biases potentially present in retrospective meta-analysis. Some of the potential biases in retrospective meta-analysis includes:
+
+- Publication bias; only trials in favor of the research hypothesis are published. 
+- Sequential decision bias; new trials are more likely to be conducted if previous promising results have been found. Kulinskaya et al 2015 (https://doi.org/10.1002/jrsm.1185).
+- Sequential design bias; new trials base their designs on pre-existing trials. Kulinskaya et al 2015 (https://doi.org/10.1002/jrsm.1185).
+- and more.
+
+# Sequential prospective and retrospective meta-analysis
+
+One can use `RTSA` for both their prospective and retrospective sequential meta-analysis.
+
+To make a prospective meta-analysis using `RTSA`, a design is required. One can design a meta-analysis using the `RTSA()` function by specifying that the type of analysis is design: 
+
+```{r, eval = FALSE}
+RTSA(type = "design",...)
+```
+
+Storing the RTSA design object and using it as a argument in the `RTSA()` function when data has been collected ensures that the design of the meta-analysis is not dependent on the data. 
+
+```{r, eval = FALSE}
+pro_design <- RTSA(type = "design",...)
+pro_analysis <- RTSA(type = "analysis", design = pro_design, 
+                     data = studies)
+```
+
+In the retrospective meta-analysis is there no pre-existing design and the `RTSA()` function is provided with all design arguments such as `alpha` (type-I-error level), `beta` (type-II-error level), `side` (whether the analysis is one- or two-sided), `es_alpha` (the error spending function for alpha), `futility` (if any futility - which one) and more. 
+
+To run a retrospective meta-analysis in `RTSA` one sets the type to design. The difference between a retrospective and prospective analysis is that the retrospective analysis does not require a design.  
+
+```{r, eval = FALSE}
+retro_analysis <- RTSA(type = "analysis", alpha = alpha_level, 
+                       beta = beta_level, data = studies, ...)
+```
+
+We will now provide two examples of respectively a prospective sequential meta-analysis and a retrospective sequential meta-analysis.
+
+## Prospective sequential meta-analysis
+
+Let $X$ be the treatment difference between treatment $A$ and $B$ such as a mean difference. Suppose that the research question of interest is: "Is X different from 0?". Our null hypothesis is then that $X=0$. Consider the scenario that 0.5 is a minimal clinical value of interest for the difference between treatment $A$ and $B$ and we expect a standard deviation of 1. We want to test at a 5% significance level at 90% power. 
+
+No trials on the topic exists, however three research centers have planned to run close to identical trials investigating the treatment difference between treatment $A$ and $B$. Each center can not individually recruit a sufficient number of participants to have a well-powered trial, hence they want to combine their trials in a meta-analysis. They decide that the number of participants should be split such that the first center accounts for 50% of the sample, whereas the remaining two account for 25%.
+
+The centers want to stop and allocate the patients to the most effective treatment as soon as possible if early findings of efficacy of any of the treatments are found. They choose a Lan and DeMets' version of O'Brien-Fleming boundaries for enabling early stopping. They are not interested in stopping for futility. 
+
+Regarding heterogeneity and the interpretation of the meta-analysis, they decide to use a fixed-effect meta-analysis based on the trials are close to homogeneous. However, presence of heterogeneity will be investigated.
+
+We can then use `RSTA` to plan the prospective sequential meta-analysis. One can perform a prospective meta-analysis in RTSA by creating a design:
+
+```{r}
+library(RTSA)
+design_pma <- RTSA(type = "design", outcome = "MD", alpha = 0.05, beta = 0.1, mc = 0.5, sd_mc = 1,
+     side = 2, timing = c(0.5,0.75,1), es_alpha = "esOF", fixed = TRUE)
+design_pma
+```
+
+The output provides the required number of participants and boundaries for testing in a sequential meta-analysis. Hence for the three trials, the samples can be split as follows: `r 174*0.5`, `r 174*0.25`, `r 174*0.25`.
+
+Suppose that the first trial is done. We can then update the prospective meta-analysis by using the design in the call: 
+
+```{r}
+set.seed(0702)
+treatA <- rnorm(n = ceiling(87/2), mean = 1.0, sd = 1)
+treatB <- rnorm(n = ceiling(87/2), mean = 0.5, sd = 1)
+trial1 <- data.frame(mI = mean(treatB), mC = mean(treatA), sdI = sd(treatB),
+                     sdC = sd(treatA), nI = ceiling(87/2), nC = ceiling(87/2))
+x <- RTSA(type = "analysis", design = design_pma, data = trial1)
+x
+```
+## Type-I-error in sequential meta-analysis
+
+The type-I-error will be controlled in a prospective sequential meta-analysis, when first being designed and then updated using the same design. Changes to the original design such as having an additional trial will not impact type-I-error however it can impact the power of the meta-analysis. This is also true for unaccounted for presence of heterogeneity. If there is presence of heterogeneity then the trial will be under-powered but again it will not affect type-I-error control. 
+
+A paper reviewing some of these scenarios where we diverge from the design is under way. Both for the prospective meta-analysis and the retrospective meta-analysis. 
+
+## Sequential meta-analysis for retrospective meta-analysis
+
+The sequential retrospective meta-analysis can for many reasons be biased by the knowledge of results of studies used in the meta-analysis. Previous knowledge can affect the research hypothesis, which of the studies to be included in the meta-analysis, and more. Further, the set of studies available might be overly positive due to publication bias. Most of these biases will cause a potential increase in type-I-error which can not be handled by TSA.
+
+Another cause of increase in type-I-error is the potential adaption of the method to the data of retrospective meta-analysis. These include leveraging information from the studies intended to use in the sequential meta-analysis. Such information could be the estimate of heterogeneity, or for binary data the probability of event in the control group. For good reasons, one might want to use the estimate of heterogeneity in the sample size calculation of the retrospective meta-analysis. However, the effect of being data-adaptive and not sticking to a pre-specified design can affect the control of type-I-error. 
+
+If one can accept not to use p-values as decision markers, a sequential retrospective meta-analysis is still of value. The method will provide the users with:
+
+1. Control of type-I-error in the scenario that the current state is the truth.
+2. A reminder user that the hypothesis has been tested multiple times and the type-I-error rate is affected.
+3. Quantification whether the meta-analysis is sufficiently powered or more trials are required to reach the wanted level of power. 
+
+An example of a retrospective meta-analysis is the eds data from the RTSA package. Here there is no design, so the function requires all of the relevant design settings such as setting the spending functions, type-I- and type-II-error levels etc. 
+
+```{r}
+eds <- eds[order(eds$year),]
+ex_retro_rtsa <- RTSA(type = "analysis", data = eds, side = 2, outcome = "MD",
+                      alpha = 0.05, beta = 0.1, futility = "none", 
+                      fixed = FALSE, es_alpha = "esOF", mc = -2,
+                      ana_time = c(3,6))
+```
+
+```{r, fig.width=6, fig.height=5}
+plot(ex_retro_rtsa)
+```
+
+Another example is the coronary data from the package. 
+
+```{r}
+ex2_retro_rtsa <- RTSA(type = "analysis", data = coronary, side = 2, outcome = "OR",
+                      alpha = 0.05, beta = 0.1, futility = "non-binding", 
+                      fixed = FALSE, es_alpha = "esOF", es_beta = "esPoc", mc = 0.88)
+```
+
+```{r, fig.width=6, fig.height=5}
+plot(ex2_retro_rtsa)
+```

@@ -1,0 +1,20 @@
+"0","set.seed(0702)"
+"0","treatA <- rnorm(n = ceiling(87/2), mean = 1.0, sd = 1)"
+"0","treatB <- rnorm(n = ceiling(87/2), mean = 0.5, sd = 1)"
+"0","trial1 <- data.frame(mI = mean(treatB), mC = mean(treatA), sdI = sd(treatB),"
+"0","                     sdC = sd(treatA), nI = ceiling(87/2), nC = ceiling(87/2))"
+"0","x <- RTSA(type = ""analysis"", design = design_pma, data = trial1)"
+"0","x"
+"1","Trial Sequential Analysis was computed with the following settings: 
+ 
+"
+"1","Boundaries for a 2-sided design with a type-I-error of 0.05, and type-II-error of 0.1.
+"
+"1","Futility is set to: none. Alpha-spending function: esOF.
+Beta-spending function: .
+
+"
+"1","Timing,"
+"1"," "
+"1","boundaries, and test statistic:
+"

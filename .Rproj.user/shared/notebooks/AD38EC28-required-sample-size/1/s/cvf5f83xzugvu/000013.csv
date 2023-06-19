@@ -1,0 +1,40 @@
+"0","ris(outcome = ""RR"", mc = 0.9, p0 = 0.1, alpha = 0.05, beta = 0.1, side = 2)
+"
+"1","This is a prospective meta-analysis sample size calculation.
+The sample size calculation assumes a"
+"1"," "
+"1","2-sided test,"
+"1"," "
+"1","equal group sizes,
+a type-I-error of"
+"1"," "
+"1","0.05"
+"1"," "
+"1","and a type-II-error of"
+"1"," "
+"1","0.1."
+"1"," "
+"1","
+The minimum clinical relevant value is set to:"
+"1"," "
+"1","0.9"
+"1"," "
+"1","for outcome metric"
+"1"," "
+"1","RR.
+"
+"1","Additional parametres for sample size are:
+"
+"1","Probability of event in the control group:"
+"1"," "
+"1","0.1."
+"1","
+
+"
+"1","Fixed-effect required information size:
+"
+"1","36136 participants in total. 
+"
+"1","
+For more information about the sample size calculation see vignette:
+'Calculating required sample size and required number of trials'."

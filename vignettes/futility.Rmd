@@ -1,0 +1,123 @@
+---
+title: "Futility"
+output: 
+  bookdown::html_document2:
+    fig_caption: yes
+vignette: >
+  %\VignetteIndexEntry{futility}
+  %\VignetteEncoding{UTF-8}
+  %\VignetteEngine{knitr::rmarkdown}
+---
+
+# Purpose
+
+This vignette is used to introduce futility and it's two versions: binding and non-binding. 
+
+# Futility boundaries
+
+In a sequential meta-analysis it is possible to stop early based on evidence for benefit of treatment or harm of treatment. But it might also be of interest to stop the sequential meta-analysis early for evidence of futility; when the probability of rejecting the null hypothesis is sufficiently low. Futility boundaries are computed in *RTSA* to be able to stop a sequential meta-analysis for futility.
+
+The futility boundaries in *RTSA* allows to stop for futility while not compromising the control of the type-I-error. There are two kinds of futility boundaries to choose from. We will in this section introduce the two kinds of futility boundaries: binding and non-binding futility boundaries. After the introduction will we compare the two. 
+
+## Binding futility
+
+We provide two examples of binding futility before explaining what is means to have binding futility in detail. See Figure 1 for one- and two-sided designs with no futility or binding futility. 
+
+```{r}
+library(RTSA)
+bound_none <- boundaries(timing = c(0.5,0.75, 1), alpha  = 0.025, beta = 0.2, 
+                    side = 1, futility = "none", es_alpha = "esOF")
+bound_bind <- boundaries(timing = c(0.5,0.75, 1), alpha  = 0.025, beta = 0.2, 
+                    side = 1, futility = "binding", es_alpha = "esOF",
+                    es_beta = "esOF")
+bound_none2 <- boundaries(timing = c(0.5,0.75, 1), alpha  = 0.05, beta = 0.2, 
+                    side = 2, futility = "none", es_alpha = "esOF")
+bound_bind2 <- boundaries(timing = c(0.5,0.75, 1), alpha  = 0.05, beta = 0.2, 
+                    side = 2, futility = "binding", es_alpha = "esOF",
+                    es_beta = "esOF")
+```
+
+
+```{r fig1, warning=FALSE, fig.height=8, fig.cap="Boundaries for benefit and harm (red lines) and boundaries for futility (blue lines) are shown on the 4 plots.", fig.width=10, echo=FALSE}
+library(ggplot2)
+library(gridExtra)
+grid.arrange(plot(bound_none)+ggtitle("a) One-sided - no futility"),
+             plot(bound_bind)+ggtitle("b) One-sided - bind. futility"),
+             plot(bound_none2)+ggtitle("c) Two-sided - no futility"),
+             plot(bound_bind2)+ggtitle("d) Two-sided - bind. futility"),
+             ncol = 2)
+```
+
+To control for the type-I-error, it is assumed that one will stop the sequential meta-analysis if any of the alpha boundaries are crossed. When using binding futility boundaries, it will also be assumed that the meta-analysis stops when entering the futility area. If the meta-analysis does not stop when reaching the futility area but continues will the hypothesis testing of the null hypothesis be too optimistic (more than the set level of type-I-error). In the examples above, we have a too optimistic test. We can see this based on the boundaries printed below. The first print is the one-sided test with no futility. Here the boundaries are larger than 1.96 due to the multiple testing.
+
+```{r}
+bound_none
+```
+
+The boundaries of our design with the binding futility will however have some boundaries less than 1.96. It is not true for all designs with binding futility to have boundaries below 1.96. The boundaries depends on the choice of spending function and timing of the interim analyses. But the example here shows that under binding futility we can encounter a boundary less than 1.96 (here 1.93). The reason is that if we have binding futility, the chance of a type-I-error becomes smaller as we will stop for futility. If the null hypothesis is true, the futility boundaries will catch it with a specific probability and hence reducing the risk of a false-positive, a type-I-error. This affects the boundaries as shown below.
+
+```{r}
+bound_bind
+```
+
+So in this specific design, if we continue the meta-analysis without respecting the futility stopping boundaries, we will in average have a type-I-error larger than 5%. This means that scenarios should as the one on the left plot in Figure 2 must not occur under binding futility if one wants to state that the type-I-error is controlled.
+
+```{r fig3, warning=FALSE, fig.height=4, fig.cap="Boundaries for benefit and harm (red lines) and boundaries for futility (blue lines) are shown on the 2 plots.", fig.width=10, echo=FALSE}
+grid.arrange(plot(bound_bind)+ggtitle("One-sided - binding futility") + 
+               geom_line(aes(x = c(0,0.5,0.75,1)*1.075, y = c(0,1.1, 1.0, 2.1)), line_width = 0.25) + 
+               geom_point(aes(x = c(0,0.5,0.75,1)*1.075, y = c(0,1.1, 1.0, 2.1))),
+             plot(bound_bind)+ggtitle("One-sided - binding futility") + 
+               geom_line(aes(x = c(0,0.5,0.75,1)*1.075, y = c(0,1.7, 2, 2.7)), line_width = 0.25) + 
+               geom_point(aes(x = c(0,0.5,0.75,1)*1.075, y = c(0,1.7, 2, 2.7))),
+             ncol = 2)
+```
+
+
+## Non-binding futility
+
+To allow for crossing of the futility boundary without deciding to stop and also without compromising the type-I-error, one can use non-binding futility boundaries. We look into two none-binding designs:
+
+```{r}
+bound_nbind <- boundaries(timing = c(0.5,0.75, 1), alpha  = 0.025, beta = 0.2, 
+                    side = 1, futility = "non-binding", es_alpha = "esOF",
+                    es_beta = "esOF")
+bound_nbind2 <- boundaries(timing = c(0.5,0.75, 1), alpha  = 0.05, beta = 0.2, 
+                    side = 2, futility = "non-binding", es_alpha = "esOF",
+                    es_beta = "esOF")
+```
+
+The boundaries are shown on Figure 3.
+
+```{r fig2, warning=FALSE, fig.height=8, fig.cap="Boundaries for benefit and harm (red lines) and boundaries for futility (blue lines) are shown on the 4 plots.", fig.width=10, echo=FALSE}
+grid.arrange(plot(bound_none)+ggtitle("a) One-sided - no futility"),
+             plot(bound_nbind)+ggtitle("b) One-sided - non-bind. futility"),
+             plot(bound_none2)+ggtitle("c) Two-sided - no futility"),
+             plot(bound_nbind2)+ggtitle("d) Two-sided - non-bind. futility"),
+             ncol = 2)
+```
+
+To control for the type-I-error, it is assumed that one will stop the sequential meta-analysis if any of the alpha boundaries are crossed. When using non-binding futility boundaries, futility boundaries will be calculated, but it will not be assumed that the meta-analysis stops when entering the futility area. If the meta-analysis does not stop when reaching the futility area but continues, then will the result be a over-powered meta-analysis with a controlled type-I-error. The boundaries of our design with the non-binding futility will never have boundaries less than 1.96. It is true for all designs with non-binding futility to have boundaries above 1.96 when testing on a 2.5% level for one-sided or 5% level for two-sided. The reason is that the same boundaries are used for stopping for benefit and for harm as in the design with no futility. The print of the non-binding design below shows identical upper boundaries to the design with no futility. 
+
+```{r}
+bound_nbind
+```
+
+If one decides to stop the meta-analysis when reaching the non-binding futility area, we still would have controlled for type-I-error in this design, however the test will be too conservative.  
+
+## Comparison
+
+Before making recommendations about which kind of futility to use, if used at all, it is fruitful to compare the two. Several points are worth considering: 
+
+1. The sample size requirement is larger for non-binding futility designs compared to binding futility designs.  
+
+2. The control of the type-I-error in binding futility is only secured if the meta-analysis will stop when crossing a futility boundary. 
+
+3. Only stopping for benefit or harm in a non-binding futility meta-analysis design will cause the null hypothesis test to be too conservative. 
+
+Hence, the choice of selecting whether the futility boundaries should be binding or non-binding depends on the application. The design of the sequential meta-analysis is affected by the choice: 
+
+- *The stopping behavior*: If one will stop the meta-analysis when reaching the futility area, binding futility can be chosen over non-binding futility. 
+
+- *The power of the design*: More participants are required under non-binding futility to achieve a given level of power. Maybe it is too unrealistic to reach the level of participants required in a non-binding futility design. 
+
+For many designs will it not be realistic to assume that the meta-analysis will always stop for futility. More trials might be underway and the meta-analysis will be updated. In most sequential meta-analyses will the obvious choice of futility boundaries be the non-binding futility. But this is only to be considered if one will ever use the futility boundaries for anything. The design without futility ensures a precise level of type-I-error in average at the right level of power if the meta-analysis is prospective and have the same amount of control as in a sequential trial. Designs with no futility boundaries require less participants. 
