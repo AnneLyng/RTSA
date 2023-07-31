@@ -63,13 +63,13 @@ What we need to define in order to make the sample size calculation differs depe
 For RR, OR or RD, we need specification of:
 
 - The minimum clinically relevant difference $\theta$.
-- Common probability of event $p_0$.
+- Common probability of event $p_C$.
 - test type (one- or two-sided), type-I-error and type-II error levels.
 
-Suppose we assume an effect of intervention compared to control for a dichotomous outcome resulting in a risk ratio of $RR = 0.9$ with a common probability of event being $p_0 = 0.1$. To calculate the number of required participants, we use the RTSA function `ris()`. We set `alpha` to 0.05, `beta` to 0.1 and use a two-sided test, hence `side = 2`. 
+Suppose we assume an effect of intervention compared to control for a dichotomous outcome resulting in a risk ratio of $RR = 0.9$ with a common probability of event being $p_C = 0.1$. To calculate the number of required participants, we use the RTSA function `ris()`. We set `alpha` to 0.05, `beta` to 0.1 and use a two-sided test, hence `side = 2`. 
 
 ```{r}
-ris(outcome = "RR", mc = 0.9, p0 = 0.1, alpha = 0.05, beta = 0.1, side = 2)
+ris(outcome = "RR", mc = 0.9, pC = 0.1, alpha = 0.05, beta = 0.1, side = 2)
 ```
 
 ## Heterogeneity
@@ -97,11 +97,11 @@ For more information about the two formulas, see (Wetterslev 2009).
 An example of calculating RIS using RIS based on diversity ($D^2$) or inconsistency ($I^2$) is given below.
 
 ```{r}
-ris(outcome = "RR", mc = 0.9, p0 = 0.2, random = TRUE, I2 = 0.2, D2 = 0.3,
+ris(outcome = "RR", mc = 0.9, pC = 0.2, random = TRUE, I2 = 0.2, D2 = 0.3,
     side = 2, alpha = 0.05, beta = 0.2)
 ```
 
-Using a simulation study, we investigate if the method will provide an RIS to achieve sufficient power. Consider a scenario where $RR = 0.9$, $p_0 = 0.1$, and $\tau^2=0.05$. Each $RIS$ formula is depending on $\tau$ and $D^2$ or $I^2$, so we need a guess for an estimate of $\tau$ and an estimate of $\sigma_D$ or $\sigma_M$. For each simulation we make an initial meta-analysis of 10 studies where each study has 500 participants. From the meta-analyses we estimate $\tau$, $\sigma_D$ and $\sigma_M$. From these estimates, we can calculate $RIS_{D^2}$ and $RIS_{I^2}$ providing us with the needed number of participants. An additional trial is then added to achieve the RIS. Redoing this 10,000 times, we wish to see how many times the null hypothesis is rejected to investigate if we on average achieve the right power. 
+Using a simulation study, we investigate if the method will provide an RIS to achieve sufficient power. Consider a scenario where $RR = 0.9$, $p_C = 0.1$, and $\tau^2=0.05$. Each $RIS$ formula is depending on $\tau$ and $D^2$ or $I^2$, so we need a guess for an estimate of $\tau$ and an estimate of $\sigma_D$ or $\sigma_M$. For each simulation we make an initial meta-analysis of 10 studies where each study has 500 participants. From the meta-analyses we estimate $\tau$, $\sigma_D$ and $\sigma_M$. From these estimates, we can calculate $RIS_{D^2}$ and $RIS_{I^2}$ providing us with the needed number of participants. An additional trial is then added to achieve the RIS. Redoing this 10,000 times, we wish to see how many times the null hypothesis is rejected to investigate if we on average achieve the right power. 
 
 To investigate the effect of more trials, we also increase the number of added trials to the meta-analysis from 1 to 10. 
 
@@ -112,9 +112,9 @@ outl = matrix(NA, ncol = 3, nrow = 10)
 outm = matrix(NA, ncol = 4, nrow = 10)
 
 RR <- 0.9
-p0 <- 0.1
-pI <- round(exp(log(p0) + log(RR) / 2), 4)
-pC <- round(exp(log(p0) - log(RR) / 2), 4)
+pC <- 0.1
+pI <- round(exp(log(pC) + log(RR) / 2), 4)
+pC <- round(exp(log(pC) - log(RR) / 2), 4)
 theta = round(pC - pI, 4)
 n = 2500
 K = 10
@@ -127,10 +127,10 @@ for(m in 1:10) {
   for (h in 1:nsim) {
     ln_RR = rnorm(K, mean = log(RR), sd = sqrt(tau2))
     
-    pI = exp(log(p0) + ln_RR)
+    pI = exp(log(pC) + ln_RR)
     pI[pI < 0.01] = 0.01
     pI[pI > 0.99] = 0.99
-    pC = rep(exp(log(p0)),K)
+    pC = rep(exp(log(pC)),K)
     pC[pC < 0.01] = 0.01
     pC[pC > 0.99] = 0.99
     outmat = matrix(NA, ncol = 4, nrow = K)
@@ -169,10 +169,10 @@ for(m in 1:10) {
     }
     
     ln_RR = rnorm(m, mean = log(RR), sd = sqrt(tau2))
-    pI = exp(log(p0) + ln_RR)
+    pI = exp(log(pC) + ln_RR)
     pI[pI < 0.01] = 0.01
     pI[pI > 0.99] = 0.99
-    pC = rep(exp(log(p0)),m)
+    pC = rep(exp(log(pC)),m)
     pC[pC < 0.01] = 0.01
     pC[pC > 0.99] = 0.99
 
@@ -256,10 +256,10 @@ K}{\left(z_{1-\alpha/2}+z_{1-\beta}\right)^2} - \tau^2}.
 
 We compare the methods originally implemented in the TSA software with the new methods for calculating both the required number of participants and the required number of trials. 
 
-We set $RR = 0.9$, $p_0 = 0.1$ and $\tau^2 = 0.05$. With these values we get the following minimum number of required trials:
+We set $RR = 0.9$, $p_C = 0.1$ and $\tau^2 = 0.05$. With these values we get the following minimum number of required trials:
 
 ```{r}
-ris(outcome = "RR", mc = 0.9, random = TRUE, tau2 = 0.05, p0 = 0.1,
+ris(outcome = "RR", mc = 0.9, random = TRUE, tau2 = 0.05, pC = 0.1,
     side = 2, alpha = 0.05, beta = 0.2)
 ```
 
@@ -269,14 +269,14 @@ The intended level of power is reached for each of the combinations of the numbe
 outl = matrix(NA, ncol = 3, nrow = 4)
 
 RR <- 0.9
-p0 <- 0.1
-pI <- round(exp(log(p0)+log(RR)/2),4)
-pC <- round(exp(log(p0)-log(RR)/2),4)
+pC <- 0.1
+pI <- round(exp(log(pC)+log(RR)/2),4)
+pC <- round(exp(log(pC)-log(RR)/2),4)
 theta = round(pC - pI,4)
 nsim = 10000
 tau2 = 0.05
 
-trial.out = minTrial(outcome = "RR", mc = 0.9, tau2 = 0.05, p0 = 0.1)
+trial.out = minTrial(outcome = "RR", mc = 0.9, tau2 = 0.05, pC = 0.1)
 
 outtau = numeric(nsim)
 outpvalue = matrix(NA, ncol = 3, nrow = nsim)
@@ -289,10 +289,10 @@ n = trial.out$nPax[2,l]
     outmat = matrix(NA,ncol = 4, nrow = K)
 
     ln_RR = rnorm(K, mean = log(RR), sd = sqrt(tau2))
-    pI = exp(log(p0)+ln_RR/2)
+    pI = exp(log(pC)+ln_RR/2)
     pI[pI < 0.01] = 0.01
     pI[pI > 0.99] = 0.99
-    pC = exp(log(p0)-ln_RR/2)
+    pC = exp(log(pC)-ln_RR/2)
     pC[pC < 0.01] = 0.01
     pC[pC > 0.99] = 0.99
     for(i in 1:(K)){
@@ -354,7 +354,7 @@ In both formulas are the $\sigma^2_{R}$ the current estimate of the variance of 
 
 ```{r}
 ma <- metaanalysis(data = perioOxy, outcome = "RR", mc = 0.8, beta = 0.1,
-                   p0 = 0.15)
+                   pC = 0.15)
 ma$ris
 ```
 

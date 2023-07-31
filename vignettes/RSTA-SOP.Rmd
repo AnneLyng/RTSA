@@ -21,7 +21,7 @@ knitr::opts_chunk$set(
 
 # Description
 
-Trial Sequential Analysis is an analysis of meta-analytic data that aims to transparently control for type I and type II errors [1]. When conducting a systematic review with meta-analysis transparency is of highest importance. Including a Trial Sequential Analysis to the meta-analysis is no exception. One of the most important tools is providing a public available protocol that describes, in detail, how and when the analysis will be conducted for each chosen outcome. If failing to do so, the analysis will stand out as biased due to the risk that each variable has been chosen to show the results the researchers was aiming to achieve (e.g., nearly significant, or highly significant). This standard operating procedure aims to help and guide future reviewers of interventional trials on how to navigate through the meta-analysis when conducting Trial Sequential Analysis.
+Trial Sequential Analysis is a sequential meta-analysis that aims to transparently control for type I and type II errors [1]. When conducting a systematic review with meta-analysis transparency is of highest importance. Including a Trial Sequential Analysis to the meta-analysis is no exception. One of the most important tools is providing a public available protocol that describes, in detail, how and when the analysis will be conducted for each chosen outcome. If failing to do so, the analysis will stand out as biased due to the risk that each variable has been chosen to show the results the researchers was aiming to achieve (e.g., nearly significant, or highly significant). This standard operating procedure aims to help and guide future reviewers of interventional trials on how to navigate through the meta-analysis when conducting Trial Sequential Analysis.
 
 # Predefine Trial Sequential Analysis in the protocol phase - and make it public!
 
@@ -35,6 +35,12 @@ Remember the certainty of the evidence from a meta-analysis will always depend o
 
 Clearly state that TSA will be used in the systematic review meta-analysis and what version of the software that is used. Describe all details about the analysis in the protocol (see below).
 
+If the `R` version of TSA is used, one can find the version via: 
+```{r}
+library(RTSA)
+packageVersion("RTSA")
+```
+
 ## Outcome
 
 All outcomes intended to be analysed with TSA should be clearly defined in the protocol. At this point it is advisable to consider if these are continuous or dichotomous outcomes. Please be aware that the TSA cannot be calculated with standardised mean differences (SMD).
@@ -43,9 +49,15 @@ For dichotomous and continuous outcomes, the following needs to be defined:
 
 ### alpha-level
 
-Normally, meta-analysis will operate with the conventional 5% significance limit. Multiple testing of outcomes is at risk of increasing the type I error as seen when performing multiple interim analysis in randomised clinical trials [3]. Furthermore, if systematic reviews are investigating more than one outcome, the risk of no longer operating under a 5% significance limit increases (family wise error rate) [4, 5].
+Normally, meta-analyses will operate with the conventional 5% significance limit. Multiple testing of outcomes is at risk of increasing the type I error as seen when performing multiple interim analysis in randomised clinical trials [3]. Furthermore, if systematic reviews are investigating more than one outcome, the risk of no longer operating under a 5% significance limit increases [4, 5].
 
 Therefore, it is recommended to adjust the alpha level according to the number of outcomes used. There are different ways to do this, with the Bonferroni correction being the most conservative. Jakobsen et al. (2014) suggests dividing the conventional alpha level with the number between no correction (1) and the Bonferroni correction (number of outcomes). So, when three primary outcomes are defined the conventional alpha level should be divided by 1.5, if four outcomes exist divide by 2 and so on [4]. 
+
+In `RTSA` the alpha level is set in the function by the argument alpha. For a signifance level of 5%, which is also the default value, set:
+```{r, eval = FALSE}
+RTSA(alpha = 0.05, ...)
+```
+
 
 ### Level of power
 
@@ -53,25 +65,51 @@ Traditionally, systematic reviews are not concerned with the level of power [6].
 
 Both the alpha-level and the level of power should be clearly described in the protocol.
 
+In `RTSA` the power is set in the function by the argument beta, where $Power = 1 - beta$. Hence for 90% power, which is also the default value, set:
+```{r, eval = FALSE}
+RTSA(beta = 0.1, ...)
+```
+
 ### Heterogeneity
 
-For traditional meta-analysis it has been custom to use the inconsistency (I2) for calculating heterogeneity [2]. This can also be used in the TSA, but it is recommended to calculate and adjust for diversity (D2) [10]. Diversity is a more conservative estimate for heterogeneity affecting the required information size if heterogeneity is present. The TSA will then present a diversity adjusted required information size (DARIS) [10]. For meta-analysis where the required information size is not reached and a 0% heterogeneity is found, a predefined subgroup analysis adjusting for diversity between 25% to 50% could be relevant. Including more future trials will increase the risk of an increase in heterogeneity. This should then be clearly predefined in the protocol.
+For traditional meta-analysis it has been custom to use the inconsistency ($I^2$) for calculating heterogeneity [2]. This can also be used in the TSA, but it is recommended to calculate and adjust for diversity ($D^2$) [10]. Diversity is a more conservative estimate for heterogeneity affecting the required information size if heterogeneity is present. The TSA will then present a diversity adjusted required information size (DARIS) [10]. For meta-analysis where the required information size is not reached and a 0% heterogeneity is found, a predefined subgroup analysis adjusting for diversity between 25% to 50% could be relevant. Including more future trials will increase the risk of an increase in heterogeneity. This should then be clearly predefined in the protocol.
+
+In `RTSA` the meta-analysis is per default adjusted by the estimated diversity, if the meta-analysis is a retrospective meta-analysis. If one wants to explore different levels of diversity, say 50%, the following can be achieved by:
+```{r, eval = FALSE}
+RTSA(fixed = FALSE, D2 = 0.5, ...)
+```
 
 ## Dichotomous outcomes
 
 The following variables should be predefined in the protocol before conducting a TSA for each dichotomous outcome.
 
-### Proportion of events in the control group (pc)
+### Proportion of events in the control group (Pc)
 
 For calculating the TSA for a dichotomous outcome, a proportion of events in the control group must be defined. Ideally this is derived from a previous well conducted and large trial or systematic review with low risk of bias [1]. If such a trial does not exist a large observational study with low risk of bias can be used. Data from the control group of the conducted meta-analysis can also be used if data is not accessible. This should be predefined in a publicly available protocol indicating the choice.
+
+In `RTSA` the proportion of events in the control group is set using the argument `pC`:
+```{r, eval = FALSE}
+RTSA(pC = 0.1, ...)
+```
 
 ### Relative risk reduction (RRR)
 
 The relative risk is an estimate of the effect of reducing the risk in the intervention group over the reduction of risk in the control group [6, 11]. If data from previous low risk of bias trials or systematic reviews exists that can be used to estimate the RRR this is preferred. Normally in health research relatively small benefits are gained from one intervention. But very small RRR requires very large, required information sizes. On the other hand, a large RRR can underestimate the power needed in the meta-analysis and increase the risk of random errors. Nevertheless, RRR should always be a realistic estimate.
 
+In `RTSA` for relative risks can both the argument `RRR` be used or the argument `mc` can be used. For a relative risk reduction of 20%, set `RRR = 0.2` or `mc = 0.8` (RR of 80%):
+```{r, eval = FALSE}
+RTSA(RRR = 0.2, ...)
+RTSA(mc = 0.8, ...)
+```
+
 ### Zero events
 
 In dichotomous outcomes zero events may occur in one or more groups of the included trials. In the protocol it is important to define how these events are handled. Revman 5.1 [12] does by default replace a zero event with a 0.5 value. In the TSA higher or lower values can be defined by the authors using continuity adjustment techniques such as constant, reciprocal or empirical [13].
+
+In `RTSA` the default zero adjustment is 0.5:
+```{r, eval = FALSE}
+RTSA(zero_adj = 0.5, ...)
+```
 
 ## Continuous outcomes
 
@@ -81,15 +119,32 @@ For continuous outcomes the following should be predefined in the protocol besid
 
 The minimally relevant difference is the change on a continues scale that is clinically relevant for the patient to experience. The TSA takes the MIREDIF into account when calculating a continuous outcome. MIREDIF can be derived from previous conducted studies on patients with the same conditions. When no data is available it is often fair (but not always) to estimate the MIREDIF as 0.5xstandard deviation [14, 15].
 
+In `RTSA` the argument to specify MIREDIF is `mc`, for a MIREDIF of 5:
+```{r, eval = FALSE}
+RTSA(mc = 5, ...)
+```
+
 ### Variance
 
 The variance is the spread of numbers in a dataset. Again, the variance of an outcome can be derived from previous studies examining the same outcome on the same group of patients. If this is not possible, variance can be calculated as the squared standard deviation.
+
+In `RTSA` the standard deviation is used:
+```{r, eval = FALSE}
+RTSA(sd_mc = X, ...)
+```
 
 ## Preparing the analysis
 
 ### Meta-analytic methods
 
-The type of method used can alter the results of the TSA. Pre-defined methods whether fixed effect or random-effects model and type of model to be used should be described in the protocol. As the TSA test the optimal information size by calculating the DARIS, the TSA should follow the same methodological approach as the meta-analysis performed. For example, using the random-effects model (DerSirmonian and Laird) in the meta-analysis should transfer to the TSA.
+The type of method used can alter the results of the TSA. Pre-defined methods whether fixed effect or random-effects model and type of model to be used should be described in the protocol. As the TSA test the optimal information size by calculating the DARIS, the TSA should follow the same methodological approach as the meta-analysis performed. For example, using the random-effects model (DerSirmonian and Laird or the Hartung-Knapp-Sidik-Jonkman adjustment) in the meta-analysis should transfer to the TSA.
+
+E.g:
+```{r, eval = FALSE}
+RTSA(fixed = FALSE, re_method = "DL") # for DerSimonian-Laird.
+RTSA(fixed = FALSE, re_method = "DL_HKSJ") # for the Hartung-Knapp-Sidik-Jonkman adjustment of DerSimonian-Laird.
+```
+
 
 ### Calculating the TSA-adjusted confidence interval (CI)
 

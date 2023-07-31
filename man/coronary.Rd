@@ -3,9 +3,9 @@
 \docType{data}
 \name{coronary}
 \alias{coronary}
-\title{A dataset containing data on ...}
+\title{Dataset of studies investigating the intensity of statin therapy on the risk of myocardial infarction or coronary death}
 \format{
-A data frame with 6 rows and 5 variables:
+A data frame with 4 rows and 5 variables:
 \describe{
   \item{study}{Name of first author of the trial}
   \item{eI}{Number of events in the intervention group}
@@ -18,6 +18,8 @@ A data frame with 6 rows and 5 variables:
 coronary
 }
 \description{
-A dataset containing data on ...
+A dataset containing data on myocardial infarction or coronary death among 
+patients with acute coronary syndromes or chronic coronary artery disease 
+of statin therapy intensity. The studies compared low intensities of statin to higher intensities.
 }
 \keyword{datasets}

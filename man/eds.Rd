@@ -3,7 +3,7 @@
 \docType{data}
 \name{eds}
 \alias{eds}
-\title{Early supported discharge services}
+\title{Dataset of studies investigating the effect of carer on early supported discharge services}
 \format{
 A data frame with 9 studies and 8 variables:
 }

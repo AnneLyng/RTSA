@@ -1,23 +1,22 @@
 #' @title Boundaries for group sequential designs
 #' @description
-#' Calculates alpha- and potentially beta-spending boundaries for group sequential 
-#' designs for meta-analysis together with a scalar to achieve the wanted level of power.
+#' Calculates alpha- and potentially beta-spending boundaries for group sequential designs for meta-analysis. Should be used for exploring how the different arguments affect the sequential design. The function is not intended to be used individually for Trial Sequential Analysis. For this purpose is RTSA() recommended.
 #' 
 #'
-#' @param timing Expected timings of interim analyses and final analysis.
-#' @param alpha The level of type I error
-#' @param beta The level of type II error
-#' @param side Whether a 1- or 2-sided hypothesis test is used. Options are 1 or 2.
+#' @param timing Expected timings of interim analyses and final analysis as a vector consisting of values from 0 to 1. 
+#' @param alpha The level of type I error as a percentage, the default is 0.05 corresponding to 5\%.
+#' @param beta The level of type II error as a percentage, the default is 0.1 corresponding to 10\%.
+#' @param side Whether a 1- or 2-sided hypothesis test is used. Defaults to 2. Options are 1 or 2.
 #' @param futility Futility boundaries added to design. Options are: none, non-binding and binding. Default is "none".
-#' @param es_alpha The spending function for alpha-spending. Options are: "esOF" (Lan & DeMets version of O'Brien-Fleming), "esPoc" (Lan & DeMets version of Pocock), "HSDC" (Hwang Sihi and DeCani) and "rho" (rho family).
-#' @param es_beta The spending function for beta-spending. For options see es_alpha.
-#' @param tol Tolerance level.
-#' @param type Whether the boundaries are used for design or analysis. Defaults to design.
-#' @param design_R If type is analysis, a scalar for achieving the right amount of power must be provided.
+#' @param es_alpha The spending function for alpha-spending. Options are: "esOF" (Lan & DeMets version of O'Brien-Fleming), "esPoc" (Lan & DeMets version of Pocock), "HSDC" (Hwang Sihi and DeCani) and "rho" (rho family). Defaults to "esOF".
+#' @param es_beta The spending function for beta-spending. For options see es_alpha. Defaults to NULL.
+#' @param type Whether the boundaries are used for design or analysis. We recommend only to use the boundaries() function with type equal to design. Defaults to design.
+#' @param design_R If type is analysis, a scalar for achieving the right amount of power is required. It is recommended not to use the boundaires() function with the setting type equal to analysis. Defaults to NULL. 
+#' @param tol Tolerance level for numerical integration. Defaults to 1e09.
 #'
 #' @returns A \code{boundaries} object which includes:
 #' \item{inf_frac}{Timing of interim analyses and final analysis. Potentially modified if \code{type = "analysis"}.}
-#' \item{org_inf_frac}{Original timing. If \code{type = "design"} NULL.}
+#' \item{org_inf_frac}{Original timing. If \code{type = "design"}.}
 #' \item{alpha_ubound}{Upper alpha-spending boundaries}
 #' \item{alpha_lbound}{Lower alpha-spending boundaries}
 #' \item{alpha}{As input}
@@ -43,9 +42,9 @@
 #'  side = 2, futility = "non-binding", es_alpha = "esOF", es_beta = "esOF")
 #'
 #' @export
-boundaries <- function(timing, alpha, beta, side,
-                       futility = "none", es_alpha, es_beta = NULL, tol = 1e09,
-                       type = "design", design_R = NULL){
+boundaries <- function(timing, alpha = 0.05, beta = 0.1, side = 2,
+                       futility = "none", es_alpha = "esOF", es_beta = NULL,
+                       type = "design", design_R = NULL, tol = 1e09){
 
   n_max <- 10 # finding root for power
   nn_max <- 50 # finding root for type-I-error
@@ -837,7 +836,7 @@ boundaries <- function(timing, alpha, beta, side,
   
   out <- c(boundout,list(pwr = pwr, tIe = tIe, side = side,
               beta = beta, es_alpha = es_alpha,
-              es_beta = es_beta, type = type, futility = futility))
+              es_beta = es_beta, type = type, futility = futility, design_R = design_R))
   class(out) <- "boundaries"
   return(out)
 }
@@ -853,13 +852,23 @@ print.boundaries <- function(x, ...) {
              x$es_alpha, ".\n", "Beta-spending function: ", x$es_beta, ".\n\n"))
   cat("Timing and boundaries:\n")
   if(x$side == 1){
-    y <- data.frame("SMA_Timing" = x$inf_frac*x$root,
+    if(!is.null(x$design_R)){
+      sma_timing <- x$inf_frac
+    } else {
+      sma_timing <- x$inf_frac*x$root
+    }
+    y <- data.frame("SMA_Timing" = sma_timing,
                     "Upper" = x$alpha_ubound)
     if(x$futility != "none"){
       y <- cbind(y, data.frame("FutLower" = x$beta_lbound))
     }
   } else {
-    y <- data.frame("SMA_Timing" = x$inf_frac*x$root,
+    if(!is.null(x$design_R)){
+      sma_timing <- x$inf_frac
+    } else {
+      sma_timing <- x$inf_frac*x$root
+    }
+    y <- data.frame("SMA_Timing" = sma_timing,
                     "Upper" = x$alpha_ubound,
                     "Lower" = x$alpha_lbound)
     if(x$futility != "none"){
@@ -870,7 +879,7 @@ print.boundaries <- function(x, ...) {
   print(round(y,3), row.names = FALSE)
 }
 
-#' plot.boundaries
+#' @title Plot of boundaries for group sequential designs
 #'
 #' @param x boundaries object
 #' @param theme Whether the theme is "classic" or "aussie"

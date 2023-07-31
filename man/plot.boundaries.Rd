@@ -2,7 +2,7 @@
 % Please edit documentation in R/boundaries.R
 \name{plot.boundaries}
 \alias{plot.boundaries}
-\title{plot.boundaries}
+\title{Plot of boundaries for group sequential designs}
 \usage{
 \method{plot}{boundaries}(x, theme = "classic", ...)
 }
@@ -17,7 +17,7 @@
 Plot. Either a plot for two- or one-sided testing.
 }
 \description{
-plot.boundaries
+Plot of boundaries for group sequential designs
 }
 \examples{
 bounds <- boundaries(timing = c(0.5,0.75, 1), alpha  = 0.025, beta = 0.2,

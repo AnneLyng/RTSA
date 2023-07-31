@@ -2,7 +2,7 @@
 % Please edit documentation in R/ris.R
 \name{minTrial}
 \alias{minTrial}
-\title{minTrial}
+\title{Minimum number of trials needed for a specific level of power}
 \usage{
 minTrial(
   outcome,
@@ -11,7 +11,7 @@ minTrial(
   alpha,
   beta,
   side,
-  p0 = NULL,
+  pC = NULL,
   p1 = NULL,
   var_mc = NULL,
   var_random = NULL,
@@ -19,27 +19,27 @@ minTrial(
 )
 }
 \arguments{
-\item{outcome}{Metric of interest, options include only risk ratio (RR) for now}
+\item{outcome}{Metric of interest, options include "RR" (relative risk), "OR" (odds ratio), "RD" (risk difference) and "MD" (mean difference).}
 
-\item{mc}{Minimal clinical relevant value.}
+\item{mc}{Minimal clinical relevant value provided as a numeric value. Such as 0.8 for e.g. an odds ratio of 0.8.}
 
-\item{tau2}{Heterogeneity estimate}
+\item{tau2}{Heterogeneity estimate. Can be extracted from the metaanalysis() function.}
 
-\item{alpha}{Type I error}
+\item{alpha}{The level of type I error as a percentage, the default is 0.05 corresponding to 5\%.}
 
-\item{beta}{Type II error}
+\item{beta}{The level of type II error as a percentage, the default is 0.1 corresponding to 10\%.}
 
 \item{side}{Whether a 1- or 2-sided hypothesis test is used. Options are 1 or 2.}
 
-\item{p0}{Probability of event in control group}
+\item{pC}{Probability of event in control group. Only used for outcomes "RR", "OR" and "RD".}
 
-\item{p1}{Probability of event in treatment group}
+\item{p1}{Probability of event in treatment group. Only used for outcome "RD".}
 
-\item{var_mc}{Variance of the estimated effect}
+\item{var_mc}{Variance of the estimated effect when outcome is "MD". Not required for outcome types "OR", "RR" or "RD".}
 
-\item{var_random}{Estimated variance from the random-effects meta-analysis}
+\item{var_random}{Estimated variance from the random-effects meta-analysis. Used then a meta-analysis have already been made previously.}
 
-\item{trials}{optional number of trials.}
+\item{trials}{Optional argument. Number of trials of interest for to provide the number of participants needed for that exact number of trials.}
 }
 \value{
 Either a number (minimum required trials) or the minimum required
@@ -47,11 +47,18 @@ required trials together with a matrix of required participants per trial given
 different number of trials.
 }
 \description{
-Calculate minimum number of trials for wanted power in a meta-analysis with
-heterogeneity
+Calculates minimum number of trials needed to achieve power in a meta-analysis with
+heterogeneity.
 }
 \examples{
-minTrial(outcome = "RR", p0 = 0.5, mc = 0.7, tau2 = 0.05, alpha = 0.05,
+# Minimum number of trials for a prospective meta-analysis
+minTrial(outcome = "RR", pC = 0.5, mc = 0.7, tau2 = 0.05, alpha = 0.05,
 beta = 0.1, side = 2)
+
+# Minimum number of trials still needed for a retrospective meta-analysis
+# Note that retrospective sample size calculations are prone to bias
+ma <- metaanalysis(outcome = "RR", data = perioOxy)
+ris(outcome = "RR", mc = 0.80, ma = ma, type = "retrospective", fixed = FALSE,
+ beta = 0.2, alpha = 0.05, side = 2)
 
 }

@@ -2,41 +2,41 @@
 % Please edit documentation in R/inference.R
 \name{inference}
 \alias{inference}
-\title{Inference from RTSA}
+\title{Inference calculations for sequential meta-analysis}
 \usage{
 inference(
-  design,
+  bounds,
   timing,
-  ana_time,
+  ana_times,
   ma,
   fixed,
-  orgTiming,
-  conf_int = "sw",
+  org_timing,
+  inf_type = "sw",
   conf_level = 0.95,
-  direction,
+  final_analysis = FALSE,
   tol = 1e-15
 )
 }
 \arguments{
-\item{design}{design}
+\item{bounds}{The boundaries for the analysis as calculated by the boundaries() function in RTSA.}
 
-\item{timing}{timing}
+\item{timing}{The timing of the studies relative to the sequential RIS. A vector consisting of values equal to the proportion of study participants out of the sequential RIS.}
 
-\item{ana_time}{analysis times}
+\item{ana_times}{The analysis times presented as a vector. Describes at which studies the meta-analyses were performed. If one expects that the meta-analysis was updated per study a vector from 1 to the number of studies included can be used.}
 
-\item{ma}{meta-analysis item}
+\item{ma}{A metaanalysis object from the metaanalysis function.}
 
-\item{fixed}{Whether the analysis is fixed or random.}
+\item{fixed}{Whether the analysis is for fixed-effect or random-effects meta-analysis. Options are TRUE (meta-analysis is fixed-effect) or FALSE (meta-analysis is random-effects).}
 
-\item{orgTiming}{The original timing of all included studies}
+\item{org_timing}{The timing of all included studies as a proportion of RIS and not sequential RIS.}
 
-\item{conf_int}{type of confidence interval}
+\item{inf_type}{For now only option is "sw" (stage-wise). Type of inference used for point estimates, confidence intervals and p-values.}
 
-\item{conf_level}{confidence interval level}
+\item{conf_level}{The confidence interval level. Defaults to 0.95 which is 95\%.}
 
-\item{direction}{whether the upper or lower boundary was crossed.}
+\item{final_analysis}{Whether or not the this analysis is considered the final analysis.}
 
-\item{tol}{tolerance}
+\item{tol}{The tolerance level. Set to 1e+09.}
 }
 \value{
 A data.frame of cumulative meta-analysis results including stopping boundaries and a list of conditional sequential inference to be parsed to RTSA
@@ -46,7 +46,7 @@ cumulative p-values and standard deviations.}
 \item{seq_inf}{If the meta-analysis crosses a alpha-spending boundary or a binding beta-spending boundary inference conditional on stopping is provided. A median unbiased estimate, lower and upper confidence interval, and p-value is provided based on stage-wise ordering.}
 }
 \description{
-Naive inference, TSA-adjusted confidence intervals and stage-wise ordered inference if the meta-analysis crosses a alpha-spending boundary or a binding beta-spending boundary.
+Calculates point-estimates, p-values and confidence intervals. Computes naive inference and TSA-adjusted confidence intervals. If the meta-analysis crosses a alpha-spending boundary, a binding beta-spending boundary or reached the sequential RIS, stage-wise ordered inference is also calculated. This function is not supposed to be used individually for Trial Sequential Analysis (TSA). RTSA() is recommended for TSA.
 }
 \examples{
 ma <- metaanalysis(data = perioOxy, outcome = "RR", mc = 0.8)
@@ -54,7 +54,7 @@ sts <- ma$ris$NR_D2$NR_D2_full
 timing <- cumsum(perioOxy$nI + perioOxy$nC)/sts
 bound_oxy <- boundaries(timing = timing, alpha = 0.05, beta = 0.2, side = 2,
                        futility = "none", es_alpha = "esOF")
-inference(timing = bound_oxy$inf_frac, design = bound_oxy, ma = ma, direction = -1, fixed = FALSE,
-ana_time = 1:length(timing), orgTiming = timing)
+inference(timing = bound_oxy$inf_frac, bounds = bound_oxy, ma = ma,fixed = FALSE,
+ana_times = 1:length(timing), org_timing = timing)
 
 }

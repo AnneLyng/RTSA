@@ -8,12 +8,12 @@
 ris(
   outcome,
   mc,
-  side,
-  alpha,
-  beta,
+  side = 2,
+  alpha = 0.05,
+  beta = 0.1,
   fixed = TRUE,
   sd_mc = NULL,
-  p0 = NULL,
+  pC = NULL,
   p1 = NULL,
   ma = NULL,
   tau2 = NULL,
@@ -31,29 +31,29 @@ ris(
 
 \item{side}{Test type. Set to 1 or 2 depending on the test being 1- or 2-sided.}
 
-\item{alpha}{Level of type-I-error. Default value is 0.05.}
+\item{alpha}{The level of type I error as a percentage, the default is 0.05 corresponding to 5\%.}
 
-\item{beta}{Level of type-II-error. Default value is 0.2.}
+\item{beta}{The level of type II error as a percentage, the default is 0.1 corresponding to 10\%.}
 
-\item{fixed}{Should sample size be based on a fixed- or random-effects model. Defaults to TRUE.}
+\item{fixed}{Should sample size be based on a fixed-effect (TRUE) or random-effects (FALSE) model. Defaults to TRUE.}
 
-\item{sd_mc}{Standard deviation of estimated effect. Only needed when outcome = "MD".}
+\item{sd_mc}{Standard deviation of estimated effect. Only needed when outcome type is "MD".}
 
-\item{p0}{Probability of event in control group.}
+\item{pC}{Probability of event in control group. Only needed when outcome type is "OR", "RR" or "RD".}
 
-\item{p1}{Probability of event in treatment group.}
+\item{p1}{Probability of event in treatment group. Only needed when outcome type is "RD".}
 
-\item{ma}{An optional \code{metaanalysis} object.}
+\item{ma}{An optional \code{metaanalysis} object. Required for retrospective sample size calculations.}
 
 \item{tau2}{The value of the heterogeneity. Use when estimating the sample size under a random effects model. If data is provided, the estimated heterogeneity is used instead.}
 
-\item{I2}{Inconsistency.}
+\item{I2}{Optional argument. Inconsistency.}
 
-\item{D2}{Diversity.}
+\item{D2}{Optional argument. Diversity.}
 
-\item{type}{Prospective or retrospective sample size calculation.}
+\item{type}{Whehter the type of calculaiton is for "prospective" meta-analysis or "retrospective" meta-analysis. If the type is retrospective, one should add a meta-analysis object to the function. See argument ma.}
 
-\item{trials}{optional number of trials for design.}
+\item{trials}{Optional numeric argument. If one is interested in a specific number of trials.}
 
 \item{...}{additional arguments}
 }
@@ -69,12 +69,16 @@ A list of up to 6 elements:
 Calculate required sample and trials size.
 }
 \examples{
-ris(outcome = "RR", mc = 0.8, p0 = 0.12, fixed = TRUE, alpha = 0.05,
+# Sample and trial size calculation for prospective meta-analysis
+ris(outcome = "RR", mc = 0.8, pC = 0.12, fixed = TRUE, alpha = 0.05,
 beta = 0.1, side = 2)
 
+# Additional sample and trial size calculation for retrospective meta-analysis 
+# It is calculated directly from the metaanalysis() function
 data("perioOxy")
 ma <- metaanalysis(outcome = "RR", data = perioOxy, mc = 0.8, beta = 0.2)
 ma$ris
+# Or by using the two functions in sequence
 ma <- metaanalysis(outcome = "RR", data = perioOxy)
 ris(outcome = "RR", mc = 0.8, ma = ma, type = "retrospective", fixed = FALSE,
  beta = 0.2, alpha = 0.05, side = 2)

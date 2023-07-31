@@ -6,42 +6,42 @@
 \usage{
 boundaries(
   timing,
-  alpha,
-  beta,
-  side,
+  alpha = 0.05,
+  beta = 0.1,
+  side = 2,
   futility = "none",
-  es_alpha,
+  es_alpha = "esOF",
   es_beta = NULL,
-  tol = 1e+09,
   type = "design",
-  design_R = NULL
+  design_R = NULL,
+  tol = 1e+09
 )
 }
 \arguments{
-\item{timing}{Expected timings of interim analyses and final analysis.}
+\item{timing}{Expected timings of interim analyses and final analysis as a vector consisting of values from 0 to 1.}
 
-\item{alpha}{The level of type I error}
+\item{alpha}{The level of type I error as a percentage, the default is 0.05 corresponding to 5\%.}
 
-\item{beta}{The level of type II error}
+\item{beta}{The level of type II error as a percentage, the default is 0.1 corresponding to 10\%.}
 
-\item{side}{Whether a 1- or 2-sided hypothesis test is used. Options are 1 or 2.}
+\item{side}{Whether a 1- or 2-sided hypothesis test is used. Defaults to 2. Options are 1 or 2.}
 
 \item{futility}{Futility boundaries added to design. Options are: none, non-binding and binding. Default is "none".}
 
-\item{es_alpha}{The spending function for alpha-spending. Options are: "esOF" (Lan & DeMets version of O'Brien-Fleming), "esPoc" (Lan & DeMets version of Pocock), "HSDC" (Hwang Sihi and DeCani) and "rho" (rho family).}
+\item{es_alpha}{The spending function for alpha-spending. Options are: "esOF" (Lan & DeMets version of O'Brien-Fleming), "esPoc" (Lan & DeMets version of Pocock), "HSDC" (Hwang Sihi and DeCani) and "rho" (rho family). Defaults to "esOF".}
 
-\item{es_beta}{The spending function for beta-spending. For options see es_alpha.}
+\item{es_beta}{The spending function for beta-spending. For options see es_alpha. Defaults to NULL.}
 
-\item{tol}{Tolerance level.}
+\item{type}{Whether the boundaries are used for design or analysis. We recommend only to use the boundaries() function with type equal to design. Defaults to design.}
 
-\item{type}{Whether the boundaries are used for design or analysis. Defaults to design.}
+\item{design_R}{If type is analysis, a scalar for achieving the right amount of power is required. It is recommended not to use the boundaires() function with the setting type equal to analysis. Defaults to NULL.}
 
-\item{design_R}{If type is analysis, a scalar for achieving the right amount of power must be provided.}
+\item{tol}{Tolerance level for numerical integration. Defaults to 1e09.}
 }
 \value{
 A \code{boundaries} object which includes:
 \item{inf_frac}{Timing of interim analyses and final analysis. Potentially modified if \code{type = "analysis"}.}
-\item{org_inf_frac}{Original timing. If \code{type = "design"} NULL.}
+\item{org_inf_frac}{Original timing. If \code{type = "design"}.}
 \item{alpha_ubound}{Upper alpha-spending boundaries}
 \item{alpha_lbound}{Lower alpha-spending boundaries}
 \item{alpha}{As input}
@@ -63,8 +63,7 @@ A \code{boundaries} object which includes:
 \item{futility}{As input}
 }
 \description{
-Calculates alpha- and potentially beta-spending boundaries for group sequential 
-designs for meta-analysis together with a scalar to achieve the wanted level of power.
+Calculates alpha- and potentially beta-spending boundaries for group sequential designs for meta-analysis. Should be used for exploring how the different arguments affect the sequential design. The function is not intended to be used individually for Trial Sequential Analysis. For this purpose is RTSA() recommended.
 }
 \examples{
 boundaries(timing = c(0.25, 0.5, 0.75, 1), alpha = 0.05, beta = 0.1,

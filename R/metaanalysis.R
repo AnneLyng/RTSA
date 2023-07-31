@@ -1,4 +1,3 @@
-# DOCUMENTATION ----
 #' Fixed-effect or random-effects meta-analysis
 #' 
 #' @description
@@ -9,18 +8,19 @@
 #' @param outcome Outcome metric for the studies. Choose between: MD (mean difference), RR (relative risk), RD (risk difference) or OR (odds ratio).
 #' @param data A data.frame containing the study results. The data set must containing a specific set of columns. These are respectively `eI` (events in intervention group), `eC` (events in control group), `nC` (participants intervention group) or `nI` (participants control group) for discrete data, or, `mI` (mean intervention group), `mC` (mean control group), `sdI` (standard error intervention group), `sdC` (standard error control group),`nC` (participants intervention group) and `nI` (participants control group)  for continuous outcomes. Preferable also a `study` column as an indicator of study.
 #' @param study Optional vector of study IDs. If no study indicator is provided in `data`, a vector of study indicators e.g. names.
-#' @param alpha Type-I-error. Defaults to 0.05.
-#' @param beta Type-II-error. Not used unless a sample and trial size calculation is wanted. Defaults to 0.1.
-#' @param side Whether a 1- or 2-sided hypothesis test is used. Options are 1 or 2. Defaults to 2.
-#' @param weights Method for calculating weights. Options are "MH" (Mantel-Haenzel and only optional for binary data) or "IV" (Inverse variance weighting). Defaults to "IV".
-#' @param cont_vartype Variance type for continuous outcomes. Choices are "equal" (homogeneity of treatment group variances) or "non-equal" (heterogeneity of treatment group variances). Defaults to "equal".
-#' @param re_method Methods are "DL" for DerSimonian-Laird or "DL_HKSJ" for DerSimonian-Laird with Hartung-Knapp-Sidik-Jonkman adjustment. Defaults to "DL_HKSJ".
-#' @param tau_ci_method Methods for computation of confidence interval for heterogeneity estimate tau. Calls rma.uni from the metafor package. Options are "BJ" and "QP". Defaults to "BJ"
+#' @param alpha The level of type I error as a percentage, the default is 0.05 corresponding to 5\%.
+#' @param beta The level of type II error as a percentage, the default is 0.1 corresponding to 10\%. Not used unless a sample and trial size calculation is wanted. 
+#' @param side Whether a 1- or 2-sided hypothesis test is used. Options are 1 or 2. Default is 2.
+#' @param weights Method for calculating weights. Options are "MH" (Mantel-Haenzel and only optional for binary data) or "IV" (Inverse variance weighting). Default is "IV".
+#' @param re_method Methods are "DL" for DerSimonian-Laird or "DL_HKSJ" for DerSimonian-Laird with Hartung-Knapp-Sidik-Jonkman adjustment. Default is "DL_HKSJ".
+#' @param tau_ci_method Methods for computation of confidence interval for heterogeneity estimate tau. Calls rma.uni from the metafor package. Options are "BJ" and "QP". Default is "BJ"
+#' @param cont_vartype Variance type for continuous outcomes. Choices are "equal" (homogeneity of treatment group variances) or "non-equal" (heterogeneity of treatment group variances). Default is "equal".
 #' @param mc Minimum clinically relevant value. Used for sample and trial size calculation.
+#' @param RRR Relative risk reduction. Used for binary outcomes with outcome metric RR. Argument mc can be used instead. Must be a value between 0 and 1.
 #' @param conf_level Confidence interval coverage
 #' @param sd_mc The expected standard deviation. Used for sample and trial size calculation for mean differences.
-#' @param zero_adj Zero adjustment for null events in binary data. Options for now is 0.5.
-#' @param ... Additional variables. See Details.
+#' @param zero_adj Zero adjustment for null events in binary data. Options for now is 0.5. Default is 0.5.
+#' @param ... Additional variables.
 #'
 #' @return A \code{metaanalysis} object which is a list with 6 or 7 elements.
 #' \item{study_results}{A data.frame containing study results which is information about the individual studies}
@@ -60,16 +60,17 @@
 
 metaanalysis <- function(outcome,
                          data,
-                         study = NULL,
                          side = 2,
-                         weights = "IV",
-                         cont_vartype = "equal",
                          alpha = 0.05,
                          beta = 0.1,
+                         weights = "IV",
                          re_method = "DL_HKSJ",
                          tau_ci_method = "BJ",
+                         cont_vartype = "equal",
                          mc = NULL,
+                         RRR = NULL,
                          sd_mc = NULL,
+                         study = NULL,
                          conf_level =  0.95,
                          zero_adj = 0.5,
                          ...) {
@@ -106,6 +107,12 @@ metaanalysis <- function(outcome,
   } else{
     missing_vec <- NULL
   }
+  
+  # check | mc or RRR
+  if(is.null(mc) & !is.null(RRR) & outcome == "RR"){
+    mc <- 1 - RRR
+  }
+  
   # check | side
   if (!(side %in% c(1, 2))) {
     stop("`side` must be either 1 or 2")
@@ -148,7 +155,7 @@ metaanalysis <- function(outcome,
     conf_level = conf_level,
     zero_adj = zero_adj
   )
-
+  
   # Use - synthesize ----
   # calculate actual meta-analysis
   sy <- synthesize(
@@ -221,7 +228,7 @@ metaanalysis <- function(outcome,
       ),
       "CI_heterogen" = sy$ci.tau
     )
-  } else { # collect only fe
+  } else { # collect only fixed-effect
     meta_results = data.frame(
       type = c("Fixed"),
       "ES" = c(sy$peF[1]),
@@ -261,6 +268,14 @@ metaanalysis <- function(outcome,
       synthesize = sy,
       settings = c(argg, list("nonevent" = nonevent, "missing_vec" = missing_vec))
     )
+  
+  if(outcome == "MD" & is.null(sd_mc)){
+    if(sy$U[1] > 0){
+      sd_mc = sqrt(sy$peR[6])
+    } else {
+      sd_mc = sqrt(sy$peF[7])
+    }
+  }
 
   # calculate retrospective sample and trial size if mc is provided
   if (!is.null(mc)) {
@@ -319,6 +334,11 @@ metaPrepare <-
            conf_level,
            nonevent = NULL,
            zero_adj = 0.5) {
+    
+    # check | data
+    if(sum(unlist(apply(is.na(data),2,which)))>0){
+      stop("Missing data in data.frame. The function can not handle missing data.")
+    }
     
     # store the original data in case of zero events handling
     org_data <- data
@@ -420,11 +440,11 @@ metaPrepare <-
 
       # Calculate confidence limits
       if (outcome %in% c("RR", "OR")) {
-        lower <- exp(log(te) - qnorm((1-conf_level)/2) * sig)
-        upper <- exp(log(te) + qnorm((1-conf_level)/2) * sig)
+        lower <- exp(log(te) - qnorm((1-conf_level)/2, lower.tail = FALSE) * sig)
+        upper <- exp(log(te) + qnorm((1-conf_level)/2, lower.tail = FALSE) * sig)
       } else {
-        lower <- te - qnorm((1-conf_level)/2) * sig
-        upper <- te + qnorm((1-conf_level)/2) * sig
+        lower <- te - qnorm((1-conf_level)/2, lower.tail = FALSE) * sig
+        upper <- te + qnorm((1-conf_level)/2, lower.tail = FALSE) * sig
       }
 
       # Return results
@@ -462,7 +482,7 @@ metaPrepare <-
       # calculate effect sizes
       te <- data$mI - data$mC
 
-      # calculate std.
+            # calculate std.
       if (cont_vartype == "equal") {
         spooled <-
           sqrt(((data$nI - 1) * data$sdI ^ 2 + (data$nC - 1) * data$sdC ^ 2) / (data$nI +
@@ -470,13 +490,13 @@ metaPrepare <-
         vte <- (data$nI + data$nC) / (data$nI * data$nC) * spooled ^ 2
         sete <- sqrt(vte)
         df <- (data$nI - 1) + (data$nC - 1)
-        lower <- te - qt((1-conf_level)/2, df = df) * sete
-        upper <- te + qt((1-conf_level)/2, df = df) * sete
+        lower <- te - qt((1-conf_level)/2, df = df, lower.tail = F) * sete
+        upper <- te + qt((1-conf_level)/2, df = df, lower.tail = F) * sete
       } else if (cont_vartype == "non-equal") {
         vte <- data$sdI ^ 2 / data$nI + data$sdC ^ 2 / data$nC
         sete <- sqrt(vte)
-        lower <- te - qnorm((1-conf_level)/2) * sete
-        upper <- te + qnorm((1-conf_level)/2) * sete
+        lower <- te - qnorm((1-conf_level)/2, lower.tail = F) * sete
+        upper <- te + qnorm((1-conf_level)/2, lower.tail = F) * sete
       }
 
       # only weight option for MD is "IV"
@@ -523,15 +543,15 @@ synthesize <- function(y, re_method, tau_ci_method, conf_level) {
     if (y$outcome == "RD") {
       vw <- pe[2]
       peF <- sum(te * w) / sum(w)
-      lci <- peF - qnorm((1-conf_level)/2) * sqrt(vw)
-      uci <- peF + qnorm((1-conf_level)/2) * sqrt(vw)
+      lci <- peF - qnorm((1-conf_level)/2, lower.tail = FALSE) * sqrt(vw)
+      uci <- peF + qnorm((1-conf_level)/2, lower.tail = FALSE) * sqrt(vw)
       zval <- peF / sqrt(vw)
     } else {
       # weights the same for OR and RR
       vw <- pe[2]
       lpeF <- log(sum(te * w) / sum(w))
-      lci <- exp(lpeF - qnorm((1-conf_level)/2) * sqrt(vw))
-      uci <- exp(lpeF + qnorm((1-conf_level)/2) * sqrt(vw))
+      lci <- exp(lpeF - qnorm((1-conf_level)/2, lower.tail = FALSE) * sqrt(vw))
+      uci <- exp(lpeF + qnorm((1-conf_level)/2, lower.tail = FALSE) * sqrt(vw))
       peF <- exp(lpeF)
       zval <- lpeF / sqrt(vw)
     }
@@ -542,13 +562,13 @@ synthesize <- function(y, re_method, tau_ci_method, conf_level) {
     # if IV
     if (y$outcome %in% c("RD", "MD")) {
       peF <- sum(te * rw) # fixed effect log pooled estimate
-      uci <- peF + qnorm((1-conf_level)/2) * sqrt(vw)
-      lci <- peF - qnorm((1-conf_level)/2) * sqrt(vw)
+      uci <- peF + qnorm((1-conf_level)/2, lower.tail = F) * sqrt(vw)
+      lci <- peF - qnorm((1-conf_level)/2, lower.tail = F) * sqrt(vw)
       zval <- peF / sqrt(vw)
     } else {
       lpeF <- sum(log(te) * rw) # fixed effect log pooled estimate
-      uci <- exp(lpeF + qnorm((1-conf_level)/2) * sqrt(vw))
-      lci <- exp(lpeF - qnorm((1-conf_level)/2) * sqrt(vw))
+      uci <- exp(lpeF + qnorm((1-conf_level)/2, lower.tail = FALSE) * sqrt(vw))
+      lci <- exp(lpeF - qnorm((1-conf_level)/2, lower.tail = FALSE) * sqrt(vw))
       peF <- exp(lpeF)
       zval <- lpeF / sqrt(vw)
     }
@@ -612,26 +632,26 @@ synthesize <- function(y, re_method, tau_ci_method, conf_level) {
           vwR <- 1 / df * sum(wR * (te - peR) ^ 2 / sum(wR))
           zvalR <- peR / sqrt(vwR)
           pvalR <- 2 * pt(abs(zvalR), df = df, lower.tail = FALSE)
-          lciR <- peR - qt(1 - 0.05 / 2, df = df) * sqrt(vwR)
-          uciR <- peR + qt(1 - 0.05 / 2, df = df) * sqrt(vwR)
+          lciR <- peR - qt((1 - conf_level) / 2, df = df, lower.tail = FALSE) * sqrt(vwR)
+          uciR <- peR + qt((1 - conf_level) / 2, df = df, lower.tail = FALSE) * sqrt(vwR)
         } else {
           vwR <- 1 / df * sum(wR * (log(te) - leR) ^ 2 / sum(wR))
           zvalR <- leR / sqrt(vwR)
           pvalR <- 2 * pt(abs(zvalR), df = df, lower.tail = FALSE)
-          lciR <- exp(leR - qt(1 - 0.05 / 2, df = df) * sqrt(vwR))
-          uciR <- exp(leR + qt(1 - 0.05 / 2, df = df) * sqrt(vwR))
+          lciR <- exp(leR - qt((1 - conf_level) / 2, df = df, lower.tail = FALSE) * sqrt(vwR))
+          uciR <- exp(leR + qt((1 - conf_level) / 2, df = df, lower.tail = FALSE) * sqrt(vwR))
         }
       } else {
         if (y$outcome == "RD") {
           zvalR <- peR / sqrt(vwR)
           pvalR <- (1 - pnorm(abs(zvalR))) * 2
-          lciR <- peR - qnorm((1-conf_level)/2) * sqrt(vwR)
-          uciR <- peR + qnorm((1-conf_level)/2) * sqrt(vwR)
+          lciR <- peR - qnorm((1-conf_level)/2, lower.tail = FALSE) * sqrt(vwR)
+          uciR <- peR + qnorm((1-conf_level)/2, lower.tail = FALSE) * sqrt(vwR)
         } else {
           zvalR <- leR / sqrt(vwR)
           pvalR <- (1 - pnorm(abs(zvalR))) * 2
-          lciR <- exp(leR - qnorm((1-conf_level)/2) * sqrt(vwR))
-          uciR <- exp(leR + qnorm((1-conf_level)/2) * sqrt(vwR))
+          lciR <- exp(leR - qnorm((1-conf_level)/2, lower.tail = FALSE) * sqrt(vwR))
+          uciR <- exp(leR + qnorm((1-conf_level)/2, lower.tail = FALSE) * sqrt(vwR))
         }
       }
 
@@ -718,16 +738,15 @@ synthesize <- function(y, re_method, tau_ci_method, conf_level) {
     vwR <- 1 / sum(wR) # variance of pooled effect (random)
     rwR <- wR * vwR
     peRest <- sum(te * wR) / sum(wR)
-    lciR <- peRest - qnorm((1-conf_level)/2) * sqrt(vwR)
-    uciR <- peRest + qnorm((1-conf_level)/2) * sqrt(vwR)
+    lciR <- peRest - qnorm((1-conf_level)/2, lower.tail = F) * sqrt(vwR)
+    uciR <- peRest + qnorm((1-conf_level)/2, lower.tail = F) * sqrt(vwR)
     zvalR <- peRest / sqrt(vwR)
     pvalR <- 2 * (1 - pnorm(abs(zvalR)))
     pQ <- pchisq(Q, df, lower.tail = FALSE)
     H <- sqrt(Q / df)
-    I2 <- (Q - df) / Q
+    I2 <- ifelse((Q - df) / Q >= 0, (Q - df) / Q, 0)
     D2 <- ifelse(is.na(1 - vw / vwR), 0, (1 - vw / vwR))
-
-    if (tau2 != 0) {
+    
     if (tau_ci_method == "BJ") {
       ci.tau <- metafor::confint.rma.uni(metafor::rma.uni(
         yi = te,
@@ -743,7 +762,6 @@ synthesize <- function(y, re_method, tau_ci_method, conf_level) {
         sei = sig,
         method = "DL"
       ))
-    }
     }
   }
 
@@ -762,7 +780,6 @@ synthesize <- function(y, re_method, tau_ci_method, conf_level) {
   }
 }
 
-# FUNCTION | print metaanalysis ----
 #' @method print metaanalysis
 #' @export
 print.metaanalysis <- function(x, ...) {
@@ -793,11 +810,30 @@ print.metaanalysis <- function(x, ...) {
 
 }
 
-# FUNCTION | plot metaanalysis ----
+#' Forestplot for metaanalysis object.
+#' 
+#' @param x metaanalysis object from the RTSA package.
+#' @param type Define whether or not both fixed-effect and random-effects meta-analysis results should be printed on the plot. Options are: "fixed", "random" or "both". Default is "both".
+#' @param xlims Set default limits on the outcome scale. Default is NULL.
+#' @param ... Additional arguments
+#'
 #' @method plot metaanalysis
 #' @importFrom ggplot2 annotate labs scale_colour_identity geom_errorbar aes_string geom_polygon arrow unit
 #' @importFrom stats na.omit complete.cases
 #' @export
+#' 
+#' @examples
+#' # Example with OR 
+#' ma <- metaanalysis(data = coronary, outcome = "OR")
+#' plot(ma)
+#' 
+#' # Example with RR 
+#' ma <- metaanalysis(data = perioOxy, outcome = "RR")
+#' plot(ma)
+#' 
+#' # Example with MD
+#' ma <- metaanalysis(data = eds, outcome = "MD")
+#' plot(ma, type = "random")
 plot.metaanalysis <- function(x, type = "both", xlims = NULL, ...) {
 
   plot_message <- NULL
@@ -830,14 +866,16 @@ plot.metaanalysis <- function(x, type = "both", xlims = NULL, ...) {
   fplot <- cbind(nrow(fplot):1, fplot)
   colnames(fplot)[1] <- "yaxis"
 
-  fplot$eI[grepl("Fixed-ef|Random-ef", fplot$study)] <-
-    sum(fplot$eI, na.rm = T)
+  if(x$settings$outcome %in% c("RR","OR","RD")){
   fplot$nI[grepl("Fixed-ef|Random-ef", fplot$study)] <-
     sum(fplot$nI, na.rm = T)
-  fplot$eC[grepl("Fixed-ef|Random-ef", fplot$study)] <-
-    sum(fplot$eC, na.rm = T)
   fplot$nC[grepl("Fixed-ef|Random-ef", fplot$study)] <-
     sum(fplot$nC, na.rm = T)
+  fplot$eI[grepl("Fixed-ef|Random-ef", fplot$study)] <-
+    sum(fplot$eI, na.rm = T)
+  fplot$eC[grepl("Fixed-ef|Random-ef", fplot$study)] <-
+    sum(fplot$eC, na.rm = T)
+  } 
 
   outcome <- colnames(x$study_results)[2]
   colnames(fplot)[which(colnames(fplot) == outcome)] <- "outcome"
@@ -850,10 +888,18 @@ plot.metaanalysis <- function(x, type = "both", xlims = NULL, ...) {
     sprintf(fplot[,CInames[2]], fmt = '%#.2f'),
     ")"
   )
+  
+  if(x$settings$outcome %in% c("OR", "RR", "RD")){
   fplot$controls <- paste0(fplot$eC, "/", fplot$nC)
   fplot$controls[fplot$controls == "NA/NA"] <- ""
   fplot$experimental <- paste0(fplot$eI, "/", fplot$nI)
   fplot$experimental[fplot$experimental == "NA/NA"] <- ""
+  } else {
+    fplot$controls <- paste0(round(fplot$mC,1), "/",round(fplot$sdC,1), "/", fplot$nC)
+    fplot$controls[fplot$controls == "NA/NA/NA"] <- ""
+    fplot$experimental <- paste0(round(fplot$mI,2), "/",round(fplot$sdI,2), "/", fplot$nI)
+    fplot$experimental[fplot$experimental == "NA/NA/NA"] <- ""
+  }
   fplot$wF <- round(fplot$w_fixed)
   fplot$wF[fplot$wF < 10 &
              !is.na(fplot$wF)] <-
@@ -870,33 +916,49 @@ plot.metaanalysis <- function(x, type = "both", xlims = NULL, ...) {
     sizes <-pmax(fplot$w_random/4,1)
   }
   colors <- rep("black", nrow(fplot))
-
+  
   # define x-axis
   if (is.null(xlims))
     xlims <- c(min(fplot[,CInames[1]], na.rm = T), max(fplot[,CInames[2]], na.rm = T))
-
+  if(x$settings$outcome %in% c("OR","RR")){
+    if(xlims[1] < 1 & xlims[2] < 1){
+      xlims[2] <- 1.05
+    } else if(xlims[1] > 1 & xlims[2] > 1){
+      xlims[1] <- 0.95
+    }
+  } else {
+    if(xlims[1] < 0 & xlims[2] < 0){
+      xlims[2] <- 0
+    } else if(xlims[1] > 0 & xlims[2] > 0){
+      xlims[1] <- 0
+    }
+  }
+  
+  midpoint <- ifelse(x$settings$outcome %in% c("OR","RR"), 1, 0)
+  
   n <- length(na.omit(fplot[,CInames[2]]))
   xmax2 <- sort(na.omit(fplot[,CInames[2]]))[n-1]
   xmin2 <- sort(na.omit(fplot[,CInames[1]]), decreasing = T)[n-1]
   arrow_data <- data.frame(x = NA, y = NA, xend = NA, yend = NA)
-  if(xlims[1] < xmin2/2){
-    xlims[1] <- xmin2
-    arrow_data <- rbind(arrow_data, c(xmin2,
-      fplot$yaxis[fplot[,CInames[1]] < xmin2/2],
-      xmin2,
-      fplot$yaxis[fplot[,CInames[1]] < xmin2/2]))
-    fplot[,CInames[1]][fplot[,CInames[1]] < xmin2/2] <- xlims[1]
-  }
-  if(xlims[2] > xmax2*2){
-    xlims[2] <- xmax2
+  
+  if(midpoint != xlims[1] & (midpoint - xlims[1] > (midpoint - xmin2)*2)){
+    xlims[1] <- xmin2 - abs((xlims[1]-xmin2)/3)
     arrow_data <- rbind(arrow_data, c(xmax2,
-                                      fplot$yaxis[fplot[,CInames[2]] > xmax2*2],
-                                      xmin2,
-                                      fplot$yaxis[fplot[,CInames[2]] > xmax2*2]))
-    fplot[,CInames[2]][fplot[,CInames[2]] > xmax2*2] <- xmax2
+                                      fplot$yaxis[fplot[,CInames[1]] < xlims[1]],
+                        xlims[1],
+                        fplot$yaxis[fplot[,CInames[1]] < xlims[1]]))
+    fplot[,CInames[1]][fplot[,CInames[1]] < xlims[1]] <- xlims[1]
+  }
+  if(midpoint != xlims[2] & (xlims[2]-midpoint) > (xmax2-midpoint)*2){
+    xlims[2] <- xmax2 + abs((xlims[2]-xmax2)/3)
+    arrow_data <- rbind(arrow_data, c(xmin2,
+                                      fplot$yaxis[fplot[,CInames[2]] > xlims[2]],
+                                      xlims[2],
+                                      fplot$yaxis[fplot[,CInames[2]] > xlims[2]]))
+    fplot[,CInames[2]][fplot[,CInames[2]] > xlims[2]] <- xlims[2]
   }
   arrow_data <- arrow_data[complete.cases(arrow_data),]
-
+  
   # set the ratio between the forest plot and the other columns in plot
   # we want the forest plot to be at least 30% of the plot
   # start by calculating the wanted range of the forest plot
@@ -921,7 +983,7 @@ plot.metaanalysis <- function(x, type = "both", xlims = NULL, ...) {
       `r3` = xlims[2] + int*1.6
     )
   }
-
+  
   if (type == "random") {
     xl$r3 <- xl$r2
     xl$r2 <- NULL
@@ -934,8 +996,8 @@ plot.metaanalysis <- function(x, type = "both", xlims = NULL, ...) {
 
   #Axis text
   xlabs <- c(
-    "Experimental",
-    "Control",
+    ifelse(x$settings$outcome == "MD", "Experimental\n mean/sd/n","Experimental\n events/n"),
+    ifelse(x$settings$outcome == "MD", "Control\n mean/sd/n","Control\n events/n"),
     paste0("", outcome, " (95% CI)"),
     if (type != "random") {
       "Fixed"
@@ -952,7 +1014,7 @@ plot.metaanalysis <- function(x, type = "both", xlims = NULL, ...) {
     sprintf(x$synthesize$U[1], fmt = '%#.2f'),
     " (",
     sprintf(x$synthesize$ci.tau$random["tau^2", "ci.lb"], fmt = '%#.2f'),
-    "-",
+    "; ",
     sprintf(x$synthesize$ci.tau$random["tau^2", "ci.ub"], fmt = '%#.2f'),
     ")",
     ", Q = ",
@@ -1009,6 +1071,21 @@ plot.metaanalysis <- function(x, type = "both", xlims = NULL, ...) {
                                            fplot$yaxis[rm],fplot$yaxis[rm]-0.25))
     }
   }
+  
+  if(x$settings$outcome %in% c("RD", "MD")){
+    if(abs(xlims[2]-xlims[1]) > 5){
+      break_xlim <- c(round(seq(from = xlims[1], to = xlims[2], length.out = 5),0),0)
+    } else {
+      break_xlim <- c(round(seq(from = xlims[1], to = xlims[2], length.out = 5),2),0)
+    }
+  } else {
+    break_xlim <- c(round(exp(seq(from = log(xlims[1]), to = log(1), length.out = 3)),2),
+                    round(exp(seq(from = log(1), to = log(xlims[2]), length.out = 3)),2)[-1])
+    if(sum(diff(log(break_xlim)) < abs(log(ci_range))/5) > 0){
+      break_xlim <- c(break_xlim[1],break_xlim[-1][which(diff(log(break_xlim)) > abs(log(ci_range))/5)])
+    }
+  }
+
 
   #The plot
   p <-
@@ -1065,7 +1142,7 @@ plot.metaanalysis <- function(x, type = "both", xlims = NULL, ...) {
       hjust = 1
     ) + geom_polygon(data = poly_data,inherit.aes = FALSE,
                      mapping = aes(x = x_random, y = y_random), fill = "blue",
-                     col = "black")
+                     col = "black", alpha = 0.5)
   }
    if (type != "random"){
      p <- p +
@@ -1083,9 +1160,9 @@ plot.metaanalysis <- function(x, type = "both", xlims = NULL, ...) {
           hjust = 1
         ) + geom_polygon(data = poly_data,inherit.aes = FALSE,
                          mapping = aes(x = x_fixed, y = y_fixed), fill = "red",
-                         col = "black")
+                         col = "black", alpha = 0.5)
     }
-
+  
     # add dots between study results and meta-analysis results
     p <- p + geom_segment(aes(
       x = ifelse(x$settings$outcome %in% c("RR", "OR"),0,-Inf),
@@ -1126,8 +1203,7 @@ plot.metaanalysis <- function(x, type = "both", xlims = NULL, ...) {
           xl$r2
         }),
         name = "o\no",
-        breaks = c(round(exp(seq(from = log(xlims[1]), to = log(1), length.out = 3)),2),
-                   round(exp(seq(from = log(1), to = log(xlims[2]), length.out = 3)),2)[-1])
+        breaks = break_xlim
       )
       } +  {if(x$settings$outcome %in% c("RD", "MD"))
         scale_x_continuous(
@@ -1138,7 +1214,7 @@ plot.metaanalysis <- function(x, type = "both", xlims = NULL, ...) {
             xl$r2
           }),
           name = "o\no",
-          breaks = c(round(seq(from = xlims[1], to = xlims[2], length.out = 5),2),0)
+          breaks = break_xlim
         )
       } +
     scale_y_continuous(breaks = fplot$yaxis, labels = fplot$study) +

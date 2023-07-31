@@ -13,9 +13,13 @@
 #' }
 "perioOxy"
 
-#' A dataset containing data on ...
+#' Dataset of studies investigating the intensity of statin therapy on the risk of myocardial infarction or coronary death
 #'
-#' @format A data frame with 6 rows and 5 variables:
+#' A dataset containing data on myocardial infarction or coronary death among 
+#' patients with acute coronary syndromes or chronic coronary artery disease 
+#' of statin therapy intensity. The studies compared low intensities of statin to higher intensities.
+#'
+#' @format A data frame with 4 rows and 5 variables:
 #' \describe{
 #'   \item{study}{Name of first author of the trial}
 #'   \item{eI}{Number of events in the intervention group}
@@ -25,7 +29,7 @@
 #' }
 "coronary"
 
-#' Early supported discharge services
+#' Dataset of studies investigating the effect of carer on early supported discharge services
 #'
 #' A dataset containing data on the length of hospital stay when receiving early
 #' supported discharge (ESD) service versus conventional care. The outcome is

@@ -1,33 +1,35 @@
-#' RTSA
+#' R version of Trial Sequential Analysis. Used for designing and analysing sequential meta-analyses. 
 #'
 #' @param type Type of RTSA. Options are "design" or "analysis".
-#' @param data A data.frame containing the study results. The data set must containing a specific set of columns. These are respectively `eI` (events in intervention group), `eC` (events in control group), `nC` (participants intervention group) or `nI` (participants control group) for discrete data, or, `mI` (mean intervention group), `mC` (mean control group), `sdI` (standard error intervention group), `sdC` (standard error control group),`nC` (participants intervention group) and `nI` (participants control group)  for continuous outcomes. Preferable also a `study` column as an indicator of study.
-#' @param study An optional vector of study names and perhaps year of study. Defaults to NULL.
-#' @param ana_time An optional vector of analysis times. Used if the sequential analysis is not done for all studies included in the meta-analysis.
-#' @param timing Expected timings of interim analyses when type = "design". Defaults to NULL.
-#' @param side Whether a 1- or 2-sided hypothesis test is used. Options are 1 or 2.
 #' @param outcome Outcome metric. Options are: RR (risk ratio/relative risk), OR (odds ratio), RD (risk difference) and MD (mean difference).
-#' @param mc Minimal clinical relevant outcome value
-#' @param sd_mc The expected standard deviation. Used for sample size calculation for mean differences.
-#' @param p0 The expected probability of event in the control group. Used for sample size calculation for binary outcomes.
-#' @param alpha The level of type I error
-#' @param beta The level of type II error
+#' @param side Whether a 1- or 2-sided hypothesis test is used. Options are 1 or 2. Default is 2.
+#' @param alpha The level of type I error as a percentage, the default is 0.05 corresponding to 5\%.
+#' @param beta The level of type II error as a percentage, the default is 0.1 corresponding to 10\%.
 #' @param futility Futility boundaries added to design. Options are: none, non-binding and binding. Default is "none".
+#' @param es_alpha The spending function for alpha-spending. Options are: esOF (Lan & DeMets version of O'Brien-Fleming), esPoc (Lan & DeMets version of Pocock), HSDC (Hwang Sihi and DeCani) and rho (rho family).
+#' @param es_beta The spending function for beta-spending. For options see es_alpha.
+#' @param timing Expected timings of interim analyses when type = "design". Defaults to NULL.
+#' @param data A data.frame containing the study results. The data set must containing a specific set of columns. These are respectively `eI` (events in intervention group), `eC` (events in control group), `nC` (participants intervention group) or `nI` (participants control group) for discrete data, or, `mI` (mean intervention group), `mC` (mean control group), `sdI` (standard error intervention group), `sdC` (standard error control group),`nC` (participants intervention group) and `nI` (participants control group)  for continuous outcomes. Preferable also a `study` column as an indicator of study.
+#' @param design RTSA object where type is design.
+#' @param ana_times An optional vector of analysis times. Used if the sequential analysis is not done for all studies included in the meta-analysis.
+#' @param weights Weighting method options include IV (inverse-variance) and MH (Mantel-Haenszel). Defaults to IV.
+#' @param re_method Method for calculating the estimate of heterogeneity, tau^2, and the random-effects meta-analysis variance. Options are "DL" for DerSimonian-Laird and "DL_HKSJ" for the Hartung-Knapp-Sidik-Jonkman adjustment of the DerSimonian-Laird estimator.
+#' @param tau_ci_method Method for calculating confidence intervals for the estimated heterogeneity tau^2. Options are "QP" for Q-profiling and "BJ" for Biggelstaff ....
 #' @param fixed Should only a fixed-effect meta-analysis be computed. Default is FALSE.
+#' @param mc Minimal clinical relevant outcome value
+#' @param RRR Relative risk reduction. Used for binary outcomes with outcome metric RR. Argument mc can be used instead. Must be a value between 0 and 1.
+#' @param sd_mc The expected standard deviation. Used for sample size calculation for mean differences.
+#' @param pC The expected probability of event in the control group. Used for sample size calculation for binary outcomes.
+#' @param gamma Parameter for the HSDC error spending function.
+#' @param rho Parameter for the rho family error spending function.
+#' @param zero_adj Zero adjustment. Options for now is 0.5.
+#' @param cont_vartype For mean difference outcomes, do we expect the variance in the different groups to be "equal" or "non-equal".
+#' @param study An optional vector of study names and perhaps year of study. Defaults to NULL.
 #' @param tau2 Heterogeneity estimate. Used for sample and trial size calculation. Defaults to NULL.
 #' @param I2 Inconsistency estimate. Used for sample and trial size calculation. Defaults to NULL.
 #' @param D2 Diversity estimate. Used for sample and trial size calculation. Defaults to NULL.
-#' @param weights Weighting method options include IV (inverse-variance) and MH (Mantel-Haenszel). Defaults to IV.
-#' @param cont_vartype For mean difference outcomes, do we expect the variance in the different groups to be "equal" or "non-equal".
-#' @param re_method Method for calculating the estimate of heterogeneity, tau^2, and the random-effects meta-analysis variance. Options are "DL" for DerSimonian-Laird and "HKSJ" for the Harting-Knapp-Sidik-Jonkman adjustment of the DerSimonian-Laird estimator.
-#' @param tau_ci_method Method for calculating confidence intervals for the estimated heterogeneity tau^2. Options are "QP" for Q-profiling and "BJ" for Biggelstaff ....
-#' @param es_alpha The spending function for alpha-spending. Options are: esOF (Lan & DeMets version of O'Brien-Fleming), esPoc (Lan & DeMets version of Pocock), HSDC (Hwang Sihi and DeCani) and rho (rho family).
-#' @param es_beta The spending function for beta-spending. For options see es_alpha.
-#' @param gamma Parameter for the HSDC error spending function.
-#' @param rho Parameter for the rho family error spending function.
-#' @param design RTSA object where type is design.
-#' @param zero_adj Zero adjustment. Options for now is 0.5.
-#' @param conf_int Stopping time confidence interval. Options for now is sw (stage-wise).
+#' @param final_analysis Whether or not the current analysis is the final analysis. 
+#' @param inf_type Stopping time confidence interval. Options for now is sw (stage-wise).
 #' @param conf_level Confidence level on stopping time confidence interval.
 #' @param ... other arguments
 #'
@@ -44,6 +46,7 @@
 #' @aliases print.RTSA
 #'
 #' @examples
+#' \dontrun{
 #' ### Retrospective sequential meta-analysis:
 #' # A RRR of 20% is expected which gives mc = 1 - RRR = 0.8. 
 #' # No futility boundaries
@@ -56,7 +59,7 @@
 #' RTSA(type = "analysis", data = perioOxy, outcome = "RR", mc = 0.8, side = 2,
 #'  alpha = 0.05, beta = 0.2, es_alpha = "esOF", futility = "binding",
 #'  es_beta = "esPoc")
-#'  
+#'
 #' # Set non-binding futility boundaries
 #' RTSA(type = "analysis", data = perioOxy, outcome = "RR", mc = 0.8, side = 2,
 #'  alpha = 0.05, beta = 0.2, es_alpha = "esOF", futility = "non-binding",
@@ -71,13 +74,13 @@
 #' 
 #' # For binary outcome
 #' RTSA(type = "design", outcome = "RR", mc = 0.75, side = 1, 
-#' timing = c(0.33, 0.66, 1), p0 = 0.1, D2 = 0.1, 
+#' timing = c(0.33, 0.66, 1), pC = 0.1, D2 = 0.1, 
 #' alpha = 0.025, beta = 0.2, es_alpha = "esOF", futility = "non-binding", 
 #' es_beta = "esOF")
 #' 
 #' # extract sample size calculation
 #' out_rtsa <-  RTSA(type = "design", outcome = "RR", mc = 0.75, side = 1, 
-#' timing = c(0.33, 0.66, 1), p0 = 0.1, D2 = 0.1, 
+#' timing = c(0.33, 0.66, 1), pC = 0.1, D2 = 0.1, 
 #' alpha = 0.025, beta = 0.2, es_alpha = "esOF", futility = "non-binding", 
 #' es_beta = "esOF")
 #' out_rtsa$ris
@@ -93,37 +96,39 @@
 #' # plot the analysis
 #' an_rtsa <- RTSA(type = "analysis", design = out_rtsa, data = fake_data)
 #' plot(an_rtsa)
-
+#' }
 
 RTSA <-
   function(type = "design",
-           data = NULL,
-           study = NULL,
-           ana_time = NULL,
-           timing = NULL,
-           side = NULL,
            outcome = NULL,
-           mc,
-           sd_mc = NULL,
-           p0 = NULL,
-           alpha = NULL,
-           beta = NULL,
-           zero_adj = 0.5,
+           side = 2,
+           alpha = 0.05,
+           beta = 0.1,
            futility = "none",
+           es_alpha = "esOF",
+           es_beta = NULL,
+           timing = NULL,
+           data = NULL,
+           design = NULL,
+           ana_times = NULL,
            fixed = FALSE,
+           mc = NULL,
+           RRR = NULL,
+           sd_mc = NULL,
+           pC = NULL,
+           weights = "IV",
+           re_method = "DL",
+           tau_ci_method = "BJ",
+           gamma = NULL,
+           rho = NULL,
+           study = NULL,
+           cont_vartype = "equal",
+           zero_adj = 0.5,
            tau2 = NULL,
            I2 = NULL,
            D2 = NULL,
-           weights = "IV",
-           cont_vartype = "equal",
-           re_method = "DL",
-           tau_ci_method = "BJ",
-           es_alpha = NULL,
-           es_beta = NULL,
-           gamma = NULL,
-           rho = NULL,
-           design = NULL,
-           conf_int = "sw",
+           final_analysis = NULL,
+           inf_type = "sw",
            conf_level = 0.95,
            ...) {
     # Check inputs ----
@@ -134,33 +139,10 @@ RTSA <-
 
     # check | design arguments equal to analysis arguments if design is present
     if(type == "analysis" & !is.null(design)){
-      if(!is.null(es_alpha)) {
-        if (es_alpha != design$settings$es_alpha) {
-          warning(
-            paste0(
-              "`es_alpha` it not equal to the design setting of es_alpha. The design setting overrules the error spending function.",
-              " es_alpha is set to ",
-              design$setting$es_alpha
-            )
-          )
-        }
-      }
       if(!is.null(es_beta)){
         if(es_beta != design$settings$es_beta){
         warning(paste0("`es_beta` it not equal to the design setting of es_beta. The design setting overrules the error spending function.",
                        " es_beta is set to ", design$setting$es_beta))
-        }
-      }
-      if(!is.null(alpha)){
-        if(alpha != design$settings$alpha){
-        warning(paste0("`alpha` it not equal to the design setting of alpha. The design setting overrules.",
-                       " alpha is set to ", design$setting$alpha))
-        }
-      }
-      if(!is.null(beta)){
-        if(beta != design$settings$beta){
-        warning(paste0("`beta` it not equal to the design setting of beta. The design setting overrules.",
-                       " beta is set to ", design$setting$beta))
         }
       }
       if(!is.null(outcome)){
@@ -169,16 +151,15 @@ RTSA <-
                        " outcome is set to ", design$setting$outcome))
         }
       }
-      if(!is.null(side)){
-        if(side != design$settings$side){
-        warning(paste0("`side` it not equal to the design setting of side. The design setting overrules.",
-                       " side is set to ", design$setting$side))
-        }
-      }
       if(futility != "none" & futility != design$settings$futility){
         warning(paste0("`futility` it not equal to the design setting of futility. The design setting overrules.",
                        " futility is set to ", design$setting$futility))
       }
+    }
+    
+    # check | outcome
+    if(type == "design" & is.null(outcome)){
+      stop("Outcome metric (outcome) must be provided.")
     }
 
     # check | timing
@@ -195,11 +176,20 @@ RTSA <-
       es_beta <- design$settings$es_beta
       futility <- design$settings$futility
       mc <- design$settings$mc
+      if(outcome == "MD"){
+        sd_mc <- design$settings$sd_mc
+      }
+    }
+    
+    if((type == "design" | (type == "analysis" & is.null(design))) & is.null(mc) & is.null(RRR) & outcome == "RR"){
+      stop("For outcome risk ratio (RR) the minimum clinical value (mc) or relative risk reduction (RR) must be provided.")
+    } else if((type == "design" | (type == "analysis" & is.null(design))) & is.null(mc) & !is.null(RRR) & outcome == "RR"){
+      mc <- 1 - RRR
     }
     
     # check | mc
     if(outcome %in% c("OR", "RR") & mc < 0){
-      stop("For outcomes such as risk ratios (RR) or odds ratio (OR), the minimum clinical value (mc) can not be less than 0.")
+      stop("For outcomes such as risk ratios (RR) or odds ratio (OR), the minimum clinical value (mc) can not be equal to or less than 0. This error can also be caused by an RRR larger than or equal to 1.")
     }
 
     # check | outcome
@@ -302,7 +292,7 @@ RTSA <-
       1 / (1 + exp(-x))
 
     war_order = NULL
-    war_p0 = NULL
+    war_pC = NULL
     war_tim = NULL
     war_design = NULL
     war_ana = NULL
@@ -317,14 +307,23 @@ RTSA <-
           "The order of the Trial Sequential Analysis will be based on the order of the studies in the data-set. Please add a 'order' column in the data-set to specify the order."
         )
     }
-
+    
     # calculate the meta-analysis
     if (!is.null(data)) {
-      ma <- metaanalysis(outcome = outcome, data = data,
+      
+      if(outcome == "MD"){
+      ma <- metaanalysis(outcome = outcome, data = data, mc = mc, sd_mc = sd_mc,
                    weights = weights, cont_vartype = cont_vartype,
                    alpha = alpha, zero_adj = zero_adj,
                    conf_level = conf_level,
                    re_method = re_method, tau_ci_method = tau_ci_method)
+      } else {
+        ma <- metaanalysis(outcome = outcome, data = data, mc = mc,
+                           weights = weights, cont_vartype = cont_vartype,
+                           alpha = alpha, zero_adj = zero_adj,
+                           conf_level = conf_level,
+                           re_method = re_method, tau_ci_method = tau_ci_method)
+      }
 
       mp <- ma$metaPrepare
       sy <- ma$synthesize
@@ -335,15 +334,15 @@ RTSA <-
 
       # Calculate the RIS
       if (outcome %in% c("RR", "OR")) {
-        if (is.null(p0) & is.null(design)) {
-          p0 = sum(data$eC + data$eI) / sum(data$nC + data$nI)
-          war_p0 <- NULL
+        if (is.null(pC) & is.null(design)) {
+          pC = sum(data$eC + data$eI) / sum(data$nC + data$nI)
+          war_pC <- NULL
         } else {
-          p0 <- ifelse(!is.null(design),design$settings$p0,p0)
-          war_p0 <- c(
+          pC <- ifelse(!is.null(design),design$settings$pC,pC)
+          war_pC <- c(
             paste0(
               "Prob. of event in the control group is set to ",
-              ifelse(!is.null(design),design$settings$p0,p0),
+              ifelse(!is.null(design),design$settings$pC,pC),
               ". The observed prob. of event is ",
               round(sum(data$eC + data$eI) / sum(data$nC + data$nI), 4),
               ". The power of the sequential might be affected."
@@ -359,48 +358,37 @@ RTSA <-
           } else {
             sd_mc = sqrt(sy$peF[7])
           }
-          war_p0 <- paste0("Standard deviation is set to", round(sd_mc,4))
+          war_pC <- paste0("Standard deviation is set to", round(sd_mc,4))
         } else {
           sd_mc <- ifelse(!is.null(design),design$settings$sd_mc,sd_mc)
-          war_p0 <- paste0("Standard deviation is set to", round(sd_mc,4))
+          war_pC <- paste0("Standard deviation is set to", round(sd_mc,4))
         }
       }
 
       mc <- ifelse(!is.null(design),design$settings$mc,mc)
 
       if (outcome == "RR") {
-        pI = exp(log(p0) + log(mc)) # pI = exp(log(p0)+log(mc)/2)
+        pI = exp(log(pC) + log(mc)) # pI = exp(log(pC)+log(mc)/2)
       } else if (outcome == "OR") {
-        pI = invlogit(logit(p0) + log(mc))
+        pI = invlogit(logit(pC) + log(mc))
       }
 
       if(is.null(design)){
-      if (side == 1 & (outcome == "RR" | outcome == "OR")) {
+      if ((outcome == "RR" | outcome == "OR")) {
         outris = ris(
           outcome = outcome,
           mc = mc,
-          side = 1,
+          side = side,
           alpha = alpha,
           beta = beta,
           fixed = fixed,
-          p0 = p0,
-          tau2 = sy$U[1],
-          D2 = sy$U[4]
+          pC = pC,
+          type = "retrospective",
+          # tau2 = sy$U[1],
+          # D2 = sy$U[4]
+          ma = ma
         )
-
-      } else if (outcome == "RR" | outcome == "OR") {
-        outris = ris(
-          outcome = outcome,
-          mc = mc,
-          side = 2,
-          alpha = alpha,
-          beta = beta,
-          fixed = fixed,
-          p0 = p0,
-          tau2 = sy$U[1],
-          D2 = sy$U[4]
-        )
-      } else if (side == 1 & outcome == "MD") {
+      } else if (outcome == "MD") {
         outris = ris(
           outcome = outcome,
           mc = mc,
@@ -409,8 +397,10 @@ RTSA <-
           beta = beta,
           sd_mc = sd_mc,
           fixed = fixed,
-          tau2 = sy$U[1],
-          D2 = sy$U[4]
+          type = "retrospective",
+          # tau2 = sy$U[1],
+          # D2 = sy$U[4]
+          ma = ma
         )
       } else {
         outris = ris(
@@ -419,22 +409,28 @@ RTSA <-
           side = side,
           alpha = alpha,
           beta = beta,
-          fixed = FALSE,
-          sd_mc = sd_mc,
-          tau2 = sy$U[1],
-          D2 = sy$U[4]
+          fixed = fixed,
+          # tau2 = sy$U[1],
+          # D2 = sy$U[4]
+          ma = ma
         )
       }
 
       if(sy$U[1] == 0 | fixed){
-        RIS = outris$NF
+        RIS = outris$NF$NF_full
       } else {
-        RIS = outris$NR_D2
+        RIS = outris$NR_D2$NR_D2_full
       }
       } else {
         RIS = ceiling(design$results$RIS)
       }
     } else {
+      
+      # check adjustment for heterogeneity
+      if(fixed == FALSE & is.null(tau2) & is.null(I2) & is.null(D2)){
+        stop("Argument fixed is set to FALSE, but there is no tau2, I2 (inconsistency) or D2 (diversity) to adjust the sample size calculation by. Set either fixed to TRUE or provide a heterogeneity estimate.")
+      }
+      
       # calculate ris without data
       if(fixed == FALSE){
         war_het_design <- "Note that you have adjusted for heterogeneity in the prospective sample size calculation. If the estimate of the heterogeneity is different than the expected size, the analysis is most likely not valid."
@@ -455,15 +451,15 @@ RTSA <-
         )
       } else if(outcome %in% c("RR", "OR")){
         if (outcome == "RR") {
-          pI = exp(log(p0) + log(mc)) # pI = exp(log(p0)+log(mc)/2)
+          pI = exp(log(pC) + log(mc)) # pI = exp(log(pC)+log(mc)/2)
         } else if (outcome == "OR") {
-          pI = invlogit(logit(p0) + log(mc))
+          pI = invlogit(logit(pC) + log(mc))
         }
 
         outris = ris(
           outcome = outcome,
           mc = mc,
-          p0 = p0,
+          pC = pC,
           side = side,
           alpha = alpha,
           beta = beta,
@@ -507,15 +503,14 @@ RTSA <-
         "The RTSA function is used for design. Boundaries are computed but sequential inference will not be calculated. Use the metaanalysis() function if interested in meta-analysis results."
       )
     } else if(type == "analysis" & is.null(design)){
-      
       # calculate timings
       timing <- c(subjects / RIS)
       
       # set analysis time
-      if (is.null(ana_time)) {
-        ana_time <- 1:length(timing)
+      if (is.null(ana_times)) {
+        ana_times <- 1:length(timing)
       } 
-      org_ana_time <- ana_time
+      org_ana_times <- ana_times
       orgTiming = timing
       
       if (max(timing) > 1) {
@@ -529,16 +524,16 @@ RTSA <-
         timing <- c(timing, design$bounds$root) 
       }
     
-    if(length(timing) < max(ana_time)){
-      ana_time <- ana_time[ana_time <= length(timing)]
-      if(length(ana_time) == 0) { 
+    if(length(timing) < max(ana_times)){
+      ana_times <- ana_times[ana_times <= length(timing)]
+      if(length(ana_times) == 0) { 
         timing = 1
-        ana_time <- 1
+        ana_times <- 1
       } else {
-        timing = timing[ana_time]
+        timing = timing[ana_times]
       }
     } else {
-      timing = timing[ana_time]
+      timing = timing[ana_times]
     }
     
     trials <- cbind(timing, NA, 1:length(timing))
@@ -546,7 +541,7 @@ RTSA <-
     time_tf = 0.01
     war_tim2 <- NULL
     
-    if(length(ana_time) == 1){
+    if(length(ana_times) == 1){
       trials[2] <- trials[1] - 0
       if (trials[2] < time_tf) {
         war_tim2 <- c(
@@ -567,7 +562,7 @@ RTSA <-
       }
       trials <-
         matrix(trials[trials[, 2] > time_tf, ], ncol = 3, byrow = F)
-      if(length(ana_time) > 0) ana_time = trials[, 3]
+      if(length(ana_times) > 0) ana_times = trials[, 3]
       
       trials[, 2] <-
         trials[, 1] - c(0, trials[, 1][-length(trials[, 1])]) 
@@ -577,7 +572,7 @@ RTSA <-
           "design was not provided for the analysis. The analysis will be retrospective and the results validity is affected."
         )
         
-        if(length(ana_time) == 1){
+        if(length(ana_times) == 1){
           timing <- trials[1] } else {
             timing <- trials[, 1] }
 
@@ -596,6 +591,7 @@ RTSA <-
     } 
     
     if(type == "analysis"){
+      
     if (!is.null(design)) {
           war_ana <- NULL
           design_R <- design$bounds$root
@@ -606,27 +602,26 @@ RTSA <-
       orgTiming <- timing
       
       # set analysis time
-      if (is.null(ana_time)) {
-        ana_time <- 1:length(timing)
-        org_ana_time <- NULL
+      if (is.null(ana_times)) {
+        ana_times <- 1:length(timing)
+        org_ana_times <- NULL
       } 
-      if(is.null(org_ana_time)){
-        org_ana_time <- ana_time
+      if(is.null(org_ana_times)){
+        org_ana_times <- ana_times
       }
-      orgTiming = timing
       
-      timing <- timing[org_ana_time]
+      timing <- timing[org_ana_times]
       
       if(max(timing) < design_R){
         timing <- c(timing, design_R)
-        ana_time <- org_ana_time[org_ana_time <= length(timing)]
+        ana_times <- org_ana_times[org_ana_times <= length(timing)]
       } else if(max(timing) > design_R){
         timing <- c(timing[timing < design_R], design_R) 
-        ana_time <- org_ana_time[org_ana_time <= length(timing)]
+        ana_times <- org_ana_times[org_ana_times <= length(timing)]
       }
       
-      if(length(ana_time) == 0){
-        ana_time <- 1
+      if(length(ana_times) == 0){
+        ana_times <- 1
       }
 
       trials <- cbind(timing, NA, 1:length(timing))
@@ -644,33 +639,18 @@ RTSA <-
       
       trials <-
         matrix(trials[trials[, 2] > time_tf, ], ncol = 3, byrow = F)
-      if(length(ana_time) > 0) ana_time = trials[, 3]
+      if(length(ana_times) > 0) ana_times = trials[, 3]
 
       trials[, 2] <-
         trials[, 1] - c(0, trials[, 1][-length(trials[, 1])]) 
 
-      if (max(trials[, 1]) < 1) {
+      if (max(trials[, 1]) < 1 & max(trials[, 1]) < design_R) {
         timing <- c(trials[, 1], design_R) 
       } else {
         timing <- trials[, 1]
       }
 
-      if(!is.null(design)){
-        
-        bounds <- boundaries(
-          timing = timing,
-          alpha = design$settings$alpha,
-          beta = design$settings$beta,
-          side = design$settings$side,
-          futility = design$settings$futility,
-          es_alpha = design$settings$es_alpha,
-          es_beta = design$settings$es_beta,
-          type = type,
-          design_R = design_R
-        )
-      } else {
-        
-        bounds <- boundaries(
+      bounds <- boundaries(
           timing = timing,
           alpha = alpha,
           beta = beta,
@@ -681,23 +661,32 @@ RTSA <-
           type = type,
           design_R = design_R
         )
+  
+      if(!is.null(design) & (timing[max(ana_times)] == max(orgTiming) | abs(timing[max(ana_times)] - max(orgTiming)) < 0.05) & is.null(final_analysis)){
+        final_analysis <- T
+        warning("We have set this to be the final analysis. If you believe that the analysis will continue past this analysis, set final_analysis to FALSE.")
+      } else if(is.null(design) & sum(timing > RIS * design_R) > 0 & is.null(final_analysis)){
+        final_analysis <- F
+        warning("Note that the required information size for this sequential meta-analysis has been reached, if you consider this the final analysis set final_analysis to TRUE. If you believe that the analysis will continue past this analysis, set final_analysis to FALSE.")
+      } else {
+        final_analysis <- F
+      }
+      
+      if(abs(max(orgTiming) - max(timing)) < 0.01){
+        orgTiming[orgTiming == max(orgTiming)] <- max(timing)
       }
 
-      if((outcome %in% c("OR", "RR") & mc < 1) | (outcome %in% c("MD", "RD") & mc < 0)){
-        direction <- -1
-      } else {direction <- 1}
-      
       # inference
       inf <- inference(
-        design = bounds,
+        bounds = bounds,
         timing = timing,
-        ana_time = ana_time,
-        orgTiming = orgTiming,
+        ana_times = ana_times,
+        org_timing = orgTiming,
         ma = ma,
-        direction = direction,
-        fixed = ifelse(!is.null(design), design$settings$fixed, FALSE),
-        conf_int = conf_int,
-        conf_level = conf_level
+        fixed = ifelse(!is.null(design), design$settings$fixed, fixed),
+        inf_type = inf_type,
+        conf_level = conf_level,
+        final_analysis = final_analysis
         )
     }
 
@@ -708,9 +697,8 @@ RTSA <-
       RTSAout$settings$Pax <-
       list(
         RIS = RIS,
-        p0 = p0,
-        pI = pI,
-        pC = p0
+        pC = pC,
+        pI = pI
       )
 
     # store sample and trial size calculation
@@ -725,14 +713,15 @@ RTSA <-
     #if(!is.null(data)) RTSAout$orgTiming = orgTiming
     RTSAout$results$RIS = RIS
     RTSAout$results$DARIS = RIS * RTSAout$bounds$root
-    RTSAout$results$DARIS_F = RTSAout$ris$NF * RTSAout$bounds$root
+    if(is.null(data)) RTSAout$results$DARIS_F = RTSAout$ris$NF * RTSAout$bounds$root
+    if(!is.null(data)) RTSAout$results$DARIS_F = RTSAout$ris$NF_full * RTSAout$bounds$root
 
     #if(!is.null(data)) RTSAout$results$timing <- c(subjects / RTSAout$results$DARIS)
     if(!is.null(data)) RTSAout$results$AIS = sum(data$nC + data$nI)
     #if(!is.null(data)) RTSAout$het = heteResults
     RTSAout$warnings <- list(
       war_order = war_order,
-      war_p0 = war_p0,
+      war_pC = war_pC,
       war_tim = war_tim,
       war_design = war_design,
       war_ana = war_ana,
@@ -745,7 +734,7 @@ RTSA <-
       RTSAout$settings$outcome <- design$settings$outcome
       RTSAout$settings$mc <- design$settings$mc
       RTSAout$settings$sd_mc <- design$settings$sd_mc
-      RTSAout$settings$p0 <- design$settings$p0
+      RTSAout$settings$pC <- design$settings$pC
       RTSAout$settings$alpha <- design$settings$alpha
       RTSAout$settings$beta <- design$settings$beta
       RTSAout$settings$futility <- design$settings$futility
@@ -931,7 +920,7 @@ print.RTSA <- function(x, ...) {
     format(round(r_tmp_pvalue, 4), nsmall = 4)
   )
 
-  if(!is.null(x$results$seq_inf)){
+  if(!is.null(x$results$seq_inf$median_unbiased)){
     if(x$results$seq_inf$lower > x$results$seq_inf$upper){
       temp <- x$results$seq_inf$lower
       x$results$seq_inf$lower <- x$results$seq_inf$upper
@@ -955,7 +944,7 @@ print.RTSA <- function(x, ...) {
   #CREATE LABELS
   settings <- paste0(
     "Pc: ",
-    percent(x$Pax$p0, 0.1),
+    percent(x$Pax$pC, 0.1),
     "; ",
     "MC: ",
     percent(x$settings$mc, 0.1),
@@ -1002,8 +991,8 @@ print.RTSA <- function(x, ...) {
   if(!is.null(unlist(x$warnings))) cat("\n\nPlease note the following warnings:\n")
   if (!is.null(x$warnings$war_order))
     cat("-", x$warnings$war_order, "\n\n")
-  if (!is.null(x$warnings$war_p0))
-    cat("-", x$warnings$war_p0, "\n\n")
+  if (!is.null(x$warnings$war_pC))
+    cat("-", x$warnings$war_pC, "\n\n")
   if (!is.null(x$warnings$war_tim))
     cat("-", x$warnings$war_tim, "\n\n")
   if (!is.null(x$warnings$war_design))

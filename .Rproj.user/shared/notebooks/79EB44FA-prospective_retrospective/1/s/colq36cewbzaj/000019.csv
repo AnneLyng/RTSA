@@ -1,3 +1,0 @@
-"0","ex2_retro_rtsa <- RTSA(type = ""analysis"", data = coronary, side = 2, outcome = ""OR"","
-"0","                      alpha = 0.05, beta = 0.1, futility = ""non-binding"", "
-"0","                      fixed = FALSE, es_alpha = ""esOF"", es_beta = ""esPoc"", mc = 0.85)"

@@ -2,9 +2,9 @@
 % Please edit documentation in R/RTSA_plot.R
 \name{plot.RTSA}
 \alias{plot.RTSA}
-\title{plot.RTSA}
+\title{Plot RTSA object. Returns the R version of the original TSA plot.}
 \usage{
-\method{plot}{RTSA}(x, model = "random", type = "classic", theme = "classic", sign = 1, ...)
+\method{plot}{RTSA}(x, model = "random", type = "classic", theme = "classic", ...)
 }
 \arguments{
 \item{x}{RTSA object}
@@ -15,20 +15,18 @@
 
 \item{theme}{Whether the theme is traditional TSA (classic) or modern (modern)}
 
-\item{sign}{Whether the y-axis runs from -Inf to Inf, or Inf to -Inf.}
-
 \item{...}{Other arguments to plot.RTSA}
 }
 \value{
 Plot. Either a plot for two sided testing or one-sided
 }
 \description{
-plot.RTSA
+Plot RTSA object. Returns the R version of the original TSA plot.
 }
 \examples{
 data(perioOxy)
 outRTSA <- RTSA(type = "analysis", data = perioOxy, outcome = "RR", mc = 0.8,
- side = 2, alpha = 0.05, beta = 0.2, fixed = FALSE, es_alpha = "esOF")
+ side = 2, alpha = 0.05, beta = 0.2, fixed = FALSE, es_alpha = "esOF", design = NULL)
 plot(x = outRTSA)
 
 }
