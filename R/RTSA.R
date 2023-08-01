@@ -127,6 +127,7 @@ RTSA <-
            tau2 = NULL,
            I2 = NULL,
            D2 = NULL,
+           trials = NULL,
            final_analysis = NULL,
            inf_type = "sw",
            conf_level = 0.95,
@@ -447,7 +448,8 @@ RTSA <-
           fixed = fixed,
           tau2 = tau2,
           I2 = I2,
-          D2 = D2
+          D2 = D2,
+          trials = trials
         )
       } else if(outcome %in% c("RR", "OR")){
         if (outcome == "RR") {
@@ -466,7 +468,8 @@ RTSA <-
           fixed = fixed,
           tau2 = tau2,
           I2 = I2,
-          D2 = D2
+          D2 = D2,
+          trials = trials
         )
       }
 
@@ -474,7 +477,11 @@ RTSA <-
         RIS = outris$NF
       } else {
         if(!is.null(tau2)){
-          RIS = outris$NR$nPax[3,1]
+          if(!is.null(trials)){
+            RIS = outris$NR_tau$nPax[3,5] 
+          } else {
+          RIS = outris$NR_tau$nPax[3,1] 
+          }
         } else if(!is.null(I2)){
           RIS = outris$NR_I2
         } else {

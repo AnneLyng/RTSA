@@ -195,11 +195,11 @@ ris <-
            ...) {
 
     # check input
-    if (outcome == "MD" & (is.null(sd_mc) | is.null(mc))) {
+    if (outcome == "MD" & (is.null(sd_mc) | is.null(mc)) & is.null(ma)) {
       stop("For continuous outcomes provide mc and sd_mc")
     }
 
-    if (type == "prospective" & outcome %in% c("RR", "OR") & (is.null(pC) | is.null(mc))) {
+    if (type == "prospective" & outcome %in% c("RR", "OR") & (is.null(pC) | is.null(mc)) & is.null(ma)) {
       stop("For binary outcomes OR and RR provide mc and pC.")
     }
 
@@ -215,6 +215,8 @@ ris <-
       fixed <- FALSE
       warning("There is provided a value for tau2, I2 and/or D2. Argument fixed is changed to FALSE.")
     }
+    
+    if(!is.null(ma)) type = "retrospective"
     
     if (type == "retrospective" & fixed == TRUE & !is.null(ma$synthesize$peR[6])) {
       if(ma$hete_results$hete_est$tau2 != 0){
@@ -287,7 +289,7 @@ ris <-
       if(outcome %in% c("RR", "OR")){
         NR_tau <- minTrial(outcome = outcome, mc = mc, alpha = alpha, side = side,
                        beta = beta, pC = pC, tau2 = ma$synthesize$U[1],
-                       var_random = ma$synthesize$peR[6])
+                       var_random = ma$synthesize$peR[6], trials = trials)
         NR_tau <- append(NR_tau, list(tau2 = ma$synthesize$ci.tau$random[1,1]))
         war_het <- NR_tau$war_het
         if(ma$synthesize$ci.tau$random[1,2] != 0){
@@ -311,7 +313,7 @@ ris <-
       } else if(outcome == "RD"){
         NR_tau <- minTrial(outcome = outcome, mc = mc, alpha = alpha, side = side,
                        beta = beta, pC = pC, p1 = p1, tau2 = ma$synthesize$U[1],
-                       var_random = ma$synthesize$peR[6])
+                       var_random = ma$synthesize$peR[6], trials = trials)
         NR_tau <- append(NR_tau, list(tau2 = ma$synthesize$ci.tau$random[1,1]))
         war_het <- NR_tau$war_het
         if(ma$synthesize$ci.tau$random[1,2] != 0){
@@ -330,7 +332,7 @@ ris <-
       } else {
         NR_tau <- minTrial(outcome = outcome, mc = mc, alpha = alpha, side = side,
                        beta = beta, var_mc = var_mc, tau2 = ma$synthesize$U[1],
-                       var_random = ma$synthesize$peR[6])
+                       var_random = ma$synthesize$peR[6], trials = trials)
         NR_tau <- append(NR_tau, list(tau2 = ma$synthesize$ci.tau$random[1,1]))
         war_het <- NR_tau$war_het
         if(ma$synthesize$ci.tau$random[1,2] != 0){
@@ -453,6 +455,9 @@ print.ris <- function(x, ...) {
     } else {
       cat("Probability of event in the control group:", round(x$settings$pC,4), "and probability of event in intervention group:", paste0(x$settings$p1, "."))
     }
+    if(!is.null(x$settings$trials)){
+      cat("\nNumber of planned trials:", x$settings$trials)
+    }
     cat("\n\n")
     cat("Fixed-effect required information size:\n")
     cat(paste(x$NF, "participants in total. \n"))
@@ -460,6 +465,16 @@ print.ris <- function(x, ...) {
       cat("\n")
       cat("Random-effects required information size:\n")
       if (!is.null(x$settings$tau2) & is.null(x$war_het)) {
+        if(!is.null(x$settings$trials)){
+          cat(
+            paste("Adjusted by tau^2:",
+                  x$NR_tau$nPax[3, 5],
+                  "participants in total split over",
+                  x$NR_tau$nPax[1, 5],
+                  "trial(s).\n"
+            )
+          )  
+        } else {
         cat(
           paste("Adjusted by tau^2:",
             x$NR_tau$nPax[3, 1],
@@ -468,6 +483,7 @@ print.ris <- function(x, ...) {
             "trial(s).\n"
           )
         )
+        }
       }
       if (!is.null(x$NR_D2)) {
         cat(paste("Adjusted by diversity (D^2):",
@@ -504,14 +520,25 @@ print.ris <- function(x, ...) {
       cat("\n")
       cat("Random-effects required information size:\n")
       if (!is.null(x$NR_tau$NR_tau$tau2) & is.null(x$war_het)) {
-        cat(
-          paste("Adjusted by tau^2:",
-            x$NR_tau$NR_tau$nPax[3, 1],
-            "participants in total are additionally required. \nThese can be split over (at minimum)",
-            x$NR_tau$NR_tau$nPax[1, 1],
-            "trial(s).\n"
+        if(!is.null(x$settings$trials)){
+          cat(
+            paste("Adjusted by tau^2:",
+                  x$NR_tau$NR_tau$nPax[3, 5],
+                  "participants are additionally required in total split over ",
+                  x$NR_tau$NR_tau$nPax[1, 5],
+                  "trial(s).\n"
+            )
+          )  
+        } else {
+          cat(
+            paste("Adjusted by tau^2:",
+                  x$NR_tau$NR_tau$nPax[3, 1],
+                  "participants are additionally required in total split over (at minimum)",
+                  x$NR_tau$NR_tau$nPax[1, 1],
+                  "trial(s).\n"
+            )
           )
-        )
+        }
       }
       if (!is.null(x$NR_D2$NR_D2) & x$NR_D2$NR_D2 >= 0) {
         cat(paste("Adjusted by diversity (D^2):",

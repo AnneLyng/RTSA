@@ -206,16 +206,25 @@ inference <- function(bounds,
               }
     }
   
+  stnd_dv_func <- function(x){
+    if(zout[[x]]$U[1] == 0){
+      return(sqrt(zout[[x]]$peF[7]))
+    } else {
+      return(sqrt(zout[[x]]$peR[6]))
+    }
+  }
+  
   # calculate minimum clinical relevant value "boundary"
   if(fixed){
     stnd_dv <- sapply(ana_times, function(x) sqrt(zout[[x]]$peF[7])) 
     } else {
-      stnd_dv <- sapply(ana_times, function(x) sqrt(zout[[x]]$peR[6]))
+      stnd_dv <- sapply(ana_times, stnd_dv_func)
     }
   
   # if the analysis crossed a boundary
   if (!is.null(stop_time)) {
-    stnd_dv <- ifelse(fixed, sqrt(zout[[stop_time]]$peF[7]), sqrt(zout[[stop_time]]$peR[6]))
+    stnd_dv <- ifelse(fixed | zout[[stop_time]]$U[1] == 0, sqrt(zout[[stop_time]]$peF[7]),
+                      sqrt(zout[[stop_time]]$peR[6]))
     info_ana <- sd_inf(bounds$inf_frac * bounds$root)
     if (inf_type == "sw") {
       # if the type of inference is stage-wise (only option for now)
@@ -262,7 +271,7 @@ inference <- function(bounds,
           sw.lower <- stop_sign *  lowci * stnd_dv * info_ana$sd_proc[stop_time]    
           
           upci <- uniroot(sw_ciupper,
-                          upper = 10,
+                          upper = 20,
                           lower = 0,
                           conf_level = conf_level, info = info_ana,
                           za = za, zb = zb, zc = zc, zd = zd)$root
@@ -307,7 +316,7 @@ inference <- function(bounds,
           sw.lower <- stop_sign *  lowci * stnd_dv * info_ana$sd_proc[stop_time]    
           
           upci <- uniroot(sw_ciupper,
-                          upper = 10,
+                          upper = 15,
                           lower = 0,
                           conf_level = conf_level, info = info_ana,
                           za = za, zb = zb, zc = zc, zd = zd)$root
@@ -317,7 +326,7 @@ inference <- function(bounds,
     }
       
       median_unbiased_z <-
-        uniroot(sw_ciupper, upper = 10, lower = -10, conf_level = 0,info = info_ana,
+        uniroot(sw_ciupper, upper = 20, lower = -20, conf_level = 0,info = info_ana,
                 za = za, zb = zb, zc = zc, zd = zd)$root
       
       median_unbiased <- stop_sign * median_unbiased_z * stnd_dv * info_ana$sd_proc[stop_time]
