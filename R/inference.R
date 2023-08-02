@@ -264,8 +264,8 @@ inference <- function(bounds,
                             zc = zc, zd = zd)
           
           lowci <- uniroot(sw_cilower,
-                           upper = max(ul),
-                           lower = min(ll),
+                           upper = 20,
+                           lower = -20,
                            conf_level = conf_level, info = info_ana,
                            za = za, zb = zb, zc = zc, zd = zd)$root
           sw.lower <- stop_sign *  lowci * stnd_dv * info_ana$sd_proc[stop_time]    
