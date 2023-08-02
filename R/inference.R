@@ -270,8 +270,6 @@ inference <- function(bounds,
                            za = za, zb = zb, zc = zc, zd = zd)$root
           sw.lower <- stop_sign *  lowci * stnd_dv * info_ana$sd_proc[stop_time]    
           
-          browser()
-          
           upci <- uniroot(sw_ciupper,
                           upper = 30,
                           lower = 0,
