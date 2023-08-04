@@ -327,9 +327,9 @@ inference <- function(bounds,
             sw_p <- sw_pvalue(side = bounds$side, info = info_ana, za = za, zb = zb,
                               zc = zc, zd = zd)
             
-          lowci <- uniroot(sw_cilower,
-                           upper = max(ul),
-                           lower = ifelse(min(ll) == -Inf, -20, min(ll)),
+            lowci <- uniroot(sw_cilower,
+                           upper = 10,
+                           lower = -10,
                            conf_level = conf_level, info = info_ana,
                            za = za, zb = zb, zc = zc, zd = zd)$root
           sw.lower <- stop_sign *  lowci * stnd_dv * info_ana$sd_proc[stop_time]    

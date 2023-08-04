@@ -159,7 +159,7 @@ RTSA <-
     }
     
     # check | outcome
-    if(type == "design" & is.null(outcome)){
+    if((type == "design" | (type == "analysis" & is.null(design))) & is.null(outcome)){
       stop("Outcome metric (outcome) must be provided.")
     }
 
