@@ -183,7 +183,7 @@ RTSA <-
     }
     
     if((type == "design" | (type == "analysis" & is.null(design))) & is.null(mc) & is.null(RRR) & outcome == "RR"){
-      stop("For outcome risk ratio (RR) the minimum clinical value (mc) or relative risk reduction (RR) must be provided.")
+      stop("For outcome risk ratio (RR) the minimum clinical value (mc) or relative risk reduction (RRR) must be provided.")
     } else if((type == "design" | (type == "analysis" & is.null(design))) & is.null(mc) & !is.null(RRR) & outcome == "RR"){
       mc <- 1 - RRR
     }

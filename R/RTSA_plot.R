@@ -208,7 +208,7 @@ plot.RTSA = function(x, model = "random", type = "classic", theme = "classic", .
     if(x$settings$type  == "analysis" & is.null(x$settings$design)){ paste0("Retrospective TSA with: ")},
     if(x$settings$type  == "design"){ paste0("TSA design with: ")},
     if(x$settings$type  == "analysis" & !is.null(x$settings$design)){ paste0("Prospective or retrospective TSA with: ")},
-    if(sum(class(x) == "RTSA") > 0 & x$settings$outcome %in% c("RR", "OR")){paste0( "pc ", percent(x$settings$Pax$p0,0.1), ", ")},
+    if(sum(class(x) == "RTSA") > 0 & x$settings$outcome %in% c("RR", "OR")){paste0( "pc ", percent(x$settings$Pax$pC,0.1), ", ")},
     if(sum(class(x) == "RTSA") > 0 & x$settings$outcome == "RR"){paste0( "RRR ", percent(1-x$settings$mc,0.1),", ")},
     if(sum(class(x) == "RTSA") > 0 & x$settings$outcome == "OR"){paste0( "MVD OR ", percent(x$settings$mc,0.1),", ")},
     if(sum(class(x) == "RTSA") > 0 & x$settings$outcome == "MD"){paste0( "MVD ", x$settings$mc,", ")},
@@ -473,6 +473,7 @@ plot.RTSA = function(x, model = "random", type = "classic", theme = "classic", .
     scale_y_continuous(expand = expansion(0), ylabz, trans = "log",
                        labels = function(x) sprintf("%.2f", x))}} +
     scale_colour_manual(values=colz, labels = labz, name = "") +
+    scale_fill_discrete(guide = "none") + 
     scale_linetype_manual(values=colz, labels = labz, name = "") +
     theme(legend.position="bottom",
           plot.caption.position = "plot",
