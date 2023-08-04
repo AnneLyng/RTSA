@@ -140,7 +140,7 @@ inference <- function(bounds,
   
   test_values <- zvalues[ifelse(fixed,1,2),ana_times]
   
-  # if no set stop time is made, see if the analysis crossed a boundary
+  # see if the analysis crossed a boundary
   if(bounds$side == 2){
     if(sum(test_values > ul) > 0){
       stop_time <- min(which((test_values > ul) == TRUE))
@@ -154,6 +154,10 @@ inference <- function(bounds,
       stop_time <- min(which((test_values > bll & test_values < bul) == TRUE))
       stop_direction <- "fut"
       stop_sign <- 1
+    } else if(final_analysis == T){
+      stop_time <- length(test_values)
+      stop_sign <- 1
+      stop_direction <- "fa" # final analysis
     } else {
       stop_time <- NULL; stop_sign <- NULL; stop_direction <- NULL
     }
@@ -166,6 +170,10 @@ inference <- function(bounds,
       stop_time <- min(which((test_values < ll) == TRUE))
       stop_direction <- "fut"
       stop_sign <- 1
+    } else if(final_analysis == T){
+      stop_time <- length(test_values)
+      stop_sign <- 1
+      stop_direction <- "fa" # final analysis
     } else {
       stop_time <- NULL; stop_sign <- NULL; stop_direction <- NULL
     } 
@@ -229,7 +237,7 @@ inference <- function(bounds,
     if (inf_type == "sw") {
       # if the type of inference is stage-wise (only option for now)
       # zscore <- direction * zvalues[ifelse(fixed, 1, 2), stop_time]
-      if (bounds$side == 2) {
+      if (bounds$side == 2 & stop_direction != "fa") {
         zscore <- stop_sign*zvalues[ifelse(fixed, 1, 2), stop_time]
         zb <- ul[1:stop_time]; za <- ll[1:stop_time]; zd <- bul[1:stop_time]; zc <- bll[1:stop_time]
         zd <- zd[!is.na(zd)]; zc <- zc[!is.na(zc)]
@@ -289,10 +297,10 @@ inference <- function(bounds,
           sw.upper <- stop_sign *  upci * stnd_dv * info_ana$sd_proc[stop_time] 
         }
         
-        } else {
+        } else if(bounds$side == 1 | stop_direction == "fa"){
           zscore <- stop_sign*zvalues[ifelse(fixed, 1, 2), stop_time]
           zb <- ul[1:stop_time]; za <- ll[1:stop_time]; zc <- NULL; zd <- NULL
-          if(stop_direction == "ul") zb <- c(zb[-stop_time], zscore)
+          if(stop_direction == "ul" | stop_direction == "fa") zb <- c(zb[-stop_time], zscore)
           if(stop_direction == "fut") za <- c(za[-stop_time], zscore)
           if(length(za) == 1 & -Inf %in% za) za <- NULL
           

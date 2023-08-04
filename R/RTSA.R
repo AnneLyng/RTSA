@@ -417,7 +417,7 @@ RTSA <-
         )
       }
 
-      if(sy$U[1] == 0 | fixed){
+      if(sy$U[1] == 0 | fixed | !is.null(outris$war_het)){
         RIS = outris$NF$NF_full
       } else {
         RIS = outris$NR_D2$NR_D2_full
@@ -542,6 +542,7 @@ RTSA <-
     } else {
       timing = timing[ana_times]
     }
+      
     
     trials <- cbind(timing, NA, 1:length(timing))
     
@@ -672,9 +673,9 @@ RTSA <-
       if(!is.null(design) & (timing[max(ana_times)] == max(orgTiming) | abs(timing[max(ana_times)] - max(orgTiming)) < 0.05) & is.null(final_analysis)){
         final_analysis <- T
         warning("We have set this to be the final analysis. If you believe that the analysis will continue past this analysis, set final_analysis to FALSE.")
-      } else if(is.null(design) & sum(timing > RIS * design_R) > 0 & is.null(final_analysis)){
-        final_analysis <- F
-        warning("Note that the required information size for this sequential meta-analysis has been reached, if you consider this the final analysis set final_analysis to TRUE. If you believe that the analysis will continue past this analysis, set final_analysis to FALSE.")
+      } else if(is.null(design) & sum(orgTiming > design_R) > 0 & is.null(final_analysis)){
+        final_analysis <- T
+        warning("Note that the required information size for this sequential meta-analysis has been reached, and TSA considers this to be the final analysis. Hence the argument final_analysis is set to TRUE. If you believe that the analysis will continue past this analysis, set final_analysis to FALSE.")
       } else {
         final_analysis <- F
       }

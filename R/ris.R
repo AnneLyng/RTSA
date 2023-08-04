@@ -55,14 +55,13 @@ minTrial = function(outcome,
     ntrial_random = function(mc, trial, alpha, beta, tau2, side,  var_random) {
       trial / ((qnorm(1 - alpha / side) + qnorm(1 - beta)) ^ 2/mc^2-1/var_random) - tau2
     }
-
+    
     minTrial <- try(ceiling(uniroot(
       function(trial)
         ntrial_random(mc, trial, alpha, beta, tau2, side, var_random),
       interval = c(0, 1000)
     )$root), TRUE)
     if(inherits(minTrial,"try-error")){
-      fixed <- TRUE
       war_het <- c("Too low est. heterogeneity to calculate RIS based on tau^2.")
     }
   } else {
@@ -94,7 +93,7 @@ minTrial = function(outcome,
     var_mc <- pC*(1-pC)+p1*(1-p1)
   }
 
-  if(fixed == FALSE){
+  if(fixed == FALSE & is.null(war_het)){
     out.mat = matrix(NA, ncol = 4, nrow = 3)
     out.mat[1, ] <- c(minTrial, minTrial + 1, minTrial + 2, minTrial + 3)
     if(is.null(var_random)){
