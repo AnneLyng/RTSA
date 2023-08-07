@@ -343,9 +343,9 @@ inference <- function(bounds,
           }
         }
     }
-      
+    
       median_unbiased_z <-
-        uniroot(sw_ciupper, upper = 20, lower = -20, conf_level = 0,info = info_ana,
+        uniroot(sw_ciupper, upper = upci, lower = lowci, conf_level = 0,info = info_ana,
                 za = za, zb = zb, zc = zc, zd = zd)$root
       
       median_unbiased <- stop_sign * median_unbiased_z * stnd_dv * info_ana$sd_proc[stop_time]
