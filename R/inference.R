@@ -271,11 +271,22 @@ inference <- function(bounds,
           sw_p <- sw_pvalue(side = bounds$side, info = info_ana, za = za, zb = zb,
                             zc = zc, zd = zd)
           
-          lowci <- uniroot(sw_cilower,
-                           upper = 20,
-                           lower = -20,
+          lowerRoot <- -10
+          n_max <- 4
+          n_itr <- 1
+          while(n_itr <= n_max){
+          lowci <- try(uniroot(sw_cilower,
+                           upper = 10,
+                           lower = lowerRoot,
                            conf_level = conf_level, info = info_ana,
-                           za = za, zb = zb, zc = zc, zd = zd)$root
+                           za = za, zb = zb, zc = zc, zd = zd)$root, TRUE)
+          if(inherits(upci,"try-error")){
+            lowerRoot <- lowerRoot - 10
+            n_itr <- n_itr + 1
+          } else {
+            break
+          }
+          }
           sw.lower <- stop_sign *  lowci * stnd_dv * info_ana$sd_proc[stop_time]    
           
           upperRoot <- 10
@@ -334,11 +345,22 @@ inference <- function(bounds,
                            za = za, zb = zb, zc = zc, zd = zd)$root
           sw.lower <- stop_sign *  lowci * stnd_dv * info_ana$sd_proc[stop_time]    
           
-          upci <- uniroot(sw_ciupper,
-                          upper = 15,
+          upperRoot <- 10
+          n_max <- 4
+          n_itr <- 1
+          while(n_itr <= n_max){
+            upci <- try(uniroot(sw_ciupper,
+                          upper = upperRoot,
                           lower = 0,
                           conf_level = conf_level, info = info_ana,
-                          za = za, zb = zb, zc = zc, zd = zd)$root
+                          za = za, zb = zb, zc = zc, zd = zd)$root, TRUE)
+            if(inherits(upci,"try-error")){
+              upperRoot <- upperRoot + 10
+              n_itr <- n_itr + 1
+            } else {
+              break
+            }
+          }
           sw.upper <- stop_sign *  upci * stnd_dv * info_ana$sd_proc[stop_time] 
           }
         }
