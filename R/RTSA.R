@@ -420,7 +420,8 @@ RTSA <-
       if(sy$U[1] == 0 | fixed | !is.null(outris$war_het)){
         RIS = outris$NF$NF_full
       } else {
-        RIS = outris$NR_D2$NR_D2_full
+        #RIS = outris$NR_D2$NR_D2_full
+        RIS = outris$NR_tau$NR_tau_full
       }
       } else {
         RIS = ceiling(design$results$RIS)
