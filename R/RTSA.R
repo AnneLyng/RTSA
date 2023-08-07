@@ -528,9 +528,9 @@ RTSA <-
         war_tim <- NULL
       }
       
-      if(!is.null(design)){
-        timing <- c(timing, design$bounds$root) 
-      }
+      # if(!is.null(design)){
+      #   timing <- c(timing, design$bounds$root) 
+      # }
     
     if(length(timing) < max(ana_times)){
       ana_times <- ana_times[ana_times <= length(timing)]
@@ -587,7 +587,7 @@ RTSA <-
 
         bounds <-
           boundaries(
-            timing = timing,
+            timing = round(timing,6),
             alpha = alpha,
             beta = beta,
             side = side,
@@ -670,7 +670,7 @@ RTSA <-
           type = type,
           design_R = design_R
         )
-  
+      
       if(!is.null(design) & (timing[max(ana_times)] == max(orgTiming) | abs(timing[max(ana_times)] - max(orgTiming)) < 0.05) & is.null(final_analysis)){
         final_analysis <- T
         warning("We have set this to be the final analysis. If you believe that the analysis will continue past this analysis, set final_analysis to FALSE.")
