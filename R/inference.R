@@ -280,7 +280,7 @@ inference <- function(bounds,
                            lower = lowerRoot,
                            conf_level = conf_level, info = info_ana,
                            za = za, zb = zb, zc = zc, zd = zd)$root, TRUE)
-          if(inherits(upci,"try-error")){
+          if(inherits(lowci,"try-error")){
             lowerRoot <- lowerRoot - 10
             n_itr <- n_itr + 1
           } else {
