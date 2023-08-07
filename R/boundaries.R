@@ -12,7 +12,7 @@
 #' @param es_beta The spending function for beta-spending. For options see es_alpha. Defaults to NULL.
 #' @param type Whether the boundaries are used for design or analysis. We recommend only to use the boundaries() function with type equal to design. Defaults to design.
 #' @param design_R If type is analysis, a scalar for achieving the right amount of power is required. It is recommended not to use the boundaires() function with the setting type equal to analysis. Defaults to NULL. 
-#' @param tol Tolerance level for numerical integration. Defaults to 1e09.
+#' @param tol Tolerance level for numerical integration. Defaults to 1e-09.
 #'
 #' @returns A \code{boundaries} object which includes:
 #' \item{inf_frac}{Timing of interim analyses and final analysis. Potentially modified if \code{type = "analysis"}.}
@@ -44,7 +44,7 @@
 #' @export
 boundaries <- function(timing, alpha = 0.05, beta = 0.1, side = 2,
                        futility = "none", es_alpha = "esOF", es_beta = NULL,
-                       type = "design", design_R = NULL, tol = 1e09){
+                       type = "design", design_R = NULL, tol = 1e-09){
 
   n_max <- 10 # finding root for power
   nn_max <- 50 # finding root for type-I-error
