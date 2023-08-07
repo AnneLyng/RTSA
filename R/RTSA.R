@@ -587,7 +587,7 @@ RTSA <-
 
         bounds <-
           boundaries(
-            timing = round(timing,6),
+            timing = round(timing,4),
             alpha = alpha,
             beta = beta,
             side = side,
@@ -660,7 +660,7 @@ RTSA <-
       }
 
       bounds <- boundaries(
-          timing = round(timing,6),
+          timing = round(timing,4),
           alpha = alpha,
           beta = beta,
           side = side,
@@ -668,7 +668,7 @@ RTSA <-
           es_alpha = es_alpha,
           es_beta = es_beta,
           type = type,
-          design_R = round(design_R,6)
+          design_R = round(design_R,4)
         )
       
       if(!is.null(design) & (timing[max(ana_times)] == max(orgTiming) | abs(timing[max(ana_times)] - max(orgTiming)) < 0.05) & is.null(final_analysis)){
