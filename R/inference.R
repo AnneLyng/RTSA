@@ -287,6 +287,25 @@ inference <- function(bounds,
             break
           }
           }
+          if(inherits(lowci,"try-error")){
+            upperRoot <- 10
+            n_max <- 4
+            n_itr <- 1
+            while(n_itr <= n_max){
+              lowci <- try(uniroot(sw_cilower,
+                                   upper = upperRoot,
+                                   lower = -10,
+                                   conf_level = conf_level, info = info_ana,
+                                   za = za, zb = zb, zc = zc, zd = zd)$root, TRUE)
+              if(inherits(lowci,"try-error")){
+                upperRoot <- upperRoot + 10
+                n_itr <- n_itr + 1
+              } else {
+                break
+              } 
+            }
+          }
+          
           sw.lower <- stop_sign *  lowci * stnd_dv * info_ana$sd_proc[stop_time]    
           
           upperRoot <- 10
