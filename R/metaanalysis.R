@@ -803,7 +803,7 @@ print.metaanalysis <- function(x, ...) {
       paste(
         "\n NB.",
         x$settings$nonevent,
-        "was excluded from the analysis due to zero events, consider changing outcome to RD."
+        "was excluded from the analysis due to zero total events, consider changing outcome to RD."
       )
     )
   }
