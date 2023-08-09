@@ -581,9 +581,16 @@ RTSA <-
         war_tim2 <- c(
           "Interim analyses will not be made with less than 1% increase in information.\nThe number of studies and number of interim analysis will not be the same."
         )
+        if(sum(trials[,1] > time_tf) > 0){
+          trials <- matrix(trials[trials[, 1] > time_tf, ], ncol = 3, byrow = F)
+          trials[, 2] <-
+            trials[, 1] - c(0, trials[, 1][-length(trials[, 1])])
+          trials <- matrix(trials[trials[, 2] > time_tf, ], ncol = 3, byrow = F)
+        } else {
+          stop("There is less than 1% information available for the entire Trial Sequential Analysis (TSA). Hence there is not enough information in the data to make the analysis.")
+        }
       }
-      trials <-
-        matrix(trials[trials[, 2] > time_tf, ], ncol = 3, byrow = F)
+      
       if(length(ana_times) > 0) ana_times = trials[, 3]
       
       trials[, 2] <-
@@ -657,6 +664,14 @@ RTSA <-
         war_tim2 <- c(
           "Interim analyses will not be made with less than 1% increase in information.\nThe number of studies and number of interim analysis will not be the same."
         )
+        if(sum(trials[,1] > time_tf) > 0){
+          trials <- matrix(trials[trials[, 1] > time_tf, ], ncol = 3, byrow = F)
+          trials[, 2] <-
+            trials[, 1] - c(0, trials[, 1][-length(trials[, 1])])
+          trials <- matrix(trials[trials[, 2] > time_tf, ], ncol = 3, byrow = F)
+        } else {
+          stop("There is less than 1% information available for the entire Trial Sequential Analysis (TSA). Hence there is not enough information in the data to make the analysis.")
+        }
       }
       
       trials <-
