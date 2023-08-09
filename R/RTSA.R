@@ -131,6 +131,7 @@ RTSA <-
            final_analysis = NULL,
            inf_type = "sw",
            conf_level = 0.95,
+           random_adj = "D2",
            ...) {
     # Check inputs ----
     # check | type
@@ -325,13 +326,13 @@ RTSA <-
                            conf_level = conf_level,
                            re_method = re_method, tau_ci_method = tau_ci_method)
       }
-
+    
       mp <- ma$metaPrepare
       sy <- ma$synthesize
       hete_results <- ma$hete_results
-      if(dim(ma$metaPrepare$data)[1] != dim(data)[2]){
+      if(dim(ma$metaPrepare$data)[1] != dim(data)[1]){
       data <- ma$metaPrepare$data
-      warning("NB. Note that we have excluded some data due to zero total events.")
+      warning("NB. All zero-event studies (no events in both arms) are removed. Consider changing the outcome to risk difference (RD) to keep the studies in the analysis.")
       }
 
       # Calculate the cumulative number of participants
@@ -424,13 +425,21 @@ RTSA <-
       if(sy$U[1] == 0 | fixed | !is.null(outris$war_het)){
         RIS = outris$NF$NF_full
       } else {
-        #RIS = outris$NR_D2$NR_D2_full
-        RIS = outris$NR_tau$NR_tau_full
+        if(random_adj == "D2"){ 
+          warning("NB. The required information size is calculated based on Diversity (D^2). This might cause an under-powered analysis. Consider changing the argument `random_adj` from `D2` (default) to `tau2`.")
+          RIS = outris$NR_D2$NR_D2_full } else if(random_adj == "I2"){
+            RIS = outris$NR_tau$NR_I2_full
+            warning("NB. The required information size is calculated based on Inconsistency (D^2). This might cause an under-powered analysis. Consider changing the argument `random_adj` from `I2` to `tau2`.")
+          } else {
+            RIS = outris$NR_tau$NR_tau_full
+          }
       }
-      } else {
+      }
+      else {
         RIS = ceiling(design$results$RIS)
       }
-    } else {
+    } 
+    else {
       
       # check adjustment for heterogeneity
       if(fixed == FALSE & is.null(tau2) & is.null(I2) & is.null(D2)){

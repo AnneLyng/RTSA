@@ -160,14 +160,14 @@ plot.RTSA = function(x, model = "random", type = "classic", theme = "classic", .
   if(x$settings$type == "analysis"){ results <- paste0(
     "Pooled effect (", x$settings$outcome,") ",
     format(round(tmp_outcome,2),nsmall=2), ci_text,
-    "), p-value ",
+    "), naive p-value ",
     format(round(tmp_pvalue,4),nsmall=4))} else {
       results <- paste0(
         "Pooled effect (", x$settings$outcome,") ",
         tmp_outcome,
         " (95% TSA-adjusted CI: ",tmp_lcl1,";",
         tmp_ucl1,
-        "), p-value ",tmp_pvalue)
+        "), naive p-value ",tmp_pvalue)
     }
 
   #TYPE CLASSIC VS NEW (ESTIMATE AND CONFINT)
