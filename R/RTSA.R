@@ -329,7 +329,7 @@ RTSA <-
       mp <- ma$metaPrepare
       sy <- ma$synthesize
       hete_results <- ma$hete_results
-      if(dim(ma$metaPrepare$data)[1] != dim(dat)[2]){
+      if(dim(ma$metaPrepare$data)[1] != dim(data)[2]){
       data <- ma$metaPrepare$data
       warning("NB. Note that we have excluded some data due to zero total events.")
       }
