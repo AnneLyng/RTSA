@@ -434,6 +434,7 @@ RTSA <-
 
       if(sy$U[1] == 0 | fixed | !is.null(outris$war_het)){
         RIS = outris$NF$NF_full
+        fixed = TRUE
       } else {
         if(random_adj == "D2"){ 
           warning("NB. The required information size adjusted by Diversity (D^2). This might cause an under-powered analysis. Consider changing the argument `random_adj` from `D2` (default) to `tau2`.")
@@ -743,6 +744,9 @@ RTSA <-
 
     RTSAout <- list()
     RTSAout$settings = argg
+    if(RTSAout$settings$fixed != fixed){
+      RTSAout$settings$fixed <- fixed
+    }
 
     if (outcome %in% c("RR", "OR", "RD"))
       RTSAout$settings$Pax <-
@@ -753,7 +757,7 @@ RTSA <-
     
     # store the bounds 
     RTSAout$bounds = bounds
-
+    
     # update the sample size calculation
     outris$SMA_NF <- ifelse(is.null(data), outris$NF$NF* RTSAout$bounds$root,outris$NF$NF_full* RTSAout$bounds$root) 
     if(!fixed & !is.null(data)){
@@ -895,7 +899,7 @@ print.RTSA <- function(x, ...) {
   )
   
   cat("The required information size is")
-  if(x$settings$fixed == TRUE){cat(" not adjusted by heterogeneity.")}
+  if(x$settings$fixed == TRUE){cat(" not adjusted by heterogeneity")}
   if(x$settings$fixed == FALSE){cat(" adjusted by heterogeneity using", x$settings$random_adj)}
   if(x$settings$fixed == FALSE & x$settings$type == "analysis" & x$settings$random_adj == "tau2"){cat(paste0(" and assuming ", ifelse(is.null(x$settings$trials),x$ris$NR_tau$NR_tau$nPax[1, 2],x$settings$trials), " additional trials"))}
   cat(". ")

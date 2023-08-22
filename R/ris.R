@@ -282,7 +282,10 @@ ris <-
     
     # calculate random-effects sample size
     # when used inside metaanalysis or metaanalysis object is provided
-    if (!is.null(ma) & fixed == FALSE & !is.null(ma$synthesize$peR)) {
+    if(!is.null(ma) & fixed == FALSE & is.null(ma$synthesize$peR)){
+      fixed = TRUE
+    }
+    else if (!is.null(ma) & fixed == FALSE & !is.null(ma$synthesize$peR)) {
 
       if(outcome %in% c("RR", "OR")){
         NR_tau <- minTrial(outcome = outcome, mc = mc, alpha = alpha, side = side,
