@@ -21,6 +21,7 @@ ris(
   D2 = NULL,
   type = "prospective",
   trials = NULL,
+  RTSA = FALSE,
   ...
 )
 }
@@ -54,6 +55,8 @@ ris(
 \item{type}{Whehter the type of calculaiton is for "prospective" meta-analysis or "retrospective" meta-analysis. If the type is retrospective, one should add a meta-analysis object to the function. See argument ma.}
 
 \item{trials}{Optional numeric argument. If one is interested in a specific number of trials.}
+
+\item{RTSA}{Whether the ris function was called via the RTSA function. Purely operational argument.}
 
 \item{...}{additional arguments}
 }
