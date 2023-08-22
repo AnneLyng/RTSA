@@ -396,7 +396,9 @@ RTSA <-
           type = "retrospective",
           # tau2 = sy$U[1],
           # D2 = sy$U[4]
-          ma = ma
+          ma = ma,
+          RTSA = TRUE,
+          trials = trials
         )
       } else if (outcome == "MD") {
         outris = ris(
@@ -410,7 +412,9 @@ RTSA <-
           type = "retrospective",
           # tau2 = sy$U[1],
           # D2 = sy$U[4]
-          ma = ma
+          ma = ma,
+          RTSA = TRUE,
+          trials = trials
         )
       } else {
         outris = ris(
@@ -422,7 +426,9 @@ RTSA <-
           fixed = fixed,
           # tau2 = sy$U[1],
           # D2 = sy$U[4]
-          ma = ma
+          ma = ma,
+          RTSA = TRUE,
+          trials = trials
         )
       }
 
@@ -744,7 +750,29 @@ RTSA <-
         pC = pC,
         pI = pI
       )
+    
+    # store the bounds 
+    RTSAout$bounds = bounds
 
+    # update the sample size calculation
+    outris$SMA_NF <- ifelse(is.null(data), outris$NF$NF* RTSAout$bounds$root,outris$NF$NF_full* RTSAout$bounds$root) 
+    if(!fixed & !is.null(data)){
+    outris$SMA_D2_full <- ceiling(outris$NR_D2$NR_D2_full* RTSAout$bounds$root)
+    outris$SMA_tau2_full <- ceiling(outris$NR_tau$NR_tau_full * RTSAout$bounds$root) 
+    outris$SMA_I2_full <- ceiling(outris$NR_I2$NR_I2_full* RTSAout$bounds$root)
+    outris$SMA_D2 <- outris$SMA_D2_full - max(subjects) 
+    outris$SMA_tau2 <- rbind(outris$NR_tau$NR_tau$nPax[1,],
+                             ceiling(outris$NR_tau$NR_tau$nPax[2:3,]* RTSAout$bounds$root))
+    outris$SMA_I2 <- outris$SMA_I2_full - max(subjects)
+    } else if(!fixed & is.null(data)){
+      if(!is.null(D2)) outris$SMA_D2 <- ceiling(outris$NR_D2$NR_D2 * RTSAout$bounds$root) 
+      if(!is.null(tau2)){
+        outris$SMA_tau2 <- rbind(outris$NR_tau$NR_tau$nPax[1,],
+                                 ceiling(outris$NR_tau$NR_tau$nPax[2:3,]* RTSAout$bounds$root))
+      } 
+      if(!is.null(I2)) outris$SMA_I2 <- ceiling(outris$NR_I2$NR_I2* RTSAout$bounds$root) 
+    }
+    
     # store sample and trial size calculation
     if(!is.null(design)){
       RTSAout$design_ris <- design$ris
@@ -753,14 +781,13 @@ RTSA <-
     }
 
     if(!is.null(data)) RTSAout$settings$Pax$subjects <- subjects
-    RTSAout$bounds = bounds
     
     if(!is.null(data)) RTSAout$results$AIS = sum(data$nC + data$nI)
     if(is.null(data)) RTSAout$results$RIS = RTSAout$ris$NF
     if(!is.null(data)) RTSAout$results$RIS = RTSAout$ris$NF$NF_full
     RTSAout$results$SMA_RIS = RTSAout$results$RIS * RTSAout$bounds$root
     
-    if(fixed == TRUE){
+    if(fixed){
       RTSAout$results$HARIS = NULL
       RTSAout$results$SMA_HARIS = NULL
     } else if(fixed == FALSE){
@@ -870,7 +897,7 @@ print.RTSA <- function(x, ...) {
   cat("The required information size is")
   if(x$settings$fixed == TRUE){cat(" not adjusted by heterogeneity.")}
   if(x$settings$fixed == FALSE){cat(" adjusted by heterogeneity using", x$settings$random_adj)}
-  if(x$settings$fixed == FALSE & x$settings$type == "analysis" & x$settings$random_adj == "tau2"){cat(paste0(" and assuming ", x$ris$NR_tau$NR_tau$nPax[1, 2], " additional trials"))}
+  if(x$settings$fixed == FALSE & x$settings$type == "analysis" & x$settings$random_adj == "tau2"){cat(paste0(" and assuming ", ifelse(is.null(x$settings$trials),x$ris$NR_tau$NR_tau$nPax[1, 2],x$settings$trials), " additional trials"))}
   cat(". ")
   if(x$settings$power_adj == TRUE){cat("The required information size is further increased with", paste0(100*round(x$bounds$root,2)-100, " percent. "))}
   if(x$settings$power_adj == FALSE){cat("The required information size is not scaled according to the sequential design - Consider changing power_adj to TRUE. ")}

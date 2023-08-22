@@ -147,6 +147,7 @@ minTrial = function(outcome,
 #' @param D2 Optional argument. Diversity.
 #' @param type Whehter the type of calculaiton is for "prospective" meta-analysis or "retrospective" meta-analysis. If the type is retrospective, one should add a meta-analysis object to the function. See argument ma. 
 #' @param trials Optional numeric argument. If one is interested in a specific number of trials.
+#' @param RTSA Whether the ris function was called via the RTSA function. Purely operational argument.
 #' @param ... additional arguments
 #'
 #' @return A list of up to 6 elements:
@@ -189,6 +190,7 @@ ris <-
            D2 = NULL,
            type = "prospective",
            trials = NULL,
+           RTSA = FALSE,
            ...) {
 
     # check input
@@ -363,7 +365,7 @@ ris <-
       
       # set relative to the sample size already achieved
         NR_tau_full <-
-          NR_tau$nPax[3, 2] + (sum(ma$metaPrepare$org_data$nI) + sum(ma$metaPrepare$org_data$nC))
+          ifelse(is.null(trials),NR_tau$nPax[3, 1],NR_tau$nPax[3, 5]) + (sum(ma$metaPrepare$org_data$nI) + sum(ma$metaPrepare$org_data$nC))
         NR_I2_full <- NR_I2
         NR_D2_full <- NR_D2
         NR_I2 <- NR_I2 - (sum(ma$metaPrepare$org_data$nI) + sum(ma$metaPrepare$org_data$nC))
@@ -435,7 +437,6 @@ ris <-
 #' @method print ris
 #' @export
 print.ris <- function(x, ...) {
-  cat("Note that this is a sample size calculation for a non-sequential meta-analysis.\n\n")
   if (x$settings$type == "prospective") {
     cat(
       "This is a prospective meta-analysis sample size calculation.\nThe sample size calculation assumes a",
@@ -457,7 +458,7 @@ print.ris <- function(x, ...) {
     }
     cat("\n\n")
     cat("Fixed-effect required information size:\n")
-    cat(paste(x$NF, "participants in total. \n"))
+    cat(paste(ifelse(x$settings$RTSA,x$SMA_NF,x$NF), "participants in total. \n"))
     if (x$settings$fixed == FALSE) {
       cat("\n")
       cat("Random-effects required information size:\n")
@@ -465,7 +466,7 @@ print.ris <- function(x, ...) {
         if(!is.null(x$settings$trials)){
           cat(
             paste("Adjusted by tau^2:",
-                  x$NR_tau$nPax[3, 5],
+                  ifelse(x$settings$RTSA,x$SMA_tau2[3, 5],x$NR_tau$nPax[3, 5]),
                   "participants in total split over",
                   x$NR_tau$nPax[1, 5],
                   "trial(s).\n"
@@ -474,7 +475,7 @@ print.ris <- function(x, ...) {
         } else {
         cat(
           paste("Adjusted by tau^2:",
-            x$NR_tau$nPax[3, 1],
+                ifelse(x$settings$RTSA,x$SMA_tau2[3, 5],x$NR_tau$nPax[3, 1]),
             "participants in total split over (at minimum)",
             x$NR_tau$nPax[1, 1],
             "trial(s).\n"
@@ -484,13 +485,13 @@ print.ris <- function(x, ...) {
       }
       if (!is.null(x$NR_D2)) {
         cat(paste("Adjusted by diversity (D^2):",
-          x$NR_D2,
+                  ifelse(x$settings$RTSA,x$SMA_D2,x$NR_D2),
           "participants in total.\n"
         ))
       }
       if (!is.null(x$NR_I2)) {
         cat(paste("Adjusted by inconsistency (I^2):",
-          x$NR_I2,
+                  ifelse(x$settings$RTSA,x$SMA_I2,x$NR_I2),
           "participants in total.\n"
         ))
       }
@@ -520,7 +521,7 @@ print.ris <- function(x, ...) {
         if(!is.null(x$settings$trials)){
           cat(
             paste("Adjusted by tau^2:",
-                  x$NR_tau$NR_tau$nPax[3, 5],
+                  ifelse(x$settings$RTSA,x$SMA_tau2[3, 5],x$NR_tau$NR_tau$nPax[3, 5]),
                   "participants are additionally required in total split over ",
                   x$NR_tau$NR_tau$nPax[1, 5],
                   "trial(s).\n"
@@ -529,7 +530,7 @@ print.ris <- function(x, ...) {
         } else {
           cat(
             paste("Adjusted by tau^2:",
-                  x$NR_tau$NR_tau$nPax[3, 1],
+                  ifelse(x$settings$RTSA,x$SMA_tau2[3, 1],x$NR_tau$NR_tau$nPax[3, 1]),
                   "participants are additionally required in total split over (at minimum)",
                   x$NR_tau$NR_tau$nPax[1, 1],
                   "trial(s).\n"
@@ -539,7 +540,7 @@ print.ris <- function(x, ...) {
       }
       if (!is.null(x$NR_D2$NR_D2) & x$NR_D2$NR_D2 >= 0) {
         cat(paste("Adjusted by diversity (D^2):",
-          x$NR_D2$NR_D2,
+                  ifelse(x$settings$RTSA,x$SMA_D2,x$NR_D2$NR_D2),
           "participants in total are additionally required. \n"
         ))
       } else if(!is.null(x$NR_D2$NR_D2) & x$NR_D2$NR_D2 < 0){
@@ -548,7 +549,7 @@ print.ris <- function(x, ...) {
       }
       if (!is.null(x$NR_I2$NR_I2) & x$NR_I2$NR_I2 >= 0) {
         cat(paste("Adjusted by inconsistency (I^2):",
-          x$NR_I2$NR_I2,
+                  ifelse(x$settings$RTSA,x$SMA_I2,x$NR_I2$NR_I2),
           "participants in total are additionally required.\n"
         ))
       } else if(!is.null(x$NR_I2$NR_I2) & x$NR_I2$NR_I2 < 0){cat(paste("Adjusted by inconsistency (I^2):",
