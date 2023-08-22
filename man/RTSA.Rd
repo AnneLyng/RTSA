@@ -24,7 +24,7 @@ RTSA(
   sd_mc = NULL,
   pC = NULL,
   weights = "IV",
-  re_method = "DL",
+  re_method = "DL_HKSJ",
   tau_ci_method = "BJ",
   gamma = NULL,
   rho = NULL,
@@ -34,9 +34,12 @@ RTSA(
   tau2 = NULL,
   I2 = NULL,
   D2 = NULL,
+  trials = NULL,
   final_analysis = NULL,
   inf_type = "sw",
   conf_level = 0.95,
+  random_adj = "tau2",
+  power_adj = TRUE,
   ...
 )
 }
@@ -97,20 +100,26 @@ RTSA(
 
 \item{D2}{Diversity estimate. Used for sample and trial size calculation. Defaults to NULL.}
 
+\item{trials}{Number of anticipated extra trials. Used for heterogeneity adjustment by tau2.}
+
 \item{final_analysis}{Whether or not the current analysis is the final analysis.}
 
 \item{inf_type}{Stopping time confidence interval. Options for now is sw (stage-wise).}
 
 \item{conf_level}{Confidence level on stopping time confidence interval.}
 
+\item{random_adj}{The sample size adjustment based on presence of heterogeneity. Options are "D2" (Diversity), "I2" (Inconsistency) and "tau2" (the heterogeneity estimate). Default is "tau2".}
+
+\item{power_adj}{Whether the sample size should be adjusted by the sequential design. Defaults to TRUE.}
+
 \item{...}{other arguments}
 }
 \value{
 A RTSA object, a list of five elements:
 \item{settings}{A list containing all of the settings used in the \code{RTSA} call. See Arguments.}
-\item{ris}{List containing sample and trial size calculations. See documentation for \code{ris} function.}
+\item{ris}{List containing sample and trial size calculations for a non-sequential meta-analysis. See documentation for \code{ris} function.}
 \item{bounds}{List of stopping boundaries, timing of trials and more. See documentation for \code{boundaries} function.}
-\item{results}{List of 3 to 7 elements. \code{DARIS} diversity adjusted required information size. \code{DARIS_F} fixed-effect meta-analysis required sample size. \code{AIS} Achieved information size. \code{results_df} a data.frame of inference, see documentation for \code{inference} function.  \code{seq_inf} a list of conditional inference, see documentation for \code{inference} function. \code{metaanalysis} A metaanalysis object, see documentation for \code{metaanalysis} function. \code{design_df} a data.frame containing the stopping boundaries and timings from the design.}
+\item{results}{List of 3 to 7 elements. \code{AIS} Achieved information size. \code{RIS} Fixed-effect required information size for a non-sequential meta-analysis. \code{SMA_RIS} RIS adjusted for sequential analysis. \code{HARIS} Heterogeneity adjusted required information size for a non-sequential meta-analysis. \code{SMA_HARIS} HARIS adjusted for sequential analysis. \code{results_df} a data.frame of inference, see documentation for \code{inference} function.  \code{seq_inf} a list of conditional inference, see documentation for \code{inference} function. \code{metaanalysis} A metaanalysis object, see documentation for \code{metaanalysis} function. \code{design_df} a data.frame containing the stopping boundaries and timings from the design.}
 \item{warnings}{List of warnings}
 }
 \description{

@@ -14,7 +14,7 @@ boundaries(
   es_beta = NULL,
   type = "design",
   design_R = NULL,
-  tol = 1e+09
+  tol = 1e-09
 )
 }
 \arguments{
@@ -36,7 +36,7 @@ boundaries(
 
 \item{design_R}{If type is analysis, a scalar for achieving the right amount of power is required. It is recommended not to use the boundaires() function with the setting type equal to analysis. Defaults to NULL.}
 
-\item{tol}{Tolerance level for numerical integration. Defaults to 1e09.}
+\item{tol}{Tolerance level for numerical integration. Defaults to 1e-09.}
 }
 \value{
 A \code{boundaries} object which includes:
