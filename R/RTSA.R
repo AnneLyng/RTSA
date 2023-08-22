@@ -792,7 +792,7 @@ RTSA <-
       RTSAout$results$SMA_HARIS = NULL
     } else if(fixed == FALSE){
       RTSAout$results$HARIS = RIS
-      RTSAout$results$SMA_HARIS = RIS * RTSAout$bounds$root
+      RTSAout$results$SMA_HARIS = ceiling(RIS * RTSAout$bounds$root)
     } 
 
 #    if(is.null(data)) RTSAout$results$DARIS_F = RTSAout$ris$NF * RTSAout$bounds$root
