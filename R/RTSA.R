@@ -434,6 +434,9 @@ RTSA <-
 
       if(sy$U[1] == 0 | fixed | !is.null(outris$war_het)){
         RIS = outris$NF$NF_full
+        if(sy$U[1] != 0 & !fixed){
+          warning("NB. There is some heterogeneity present in the data, but it was not picked up by the sample size calculating. Consider changing random_adj to D2 or I2.")
+        }
         fixed = TRUE
       } else {
         if(random_adj == "D2"){ 
@@ -550,6 +553,10 @@ RTSA <-
         timing <- timing[timing <= 1]
       } else {
         war_tim <- NULL
+      }
+      
+      if(length(timing) == 0){
+        stop("The required information size is reached already at the first study and TSA can not be performed. Consider using a standard meta-analysis using e.g. the metaanalysis function. This error can also happen when a too optimistic minimal clinical value (mc) has been set.")
       }
       
       # if(!is.null(design)){

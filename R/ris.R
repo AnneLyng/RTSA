@@ -192,7 +192,7 @@ ris <-
            trials = NULL,
            RTSA = FALSE,
            ...) {
-
+    
     # check input
     if (outcome == "MD" & (is.null(sd_mc) | is.null(mc)) & is.null(ma)) {
       stop("For continuous outcomes provide mc and sd_mc")
@@ -291,9 +291,12 @@ ris <-
         NR_tau <- minTrial(outcome = outcome, mc = mc, alpha = alpha, side = side,
                        beta = beta, pC = pC, tau2 = ma$synthesize$U[1],
                        var_random = ma$synthesize$peR[6], trials = trials)
-        NR_tau <- append(NR_tau, list(tau2 = ma$synthesize$ci.tau$random[1,1]))
         war_het <- NR_tau$war_het
-        if(ma$synthesize$ci.tau$random[1,2] != 0){
+        if(is.null(war_het)){ NR_tau <- append(NR_tau, list(tau2 = ma$synthesize$ci.tau$random[1,1])) 
+        } else {
+          NR_tau <- NULL
+        }
+        if(ma$synthesize$ci.tau$random[1,2] != 0 & is.null(war_het)){
         NR_tau_ll <- minTrial(outcome = outcome, mc = mc, alpha = alpha,
                           beta = beta, pC = pC, side = side,
                           tau2 = ma$synthesize$ci.tau$random[1,2],
@@ -307,22 +310,26 @@ ris <-
                           beta = beta, pC = pC, side = side,
                           tau2 = ma$synthesize$ci.tau$random[1,3],
                           var_random = ma$synthesize$peR[6])
+          NR_tau_ul <- append(NR_tau_ul, list(tau2 = ma$synthesize$ci.tau$random[1,3]))
         } else {
           NR_tau_ul <- NULL
         }
-        NR_tau_ul <- append(NR_tau_ul, list(tau2 = ma$synthesize$ci.tau$random[1,3]))
       } else if(outcome == "RD"){
         NR_tau <- minTrial(outcome = outcome, mc = mc, alpha = alpha, side = side,
                        beta = beta, pC = pC, p1 = p1, tau2 = ma$synthesize$U[1],
                        var_random = ma$synthesize$peR[6], trials = trials)
-        NR_tau <- append(NR_tau, list(tau2 = ma$synthesize$ci.tau$random[1,1]))
         war_het <- NR_tau$war_het
-        if(ma$synthesize$ci.tau$random[1,2] != 0){
+        if(is.null(war_het)){ NR_tau <- append(NR_tau, list(tau2 = ma$synthesize$ci.tau$random[1,1])) 
+        } else {
+          NR_tau <- NULL
+        }
+        if(ma$synthesize$ci.tau$random[1,2] != 0 & is.null(war_het)){
         NR_tau_ll <- minTrial(outcome = outcome, mc = mc, alpha = alpha,
                           beta = beta, pC = pC, p1 = p1, side = side,
                           tau2 = ma$synthesize$ci.tau$random[1,2],
                           var_random = ma$synthesize$peR[6])
-        NR_tau_ll <- append(NR_tau_ll, list(tau2 = ma$synthesize$ci.tau$random[1,2]))} else {
+        NR_tau_ll <- append(NR_tau_ll, list(tau2 = ma$synthesize$ci.tau$random[1,2]))
+        } else {
           NR_tau_ll <- NULL
         }
         NR_tau_ul <- minTrial(outcome = outcome, mc = mc, alpha = alpha,
@@ -334,9 +341,12 @@ ris <-
         NR_tau <- minTrial(outcome = outcome, mc = mc, alpha = alpha, side = side,
                        beta = beta, var_mc = var_mc, tau2 = ma$synthesize$U[1],
                        var_random = ma$synthesize$peR[6], trials = trials)
-        NR_tau <- append(NR_tau, list(tau2 = ma$synthesize$ci.tau$random[1,1]))
         war_het <- NR_tau$war_het
-        if(ma$synthesize$ci.tau$random[1,2] != 0){
+        if(is.null(war_het)){ NR_tau <- append(NR_tau, list(tau2 = ma$synthesize$ci.tau$random[1,1])) 
+        } else {
+          NR_tau <- NULL
+        }
+        if(ma$synthesize$ci.tau$random[1,2] != 0 & is.null(war_het)){
         NR_tau_ll <- minTrial(outcome = outcome, mc = mc, alpha = alpha,
                           beta = beta, var_mc = var_mc,
                           tau2 = ma$synthesize$ci.tau$random[1,2],
@@ -367,8 +377,12 @@ ris <-
       NR_I2 <- ceiling(NR_I2) + ceiling(NR_I2) %% 2
       
       # set relative to the sample size already achieved
-        NR_tau_full <-
+      if(is.null(NR_tau)){
+        NR_tau_full <- NULL  
+      }  else {
+      NR_tau_full <-
           ifelse(is.null(trials),NR_tau$nPax[3, 1],NR_tau$nPax[3, 5]) + (sum(ma$metaPrepare$org_data$nI) + sum(ma$metaPrepare$org_data$nC))
+      }
         NR_I2_full <- NR_I2
         NR_D2_full <- NR_D2
         NR_I2 <- NR_I2 - (sum(ma$metaPrepare$org_data$nI) + sum(ma$metaPrepare$org_data$nC))
