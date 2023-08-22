@@ -24,7 +24,8 @@ plot.RTSA = function(x, model = "random", type = "classic", theme = "classic", .
   if(sum(class(x) == "boundaries") > 0){
     x$settings$side <- x$side
     x$results$AIS <- 1
-    x$results$DARIS <- 1
+    x$results$HARIS <- 1
+    x$results$RIS <- 1
     tmp_ca <- x$alpha/x$side
     x$settings$design <- NULL
     x$settings$type = "design"
@@ -195,9 +196,9 @@ plot.RTSA = function(x, model = "random", type = "classic", theme = "classic", .
   if(x$settings$type == "analysis"){
       results <- paste0(results,
                     "\n",
-                    "\U1D70F\U00B2 ", format(round(x$results$metaanalysis$hete_results$hete_est$tau2,2),nsmall=2),", ",
-                    "I\U00B2 " ,percent(x$results$metaanalysis$hete_results$hete_est$I.2,0.1),", ",
-                    "D\U00B2 " ,percent(x$results$metaanalysis$hete_results$hete_est$D.2,0.1), ", ",
+                    "\U1D70F\u0302\U00B2 ", format(round(x$results$metaanalysis$hete_results$hete_est$tau2,2),nsmall=2),", ",
+                    "I\u0302\U00B2 " ,percent(x$results$metaanalysis$hete_results$hete_est$I.2,0.1),", ",
+                    "D\u0302\U00B2 " ,percent(x$results$metaanalysis$hete_results$hete_est$D.2,0.1), ", ",
                     "Heterogeneity p-value ", format(round(x$results$metaanalysis$hete_results$hete_est$Q_pval,4),nsmall=4)
   )
   }
@@ -214,8 +215,11 @@ plot.RTSA = function(x, model = "random", type = "classic", theme = "classic", .
     if(sum(class(x) == "RTSA") > 0 & x$settings$outcome == "MD"){paste0( "MVD ", x$settings$mc,", ")},
     if(sum(class(x) == "RTSA") > 0 & x$settings$outcome == "RD"){paste0( "MVD RD ", percent(x$settings$mc,0.1),", ")},
     "alpha ", percent(x$settings$alpha,0.1), ", ",
-    "beta ", percent(x$settings$beta), ".\n",
-    if(sum(class(x) == "RTSA") > 0 & x$settings$type == "design"){paste0("RIS (adjusted for sequential design): ", ceiling(x$results$DARIS), ".\n")},
+    "beta ", percent(x$settings$beta), ". ",
+    if(sum(class(x) == "RTSA") > 0 & x$settings$fixed == FALSE){paste0("Sample size is adjusted by ", x$settings$random_adj)},
+    if(x$settings$random_adj == "tau2"){paste0(" and assuming ", x$ris$NR_tau$NR_tau$nPax[1, 2], " additional trials")},
+    ".\n",
+    if(sum(class(x) == "RTSA") > 0 & x$settings$type == "design"){paste0("RIS (adjusted for sequential design): ", ceiling(x$results$SMA_HARIS), ".\n")},
     if(sum(class(x) == "RTSA") > 0 & !x$settings$fixed & model == "random"){paste0("Methods: Random-effects, ", x$settings$re_method, "; ")},
     if(sum(class(x) == "RTSA") > 0 & x$settings$fixed | model == "fixed")"Methods: Fixed-effect, ",
     if(sum(class(x) == "RTSA") > 0){paste0("Weight ", x$settings$weights, ", ")},
@@ -286,7 +290,7 @@ plot.RTSA = function(x, model = "random", type = "classic", theme = "classic", .
       }
 
     #Zero line
-    p <- p + geom_segment(x=0,xend=max(df$sma_timing,df$sma_timing*(x$results$AIS/x$results$DARIS), na.rm = T), y=0, yend = 0,
+    p <- p + geom_segment(x=0,xend=max(df$sma_timing,df$sma_timing*(x$results$AIS/x$results$SMA_HARIS), na.rm = T), y=0, yend = 0,
                           linewidth = 0.25, col = "gray", linetype="solid",
                           na.rm=TRUE)
 
@@ -360,14 +364,22 @@ plot.RTSA = function(x, model = "random", type = "classic", theme = "classic", .
 
     # labels and breaks
     breakz <- c(df$sma_timing)[c(TRUE,diff(c(df$sma_timing[-c(length(df$sma_timing)-1,length(df$sma_timing))]))>max(df$sma_timing,na.rm = T)/20,TRUE,TRUE)]
-    labz_x <- c(paste(paste0(round(breakz,2)*100,"%"), ceiling((x$results$RIS*breakz)), sep = "\n"))
+    if(x$settings$fixed == TRUE){
+      labz_x <- c(paste(paste0(round(breakz,2)*100,"%"), ceiling((x$results$RIS*breakz)), sep = "\n"))
+    } else {
+      labz_x <- c(paste(paste0(round(breakz,2)*100,"%"), ceiling((x$results$HARIS*breakz)), sep = "\n")) 
+    }
     
     labz_x[which(breakz == max(df$sma_timing[!is.na(df$z_fixed)]))] <- paste0(labz_x[which(round(breakz,4) == max(round(df$sma_timing[!is.na(df$z_fixed)],4)))],"\nAIS")
     
-    labz_x[which(breakz == max(df$sma_timing[!is.na(df$upper)]))] <- paste0(labz_x[which(breakz == max(df$sma_timing[!is.na(df$upper)]))],"\nDARIS")
+    labz_x[which(breakz == max(df$sma_timing[!is.na(df$upper)]))] <- paste0(labz_x[which(breakz == max(df$sma_timing[!is.na(df$upper)]))],"\nHARIS")
     
     #AIS + DARIS LINE
-    if(x$results$AIS>x$results$DARIS) {expan_x <- 0.05} else {expan_x <- 0}
+    if(x$settings$fixed == TRUE){
+      if(x$results$AIS>x$results$SMA_RIS) {expan_x <- 0.05} else {expan_x <- 0}
+    } else {
+      if(x$results$AIS>x$results$SMA_HARIS) {expan_x <- 0.05} else {expan_x <- 0} 
+    }
     p <- p + geom_segment(x=max(c(df$sma_timing)[!is.na(df$z_fixed)]),
                           xend=max(c(df$sma_timing)[!is.na(df$z_fixed)]),
                           y=-Inf,yend=na.omit(tmp_z)[length(na.omit(tmp_z))],
@@ -389,9 +401,15 @@ plot.RTSA = function(x, model = "random", type = "classic", theme = "classic", .
   } else {
     zeropoint <- 0
 
+    if(x$settings$fixed == TRUE){
+      tim <- x$results$AIS/x$results$SMA_RIS
+    } else {
+      tim <- x$results$AIS/x$results$SMA_HARIS
+    }
+
     #Zoom in
     p <- p +
-      coord_cartesian(xlim = c(0,max(df$sma_timing+0.1,1.1,x$results$AIS/x$results$DARIS, na.rm = T)),
+      coord_cartesian(xlim = c(0,max(df$sma_timing+0.1,1.1,tim, na.rm = T)),
                       ylim = c(tmp_lcl1*0.5,
                                tmp_ucl1*2))
 
@@ -440,7 +458,15 @@ plot.RTSA = function(x, model = "random", type = "classic", theme = "classic", .
     # labels and breaks
     breakz <- c(0,x$orgTiming)[c(TRUE,diff(c(0,x$orgTiming[-length(x$orgTiming)]))>0.03,TRUE)]
 
-    if(x$results$AIS>x$results$DARIS) {expan_x <- 0.05} else {expan_x <- 0}
+    if(x$settings$fixed == TRUE){
+      if(x$results$AIS>x$results$SMA_RIS) {expan_x <- 0.05} else {expan_x <- 0}
+      lab_ris <-paste0("RIS:\n",ceiling(x$results$SMA_RIS))
+    } else {
+      if(x$results$AIS>x$results$SMA_HARIS) {expan_x <- 0.05} else {expan_x <- 0} 
+      lab_ris <-paste0("HARIS:\n",ceiling(x$results$SMA_HARIS))
+    }
+    
+    
 
     #AIS + DARIS LINE
       p <- p +
@@ -450,7 +476,7 @@ plot.RTSA = function(x, model = "random", type = "classic", theme = "classic", .
                            labels = c(round(breakz[-(length(breakz))],2),paste0("AIS:\n",x$results$AIS)),
                            sec.axis = sec_axis(~.,
                                                breaks=max(df$sma_timing, na.rm = T),
-                                               labels = paste0("DARIS:\n",ceiling(x$results$DARIS))))
+                                               labels = lab_ris))
   }
 
   if(sum(class(x) == "RTSA") > 0){

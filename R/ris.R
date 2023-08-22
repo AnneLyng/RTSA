@@ -78,7 +78,6 @@ minTrial = function(outcome,
 
   if (outcome == "RR") {
     pI <- exp(log(pC) + mc)
-    pC <- exp(log(pC))
     var_mc <- 1 / pC + 1 / pI - 2
   } else if (outcome == "OR") {
     logit <- function(x)
@@ -87,7 +86,6 @@ minTrial = function(outcome,
       1 / (1 + exp(-x))
 
     pI <- invlogit(logit(pC) + mc)
-    pC <- invlogit(logit(pC))
     var_mc <- 1 / pI + 1 / pC + 1 / (1 - pI) + 1 / (1 - pC)
   } else if(outcome == "RD"){
     var_mc <- pC*(1-pC)+p1*(1-p1)
@@ -231,14 +229,13 @@ ris <-
         1 / (1 + exp(-x))
 
       if(type == "retrospective" & is.null(pC)){
-        pC <- sum(ma$metaPrepare$data$eC)/sum(ma$metaPrepare$data$nC)
+        pC <- sum(ma$metaPrepare$org_data$eC)/sum(ma$metaPrepare$org_data$nC)
       }
-
+      
       if (outcome == "RR") {
         pI <- exp(log(pC) + log(mc))
       } else if (outcome == "OR") {
         pI <- invlogit(logit(pC) + log(mc))
-        pC <- invlogit(logit(pC))
       }
       p <- (pC + pI) / 2
       var_mc <- p * (1 - p)
@@ -253,15 +250,15 @@ ris <-
     if(outcome == "RD"){
 
       if(type == "retrospective" & is.null(pC)){
-        pC <- (ma$metaPrepare$data$eC)/(ma$metaPrepare$data$nC)
-        p1 <- (ma$metaPrepare$data$eI)/(ma$metaPrepare$data$nI)
+        pC <- sum(ma$metaPrepare$org_data$eC)/sum(ma$metaPrepare$org_data$nC)
+        p1 <- sum(ma$metaPrepare$org_data$eI)/sum(ma$metaPrepare$org_data$nI)
       }
 
       var_mc <- pC*(1-pC)+p1*(1-p1)
       mc_nf <- mc
     }
     
-    # store argumetns
+    # store arguments
     args <- mget(names(formals()),sys.frame(sys.nframe()))
     
     # calculate fixed effect sample size
@@ -357,7 +354,7 @@ ris <-
       NR_tau[names(NR_tau) == "war_het"] <- NULL
       NR_tau_ll[names(NR_tau_ll) == "war_het"] <- NULL
       NR_tau_ul[names(NR_tau_ul) == "war_het"] <- NULL
-
+      
       # sample size for inconsistency adj. and diversity adj.
       NR_D2 <- 1 / (1 - ma$synthesize$U[4]) * NF
       NR_I2 <- 1 / (1 - ma$synthesize$U[3]) * NF
@@ -366,11 +363,11 @@ ris <-
       
       # set relative to the sample size already achieved
         NR_tau_full <-
-          NR_tau$nPax[3, 4] + (sum(ma$metaPrepare$data$nI) + sum(ma$metaPrepare$data$nC))
+          NR_tau$nPax[3, 2] + (sum(ma$metaPrepare$org_data$nI) + sum(ma$metaPrepare$org_data$nC))
         NR_I2_full <- NR_I2
         NR_D2_full <- NR_D2
-        NR_I2 <- NR_I2 - (sum(ma$metaPrepare$data$nI) + sum(ma$metaPrepare$data$nC))
-        NR_D2 <- NR_D2 - (sum(ma$metaPrepare$data$nI) + sum(ma$metaPrepare$data$nC))
+        NR_I2 <- NR_I2 - (sum(ma$metaPrepare$org_data$nI) + sum(ma$metaPrepare$org_data$nC))
+        NR_D2 <- NR_D2 - (sum(ma$metaPrepare$org_data$nI) + sum(ma$metaPrepare$org_data$nC))
 
       outlist <-
         append(outlist, list(
@@ -438,6 +435,7 @@ ris <-
 #' @method print ris
 #' @export
 print.ris <- function(x, ...) {
+  cat("Note that this is a sample size calculation for a non-sequential meta-analysis.\n\n")
   if (x$settings$type == "prospective") {
     cat(
       "This is a prospective meta-analysis sample size calculation.\nThe sample size calculation assumes a",

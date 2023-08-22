@@ -117,7 +117,7 @@ RTSA <-
            sd_mc = NULL,
            pC = NULL,
            weights = "IV",
-           re_method = "DL",
+           re_method = "DL_HKSJ",
            tau_ci_method = "BJ",
            gamma = NULL,
            rho = NULL,
@@ -131,7 +131,8 @@ RTSA <-
            final_analysis = NULL,
            inf_type = "sw",
            conf_level = 0.95,
-           random_adj = "D2",
+           random_adj = "tau2",
+           power_adj = TRUE,
            ...) {
     # Check inputs ----
     # check | type
@@ -314,15 +315,15 @@ RTSA <-
     if (!is.null(data)) {
       
       if(outcome == "MD"){
-      ma <- metaanalysis(outcome = outcome, data = data, mc = mc, sd_mc = sd_mc,
+      ma <- metaanalysis(outcome = outcome, beta = beta, data = data, mc = mc, sd_mc = sd_mc,
                    weights = weights, cont_vartype = cont_vartype,
                    alpha = alpha, zero_adj = zero_adj,
                    conf_level = conf_level,
                    re_method = re_method, tau_ci_method = tau_ci_method)
       } else {
-        ma <- metaanalysis(outcome = outcome, data = data, mc = mc,
+        ma <- metaanalysis(outcome = outcome, data = data, mc = mc, alpha = alpha, beta = beta, 
                            weights = weights, cont_vartype = cont_vartype,
-                           alpha = alpha, zero_adj = zero_adj,
+                           zero_adj = zero_adj,
                            conf_level = conf_level,
                            re_method = re_method, tau_ci_method = tau_ci_method)
       }
@@ -341,7 +342,7 @@ RTSA <-
       # Calculate the RIS
       if (outcome %in% c("RR", "OR")) {
         if (is.null(pC) & is.null(design)) {
-          pC = sum(data$eC + data$eI) / sum(data$nC + data$nI)
+          pC = sum(data$eC) / sum(data$nC) 
           war_pC <- NULL
         } else {
           pC <- ifelse(!is.null(design),design$settings$pC,pC)
@@ -350,7 +351,7 @@ RTSA <-
               "Prob. of event in the control group is set to ",
               ifelse(!is.null(design),design$settings$pC,pC),
               ". The observed prob. of event is ",
-              round(sum(data$eC + data$eI) / sum(data$nC + data$nI), 4),
+              round(sum(data$eC) / sum(data$nC), 4),
               ". The power of the sequential might be affected."
             )
           )
@@ -426,10 +427,10 @@ RTSA <-
         RIS = outris$NF$NF_full
       } else {
         if(random_adj == "D2"){ 
-          warning("NB. The required information size is calculated based on Diversity (D^2). This might cause an under-powered analysis. Consider changing the argument `random_adj` from `D2` (default) to `tau2`.")
+          warning("NB. The required information size adjusted by Diversity (D^2). This might cause an under-powered analysis. Consider changing the argument `random_adj` from `D2` (default) to `tau2`.")
           RIS = outris$NR_D2$NR_D2_full } else if(random_adj == "I2"){
-            RIS = outris$NR_tau$NR_I2_full
-            warning("NB. The required information size is calculated based on Inconsistency (D^2). This might cause an under-powered analysis. Consider changing the argument `random_adj` from `I2` to `tau2`.")
+            RIS = outris$NR_I2$NR_I2_full
+            warning("NB. The required information size is adjusted by Inconsistency (I^2). This might cause an under-powered analysis. Consider changing the argument `random_adj` from `I2` to `tau2`.")
           } else {
             RIS = outris$NR_tau$NR_tau_full
           }
@@ -523,7 +524,7 @@ RTSA <-
       war_design <- c(
         "The RTSA function is used for design. Boundaries are computed but sequential inference will not be calculated. Use the metaanalysis() function if interested in meta-analysis results."
       )
-    } else if(type == "analysis" & is.null(design)){
+    } else if(type == "analysis" & is.null(design) & power_adj == TRUE){
       # calculate timings
       timing <- c(subjects / RIS)
       
@@ -616,7 +617,7 @@ RTSA <-
             es_beta = es_beta,
             type = "design"
           )
-        design_R <- bounds$root
+         design_R <- bounds$root
     } 
     
     if(type == "analysis"){
@@ -625,6 +626,10 @@ RTSA <-
           war_ana <- NULL
           design_R <- design$bounds$root
     }
+      
+      if(power_adj == FALSE){
+        design_R <- 1
+      }
       
       # recalculate timings
       timing <- c(subjects / RIS)
@@ -733,7 +738,6 @@ RTSA <-
     if (outcome %in% c("RR", "OR", "RD"))
       RTSAout$settings$Pax <-
       list(
-        RIS = RIS,
         pC = pC,
         pI = pI
       )
@@ -747,15 +751,23 @@ RTSA <-
 
     if(!is.null(data)) RTSAout$settings$Pax$subjects <- subjects
     RTSAout$bounds = bounds
-    #if(!is.null(data)) RTSAout$orgTiming = orgTiming
-    RTSAout$results$RIS = RIS
-    RTSAout$results$DARIS = RIS * RTSAout$bounds$root
-    if(is.null(data)) RTSAout$results$DARIS_F = RTSAout$ris$NF * RTSAout$bounds$root
-    if(!is.null(data)) RTSAout$results$DARIS_F = RTSAout$ris$NF_full * RTSAout$bounds$root
-
-    #if(!is.null(data)) RTSAout$results$timing <- c(subjects / RTSAout$results$DARIS)
+    
+    if(is.null(data)) RTSAout$results$RIS = RTSAout$ris$NF
+    if(!is.null(data)) RTSAout$results$RIS = RTSAout$ris$NF_full
     if(!is.null(data)) RTSAout$results$AIS = sum(data$nC + data$nI)
-    #if(!is.null(data)) RTSAout$het = heteResults
+    RTSAout$results$SMA_RIS = RTSAout$results$RIS * RTSAout$bounds$root
+    
+    if(fixed == TRUE){
+      RTSAout$results$HARIS = NULL
+      RTSAout$results$SMA_HARIS = NULL
+    } else if(fixed == FALSE){
+      RTSAout$results$HARIS = RIS
+      RTSAout$results$SMA_HARIS = RIS * RTSAout$bounds$root
+    } 
+
+#    if(is.null(data)) RTSAout$results$DARIS_F = RTSAout$ris$NF * RTSAout$bounds$root
+#    if(!is.null(data)) RTSAout$results$DARIS_F = RTSAout$ris$NF_full * RTSAout$bounds$root
+
     RTSAout$warnings <- list(
       war_order = war_order,
       war_pC = war_pC,
@@ -851,7 +863,16 @@ print.RTSA <- function(x, ...) {
       ".\n\n"
     )
   )
-
+  
+  cat("The required information size is")
+  if(x$settings$fixed == TRUE){cat(" not adjusted by heterogeneity.")}
+  if(x$settings$fixed == FALSE){cat(" adjusted by heterogeneity using", x$settings$random_adj)}
+  if(x$settings$fixed == FALSE & x$settings$type == "analysis" & x$settings$random_adj == "tau2"){cat(paste0(" and assuming ", x$ris$NR_tau$NR_tau$nPax[1, 2], " additional trials"))}
+  cat(". ")
+  if(x$settings$power_adj == TRUE){cat("The required information size is further increased with", paste0(100*round(x$bounds$root,2)-100, " percent. "))}
+  if(x$settings$power_adj == FALSE){cat("The required information size is not scaled according to the sequential design - Consider changing power_adj to TRUE. ")}
+  cat("The total required information size is", paste0(ifelse(x$settings$fixed,ceiling(x$results$SMA_RIS), ceiling(x$results$SMA_HARIS)), ".\n\n"))
+    
   cat("Timing,", ifelse(x$settings$type == "design",
                         "and boundaries:\n","boundaries, and test statistic:\n"))
   if(x$settings$type == "design"){
@@ -862,8 +883,8 @@ print.RTSA <- function(x, ...) {
     cat(print(x$ris))
     cat("\n")
     cat("\nSample size calculation for sequential meta-analysis:\n")
-    cat("Fixed-effect:", paste0(ceiling(x$results$DARIS_F)," participants."))
-    if(x$settings$fixed == FALSE) cat("\nRandom-effects:", paste0(ceiling(x$results$DARIS)," participants."))
+    cat("Fixed-effect:", paste0(ceiling(x$results$RIS*x$bounds$root)," participants."))
+    if(x$settings$fixed == FALSE) cat("\nRandom-effects:", paste0(ceiling(x$results$SMA_HARIS)," participants."))
   }
   if(x$settings$type == "analysis"){
     y <- x$results$results_df[,c("sma_timing", "upper", "lower", "fut_upper", "fut_lower")]

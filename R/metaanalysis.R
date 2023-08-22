@@ -943,18 +943,32 @@ plot.metaanalysis <- function(x, type = "both", xlims = NULL, ...) {
   
   if(midpoint != xlims[1] & (midpoint - xlims[1] > (midpoint - xmin2)*2)){
     xlims[1] <- xmin2 - abs((xlims[1]-xmin2)/3)
-    arrow_data <- rbind(arrow_data, c(xmax2,
-                                      fplot$yaxis[fplot[,CInames[1]] < xlims[1]],
-                        xlims[1],
-                        fplot$yaxis[fplot[,CInames[1]] < xlims[1]]))
+    arrow_data <- rbind(arrow_data, data.frame("x" = fplot[,CInames[2]][fplot[,CInames[1]] < xlims[1]],
+                                          "y" = fplot$yaxis[fplot[,CInames[1]] < xlims[1]],
+                        "xend" = xlims[1],
+                        "yend" = fplot$yaxis[fplot[,CInames[1]] < xlims[1]]))
+    fplot[,CInames[1]][fplot[,CInames[1]] < xlims[1]] <- xlims[1]
+  } else if(xlims[1] > min(fplot[,CInames[1]])){
+    arrow_data <- rbind(arrow_data, data.frame("x" = fplot[,CInames[2]][fplot[,CInames[1]] < xlims[1]],
+                                               "y" =fplot$yaxis[fplot[,CInames[1]] < xlims[1]],
+                                               "xend" =xlims[1],
+                                               "yend" =fplot$yaxis[fplot[,CInames[1]] < xlims[1]]))
     fplot[,CInames[1]][fplot[,CInames[1]] < xlims[1]] <- xlims[1]
   }
+  
+  
   if(midpoint != xlims[2] & (xlims[2]-midpoint) > (xmax2-midpoint)*2){
     xlims[2] <- xmax2 + abs((xlims[2]-xmax2)/3)
-    arrow_data <- rbind(arrow_data, c(xmin2,
-                                      fplot$yaxis[fplot[,CInames[2]] > xlims[2]],
-                                      xlims[2],
-                                      fplot$yaxis[fplot[,CInames[2]] > xlims[2]]))
+    arrow_data <- rbind(arrow_data, data.frame("x" = fplot[,CInames[1]][fplot[,CInames[2]] > xlims[2]],
+                                               "y" =fplot$yaxis[fplot[,CInames[2]] > xlims[2]],
+                                               "xend" =xlims[2],
+                                               "yend" =fplot$yaxis[fplot[,CInames[2]] > xlims[2]]))
+    fplot[,CInames[2]][fplot[,CInames[2]] > xlims[2]] <- xlims[2]
+  } else if(xlims[2] < max(fplot[,CInames[2]])){
+    arrow_data <- rbind(arrow_data, data.frame("x" = fplot[,CInames[1]][fplot[,CInames[2]] > xlims[2]],
+                                               "y" =fplot$yaxis[fplot[,CInames[2]] > xlims[2]],
+                                               "xend" =xlims[2],
+                                               "yend" =fplot$yaxis[fplot[,CInames[2]] > xlims[2]]))
     fplot[,CInames[2]][fplot[,CInames[2]] > xlims[2]] <- xlims[2]
   }
   arrow_data <- arrow_data[complete.cases(arrow_data),]
@@ -1010,7 +1024,7 @@ plot.metaanalysis <- function(x, type = "both", xlims = NULL, ...) {
 
   #Lower left text
   heterogen <- paste0(
-    "Heterogeneity: tau^2 = ",
+    "Heterogeneity: \U1D70F\U0302\U00B2 = ",
     sprintf(x$synthesize$U[1], fmt = '%#.2f'),
     " (",
     sprintf(x$synthesize$ci.tau$random["tau^2", "ci.lb"], fmt = '%#.2f'),
@@ -1021,7 +1035,9 @@ plot.metaanalysis <- function(x, type = "both", xlims = NULL, ...) {
     sprintf(x$synthesize$Q[1], fmt = '%#.1f'),
     ", df = ",
     round(x$synthesize$Q[2]),
-    ", I^2 = ",
+    ", p-value = ",
+    round(x$synthesize$Q[3], 4),
+    ", \U00CE\U00B2 = ",
     round(x$synthesize$U[3] * 100),
     "%\n"
   )
