@@ -899,7 +899,7 @@ print.RTSA <- function(x, ...) {
   if(x$settings$fixed == FALSE){cat(" adjusted by heterogeneity using", x$settings$random_adj)}
   if(x$settings$fixed == FALSE & x$settings$type == "analysis" & x$settings$random_adj == "tau2"){cat(paste0(" and assuming ", ifelse(is.null(x$settings$trials),x$ris$NR_tau$NR_tau$nPax[1, 2],x$settings$trials), " additional trials"))}
   cat(". ")
-  if(x$settings$power_adj == TRUE){cat("The required information size is further increased with", paste0(100*round(x$bounds$root,2)-100, " percent. "))}
+  if(x$settings$power_adj == TRUE){cat("The required information size is further increased with", paste0(100*round(x$bounds$root,2)-100, " percent due to the sequential design. "))}
   if(x$settings$power_adj == FALSE){cat("The required information size is not scaled according to the sequential design - Consider changing power_adj to TRUE. ")}
   cat("The total required information size is", paste0(ifelse(x$settings$fixed,ceiling(x$results$SMA_RIS), ceiling(x$results$SMA_HARIS)), ".\n\n"))
     
