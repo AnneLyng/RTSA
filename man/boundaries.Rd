@@ -28,9 +28,9 @@ boundaries(
 
 \item{futility}{Futility boundaries added to design. Options are: none, non-binding and binding. Default is "none".}
 
-\item{es_alpha}{The spending function for alpha-spending. Options are: "esOF" (Lan & DeMets version of O'Brien-Fleming), "esPoc" (Lan & DeMets version of Pocock), "HSDC" (Hwang Sihi and DeCani) and "rho" (rho family). Defaults to "esOF".}
+\item{es_alpha}{The error spending function for alpha-spending. Options are: "esOF" (Lan & DeMets version of O'Brien-Fleming boundaries), "esPoc" (Lan & DeMets version of Pocock boundaries), "HSDC" (Hwang Sihi and DeCani) and "rho" (rho family). Defaults to "esOF".}
 
-\item{es_beta}{The spending function for beta-spending. For options see es_alpha. Defaults to NULL.}
+\item{es_beta}{The error spending function for beta-spending. For options see es_alpha. Defaults to NULL.}
 
 \item{type}{Whether the boundaries are used for design or analysis. We recommend only to use the boundaries() function with type equal to design. Defaults to design.}
 
@@ -63,7 +63,7 @@ A \code{boundaries} object which includes:
 \item{futility}{As input}
 }
 \description{
-Calculates alpha- and potentially beta-spending boundaries for group sequential designs for meta-analysis. Should be used for exploring how the different arguments affect the sequential design. The function is not intended to be used individually for Trial Sequential Analysis. For this purpose is RTSA() recommended.
+Calculates alpha- and potentially beta-spending boundaries for group sequential designs for meta-analysis. Should be used for exploring how the different arguments affect the sequential design. The function is not intended to be used individually for Trial Sequential Analysis. For this purpose, we recommend RTSA().
 }
 \examples{
 boundaries(timing = c(0.25, 0.5, 0.75, 1), alpha = 0.05, beta = 0.1,

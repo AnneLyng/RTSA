@@ -19,7 +19,7 @@
 #' \item{results_df}{A data.frame containing information about: Cumulative test values, cumulative outcomes, timing of trials,
 #' stopping boundaries (alpha_upper, alpha_lower, beta_upper, beta_lower), naive confidence intervals, TSA-adjusted confidence intervals,
 #' cumulative p-values and standard deviations.}
-#' \item{seq_inf}{If the meta-analysis crosses a alpha-spending boundary or a binding beta-spending boundary inference conditional on stopping is provided. A median unbiased estimate, lower and upper confidence interval, and p-value is provided based on stage-wise ordering.}
+#' \item{seq_inf}{If the meta-analysis crosses an alpha-spending boundary, a binding beta-spending boundary  or reaches the required information size inference conditional on stopping is provided. A median unbiased estimate, lower and upper confidence interval, and p-value is calculated based on stage-wise ordering.}
 #'
 #' @export
 #'
@@ -96,7 +96,7 @@ inference <- function(bounds,
     extra <- FALSE
   }
   ll <- -Inf
-
+  
   if(length(ana_times) > 0){
   if(dim(zvalues)[2] < length(ana_times)){
     ana_times <- 1:dim(zvalues)[2]
@@ -180,9 +180,9 @@ inference <- function(bounds,
   }
   
   # calculate naive p-values and CI
-  naiveCI = list(CIfixed = sapply(ana_times, function(x) zout[[x]]$peF[c(2, 3)]),
-                   CIrandom = sapply(ana_times, function(x) {
-                     if(zout[[x]]$U[1] > 0 & !fixed) zout[[x]]$peR[c(2, 3)] else matrix(nrow = 2)}))
+  naiveCI = list(CIfixed = sapply(names(zout), function(x) zout[[x]]$peF[c(2, 3)]),
+                   CIrandom = sapply(names(zout), function(x) {
+                     if(zout[[x]]$U[1] > 0) zout[[x]]$peR[c(2, 3)] else zout[[x]]$peF[c(2, 3)]}))
     if(ma$settings$outcome %in% c("RR","OR")){
       TSAadjCI = list(
         CIfixed = sapply(ana_times, function(x) {exp(
@@ -427,19 +427,26 @@ inference <- function(bounds,
   n_out <- ifelse(is.null(dim(zvalues)[2]), 1, dim(zvalues)[2])
   if(length(ana_times) > 0) n_out2 <- max(ana_times)
   n_row <- ifelse((is.null(stop_time) | length(ana_times) < length(timing)), n_out+1, n_out)
+  if(max(org_timing[ana_times]) > max(timing)*1.05){
+    overrun <- TRUE
+  } else {
+    overrun <- FALSE
+  }
   bounds$inf_frac <- sort(unique(c(org_timing,timing)))
   n_out <- which(bounds$inf_frac %in% org_timing)
   
-  results <- as.data.frame(matrix(ncol = 21, nrow = n_row))
+  results <- as.data.frame(matrix(ncol = 21, nrow = length(bounds$inf_frac)))
   results[n_out,1:2] <- t(zvalues)
   results[n_out,3:4] <- t(outcome_values)
-  results[ana_times,10:11] <- t(naiveCI$CIfixed)
-  results[ana_times,12:13] <- t(naiveCI$CIrandom)
-  results[ana_times,14:15] <- t(TSAadjCI$CIfixed)
-  results[ana_times,16:17] <- t(TSAadjCI$CIrandom)
+  results[n_out,10:11] <- t(naiveCI$CIfixed)
+  results[n_out,12:13] <- t(naiveCI$CIrandom)
+  results[,14:15][ana_times,] <- t(TSAadjCI$CIfixed)
+  results[,14:15][!is.na(results[,14]) & is.na(results[,1]),] <- NA 
+  results[,16:17][ana_times,] <- t(TSAadjCI$CIrandom)
+  results[,16:17][!is.na(results[,16]) & is.na(results[,2]),] <- NA
   results[n_out,18:19] <- t(p_values)
   results[n_out,20:21] <- t(sd_values)
-
+  
   if(length(ana_times) < length(bounds$inf_frac) & length(ana_times) > 0){ana_times <- c(ana_times, max(ana_times)+1)}
 
   if(length(timing) > 1){
@@ -455,7 +462,6 @@ inference <- function(bounds,
   results[indi_seq,8] <- bounds$beta_ubound
   results[indi_seq,9] <- bounds$beta_lbound
 
-
   colnames(results) <- c("z_fixed", "z_random", "outcome_fixed", "outcome_random",
                          "sma_timing", "upper", "lower", "fut_upper",
                          "fut_lower", "naiveCIfixed_lower", "naiveCIfixed_upper",
@@ -464,6 +470,8 @@ inference <- function(bounds,
                          "TSAadjCIrandom_upper", "pvalues_fixed", "pvalues_random",
                          "sdvalues_fixed", "sdvalues_random")
 
+  seq_inf$overrun <- overrun
+  
   inf_out =     list(results_df = results,
                     seq_inf = seq_inf)
 

@@ -3,7 +3,7 @@
 \docType{data}
 \name{eds}
 \alias{eds}
-\title{Dataset of studies investigating the effect of carer on early supported discharge services}
+\title{Dataset of trials investigating the effect of carer on early supported discharge services}
 \format{
 A data frame with 9 studies and 8 variables:
 }
@@ -11,7 +11,7 @@ A data frame with 9 studies and 8 variables:
 eds
 }
 \description{
-A dataset containing data on the length of hospital stay when receiving early
+A dataset containing trials investigating on the length of hospital stay when receiving early
 supported discharge (ESD) service versus conventional care. The outcome is
 length of initial hospital stay counted in days.
 }

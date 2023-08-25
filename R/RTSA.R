@@ -368,10 +368,8 @@ RTSA <-
           } else {
             sd_mc = sqrt(sy$peF[7])
           }
-          war_pC <- paste0("Standard deviation is set to", round(sd_mc,4))
         } else {
           sd_mc <- ifelse(!is.null(design),design$settings$sd_mc,sd_mc)
-          war_pC <- paste0("Standard deviation is set to", round(sd_mc,4))
         }
       }
 
@@ -537,7 +535,8 @@ RTSA <-
       war_design <- c(
         "The RTSA function is used for design. Boundaries are computed but sequential inference will not be calculated. Use the metaanalysis() function if interested in meta-analysis results."
       )
-    } else if(type == "analysis" & is.null(design) & power_adj == TRUE){
+    
+      } else if(type == "analysis" & is.null(design) & power_adj == TRUE){
       # calculate timings
       timing <- c(subjects / RIS)
       
@@ -556,12 +555,8 @@ RTSA <-
       }
       
       if(length(timing) == 0){
-        stop("The required information size is reached already at the first study and TSA can not be performed. Consider using a standard meta-analysis using e.g. the metaanalysis function. This error can also happen when a too optimistic minimal clinical value (mc) has been set.")
+        stop("The required information size is reached already at the first study and TSA can not be performed. Consider using a standard meta-analysis using e.g. the metaanalysis function. This error can also happen when a too optimistic minimal clinical value (mc) has been set or the sample size is adjusted by heterogeneity. This can be investigated via the ris function.")
       }
-      
-      # if(!is.null(design)){
-      #   timing <- c(timing, design$bounds$root) 
-      # }
     
     if(length(timing) < max(ana_times)){
       ana_times <- ana_times[ana_times <= length(timing)]
@@ -739,7 +734,7 @@ RTSA <-
       inf <- inference(
         bounds = bounds,
         timing = timing,
-        ana_times = ana_times,
+        ana_times = org_ana_times,
         org_timing = orgTiming,
         ma = ma,
         fixed = ifelse(!is.null(design), design$settings$fixed, fixed),
@@ -766,7 +761,10 @@ RTSA <-
     RTSAout$bounds = bounds
     
     # update the sample size calculation
-    outris$SMA_NF <- ifelse(is.null(data), outris$NF$NF* RTSAout$bounds$root,outris$NF$NF_full* RTSAout$bounds$root) 
+    if(!is.null(design)) outris <- design$ris
+    outris$SMA_NF <- ifelse(is.null(data) | !is.null(design),
+                            ceiling(outris$NF* RTSAout$bounds$root),
+                            ceiling(outris$NF$NF_full* RTSAout$bounds$root)) 
     if(!fixed & !is.null(data)){
     outris$SMA_D2_full <- ceiling(outris$NR_D2$NR_D2_full* RTSAout$bounds$root)
     outris$SMA_tau2_full <- ceiling(outris$NR_tau$NR_tau_full * RTSAout$bounds$root) 
@@ -794,8 +792,9 @@ RTSA <-
     if(!is.null(data)) RTSAout$settings$Pax$subjects <- subjects
     
     if(!is.null(data)) RTSAout$results$AIS = sum(data$nC + data$nI)
+    if(!is.null(data) & is.null(design)) RTSAout$results$RIS = RTSAout$ris$NF$NF_full
+    if(!is.null(data) & !is.null(design)) RTSAout$results$RIS = RTSAout$design_ris$NF
     if(is.null(data)) RTSAout$results$RIS = RTSAout$ris$NF
-    if(!is.null(data)) RTSAout$results$RIS = RTSAout$ris$NF$NF_full
     RTSAout$results$SMA_RIS = RTSAout$results$RIS * RTSAout$bounds$root
     
     if(fixed){
@@ -963,62 +962,69 @@ print.RTSA <- function(x, ...) {
 
   cat("\n\nMeta-analysis results:\n")
   tmp_ca <- x$settings$alpha / x$settings$side
-
+  
   #LABELS
   df <- x$results$results_df
-  f_tmp_outcome <- df$outcome_fixed[!is.na(df$outcome_fixed)]
-  f_tmp_outcome <- f_tmp_outcome[length(f_tmp_outcome)]
-  f_tmp_lcl <- df$TSAadjCIfixed_lower
-  f_tmp_lcl1 <-
-    df$TSAadjCIfixed_lower[!is.na(df$TSAadjCIfixed_lower)]
-  f_tmp_lcl1 <- f_tmp_lcl1[length(f_tmp_lcl1)]
-  f_tmp_ucl <- df$TSAadjCIfixed_upper
-  f_tmp_ucl1 <-
-    df$TSAadjCIfixed_upper[!is.na(df$TSAadjCIfixed_upper)]
-  f_tmp_ucl1 <- f_tmp_ucl1[length(f_tmp_ucl1)]
-  f_tmp_pvalue <- df$pvalues_fixed[!is.na(df$pvalues_fixed)]
-  f_tmp_pvalue <- f_tmp_pvalue[length(f_tmp_pvalue)]
-
-  r_tmp_outcome <- df$outcome_random[!is.na(df$outcome_random)]
-  r_tmp_outcome <- r_tmp_outcome[length(r_tmp_outcome)]
-  r_tmp_lcl <- df$TSAadjCIrandom_lower
-  r_tmp_lcl1 <-
-    df$TSAadjCIrandom_lower[!is.na(df$TSAadjCIrandom_lower)]
-  r_tmp_lcl1 <- r_tmp_lcl1[length(r_tmp_lcl1)]
-  r_tmp_ucl <- df$TSAadjCIrandom_upper
-  r_tmp_ucl1 <-
-    df$TSAadjCIrandom_upper[!is.na(df$TSAadjCIrandom_upper)]
-  r_tmp_ucl1 <- r_tmp_ucl1[length(r_tmp_ucl1)]
-  r_tmp_pvalue <- df$pvalues_random[!is.na(df$pvalues_random)]
-  r_tmp_pvalue <- r_tmp_pvalue[length(r_tmp_pvalue)]
-
-
+  #stop_est <- max(which(r_tmp_outcome == df$outcome_random[!is.na(df$outcome_random)]))
+  f_tmp_outcome <- df$outcome_fixed[max(which(!is.na(df$outcome_fixed)))]
+  if(x$results$seq_inf$overrun){
+    f_tmp_lcl1 <-
+      df$naiveCIfixed_lower[max(which(!is.na(df$naiveCIfixed_lower)))]  
+    f_tmp_ucl1 <-
+      df$naiveCIfixed_upper[max(which(!is.na(df$naiveCIfixed_upper)))]
+  } else {
+    f_tmp_lcl1 <-
+      df$TSAadjCIfixed_lower[max(which(!is.na(df$TSAadjCIfixed_lower)))]  
+    f_tmp_ucl1 <-
+      df$TSAadjCIfixed_upper[max(which(!is.na(df$TSAadjCIfixed_upper)))]
+  }
+  
+  f_tmp_pvalue <- df$pvalues_fixed[max(which(!is.na(df$pvalues_fixed)))]
+  r_tmp_outcome <- df$outcome_random[max(which(!is.na(df$outcome_random)))]
+  
+  if(x$results$seq_inf$overrun){
+    r_tmp_lcl1 <-
+      df$naiveCIrandom_lower[max(which(!is.na(df$naiveCIrandom_lower)))]  
+    r_tmp_ucl1 <-
+      df$naiveCIrandom_upper[max(which(!is.na(df$naiveCIrandom_upper)))]
+  } else {
+    r_tmp_lcl1 <-
+      df$TSAadjCIrandom_lower[max(which(!is.na(df$TSAadjCIrandom_lower)))]  
+    r_tmp_ucl1 <-
+      df$TSAadjCIrandom_upper[max(which(!is.na(df$TSAadjCIrandom_upper)))]
+  }
+  r_tmp_pvalue <- df$pvalues_random[max(which(!is.na(df$pvalues_random)))]
+  
   results_fixed <- paste0(
-    "Fixed Pooled effect (",
+    "Fixed pooled effect (",
     x$settings$outcome,
     "): ",
     format(round(f_tmp_outcome, 2), nsmall = 2),
-    " (95% TSA-adjusted CI: ",
-    format(round(f_tmp_lcl1[length(f_tmp_lcl1)], 2), nsmall = 2),
-    "-",
-    format(round(f_tmp_ucl1[length(f_tmp_ucl1)], 2), nsmall = 2),
-    "); naive p-value: ",
+    if(!x$results$seq_inf$overrun){paste0(" (95% TSA-adjusted CI: ")},
+    if(x$results$seq_inf$overrun){paste0(" (95% naive CI: ")},
+    format(round(f_tmp_lcl1, 2), nsmall = 2),
+    ";",
+    format(round(f_tmp_ucl1, 2), nsmall = 2),
+    "), naive p-value: ",
     format(round(f_tmp_pvalue, 4), nsmall = 4)
   )
 
   results_random <- paste0(
-    "Random Pooled effect (",
+    "Random pooled effect (",
     x$settings$outcome,
     "): ",
     format(round(r_tmp_outcome, 2), nsmall = 2),
-    " (95% TSA-adjusted CI: ",
-    format(round(r_tmp_lcl1[length(r_tmp_lcl1)], 2), nsmall = 2),
-    "-",
-    format(round(r_tmp_ucl1[length(r_tmp_ucl1)], 2), nsmall = 2),
-    "); naive p-value: ",
+    if(!x$results$seq_inf$overrun){paste0(" (95% TSA-adjusted CI: ")},
+    if(x$results$seq_inf$overrun){paste0(" (95% naive CI: ")},
+    format(round(r_tmp_lcl1, 2), nsmall = 2),
+    "; ",
+    format(round(r_tmp_ucl1, 2), nsmall = 2),
+    "), naive p-value: ",
     format(round(r_tmp_pvalue, 4), nsmall = 4)
   )
+  
 
+  if(!x$results$seq_inf$overrun){
   if(!is.null(x$results$seq_inf$median_unbiased)){
     if(x$results$seq_inf$lower > x$results$seq_inf$upper){
       temp <- x$results$seq_inf$lower
@@ -1033,12 +1039,15 @@ print.RTSA <- function(x, ...) {
       format(round(x$results$seq_inf$median_unbiased, 2), nsmall = 2),
       " (95% SW-adjusted CI: ",
       format(round(x$results$seq_inf$lower, 2), nsmall = 2),
-      "-",
+      "; ",
       format(round(x$results$seq_inf$upper, 2), nsmall = 2),
-      "); SW p-value: ",
-      format(round(x$results$seq_inf$p.value, 4), nsmall = 4)
+      "), SW p-value: ",
+      format(round(x$results$seq_inf$p.value, 4), nsmall = 4), "\n"
     )
   } else {results_sw <- ""}
+  } else {
+    results_sw <- ""
+  }
 
   #CREATE LABELS
   settings <- paste0(
@@ -1070,7 +1079,7 @@ print.RTSA <- function(x, ...) {
   results <- paste0(
     results_fixed,
     "\n",
-    results_random,"\n",
+    if(!x$settings$fixed){paste0(results_random,"\n")},
     results_sw,
     "\nHeterogeneity results:\n",
     "tau^2: ",

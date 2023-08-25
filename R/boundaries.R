@@ -1,6 +1,6 @@
 #' @title Boundaries for group sequential designs
 #' @description
-#' Calculates alpha- and potentially beta-spending boundaries for group sequential designs for meta-analysis. Should be used for exploring how the different arguments affect the sequential design. The function is not intended to be used individually for Trial Sequential Analysis. For this purpose is RTSA() recommended.
+#' Calculates alpha- and potentially beta-spending boundaries for group sequential designs for meta-analysis. Should be used for exploring how the different arguments affect the sequential design. The function is not intended to be used individually for Trial Sequential Analysis. For this purpose, we recommend RTSA().
 #' 
 #'
 #' @param timing Expected timings of interim analyses and final analysis as a vector consisting of values from 0 to 1. 
@@ -8,8 +8,8 @@
 #' @param beta The level of type II error as a percentage, the default is 0.1 corresponding to 10\%.
 #' @param side Whether a 1- or 2-sided hypothesis test is used. Defaults to 2. Options are 1 or 2.
 #' @param futility Futility boundaries added to design. Options are: none, non-binding and binding. Default is "none".
-#' @param es_alpha The spending function for alpha-spending. Options are: "esOF" (Lan & DeMets version of O'Brien-Fleming), "esPoc" (Lan & DeMets version of Pocock), "HSDC" (Hwang Sihi and DeCani) and "rho" (rho family). Defaults to "esOF".
-#' @param es_beta The spending function for beta-spending. For options see es_alpha. Defaults to NULL.
+#' @param es_alpha The error spending function for alpha-spending. Options are: "esOF" (Lan & DeMets version of O'Brien-Fleming boundaries), "esPoc" (Lan & DeMets version of Pocock boundaries), "HSDC" (Hwang Sihi and DeCani) and "rho" (rho family). Defaults to "esOF".
+#' @param es_beta The error spending function for beta-spending. For options see es_alpha. Defaults to NULL.
 #' @param type Whether the boundaries are used for design or analysis. We recommend only to use the boundaries() function with type equal to design. Defaults to design.
 #' @param design_R If type is analysis, a scalar for achieving the right amount of power is required. It is recommended not to use the boundaires() function with the setting type equal to analysis. Defaults to NULL. 
 #' @param tol Tolerance level for numerical integration. Defaults to 1e-09.

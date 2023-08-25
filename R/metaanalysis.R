@@ -5,7 +5,7 @@
 #' 
 #' 
 #'
-#' @param outcome Outcome metric for the studies. Choose between: MD (mean difference), RR (relative risk), RD (risk difference) or OR (odds ratio).
+#' @param outcome Outcome metric for the studies. Choose between: MD (mean difference), RR (relative risk), RD (risk difference), or OR (odds ratio).
 #' @param data A data.frame containing the study results. The data set must containing a specific set of columns. These are respectively `eI` (events in intervention group), `eC` (events in control group), `nC` (participants intervention group) or `nI` (participants control group) for discrete data, or, `mI` (mean intervention group), `mC` (mean control group), `sdI` (standard error intervention group), `sdC` (standard error control group),`nC` (participants intervention group) and `nI` (participants control group)  for continuous outcomes. Preferable also a `study` column as an indicator of study.
 #' @param study Optional vector of study IDs. If no study indicator is provided in `data`, a vector of study indicators e.g. names.
 #' @param alpha The level of type I error as a percentage, the default is 0.05 corresponding to 5\%.
@@ -29,7 +29,7 @@
 #' \item{metaPrepare}{A list containing the elements used for calculating the study results.}
 #' \item{synthesize}{A list containing the elements used for calculating the meta-analysis results.}
 #' \item{settings}{A list containing the arguments used in the \code{metaanalysis} call.}
-#' \item{ris}{(Only when \code{mc} has been specified or meta-analysis is created as part of \code{RTSA}). List of sample and trial size calculation. See documentation for \code{ris}.}
+#' \item{ris}{(Only when \code{mc} has been specified or meta-analysis is created as part of \code{RTSA}). List of sample size and trial size calculation. See documentation for \code{ris}.}
 #' 
 #' @export
 #' @aliases print.metaanalysis

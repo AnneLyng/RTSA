@@ -144,24 +144,72 @@ plot.RTSA = function(x, model = "random", type = "classic", theme = "classic", .
   }
 
   if(!is.null(x$results$seq_inf$median_unbiased)){
+    
+    if(x$results$seq_inf$overrun){
+      if(x$settings$fixed){
+      tmp_outcome <- df$outcome_fixed[max(which(!is.na(df$outcome_fixed)))]
+      tmp_lcl1 <-
+        df$naiveCIfixed_lower[max(which(!is.na(df$naiveCIfixed_lower)))]  
+      tmp_ucl1 <-
+        df$naiveCIfixed_upper[max(which(!is.na(df$naiveCIfixed_upper)))]
+      tmp_pvalue <- df$pvalues_fixed[max(which(!is.na(df$pvalues_fixed)))]
+      } else {
+        tmp_outcome <- df$outcome_random[max(which(!is.na(df$outcome_random)))]
+        tmp_lcl1 <-
+          df$naiveCIrandom_lower[max(which(!is.na(df$naiveCIrandom_lower)))]  
+        tmp_ucl1 <-
+          df$naiveCIrandom_upper[max(which(!is.na(df$naiveCIrandom_upper)))]
+        tmp_pvalue <- df$pvalues_random[max(which(!is.na(df$pvalues_random)))]
+      }
+    }
+  
+    
     if(tmp_lcl1 > tmp_ucl1){
       temp <- tmp_lcl1
       tmp_lcl1 <- tmp_ucl1
       tmp_ucl1 <- temp
     }
-    ci_text <- paste0(" (", 100*x$settings$conf_level, "% SW-adjusted CI: ",
+    ci_text <- paste0(" (", 100*x$settings$conf_level,
+                      if(!x$results$seq_inf$overrun){paste0("% SW-adjusted CI: ")},
+                      if(x$results$seq_inf$overrun){paste0("% naive CI: ")},
                       format(round(tmp_lcl1,2),nsmall=2),";",
                       format(round(tmp_ucl1,2),nsmall=2))
   } else if(x$settings$type != "design"){
-    ci_text <- paste0(" (",100*x$settings$conf_level, "% TSA-adjusted CI: ",
+    if(x$results$seq_inf$overrun){
+        if(x$settings$fixed){
+          tmp_outcome <- df$outcome_fixed[max(which(!is.na(df$outcome_fixed)))]
+          tmp_lcl1 <-
+            df$naiveCIfixed_lower[max(which(!is.na(df$naiveCIfixed_lower)))]  
+          tmp_ucl1 <-
+            df$naiveCIfixed_upper[max(which(!is.na(df$naiveCIfixed_upper)))]
+          tmp_pvalue <- df$pvalues_fixed[max(which(!is.na(df$pvalues_fixed)))]
+        } else {
+          tmp_outcome <- df$outcome_random[max(which(!is.na(df$outcome_random)))]
+          tmp_lcl1 <-
+            df$naiveCIrandom_lower[max(which(!is.na(df$naiveCIrandom_lower)))]  
+          tmp_ucl1 <-
+            df$naiveCIrandom_upper[max(which(!is.na(df$naiveCIrandom_upper)))]
+          tmp_pvalue <- df$pvalues_random[max(which(!is.na(df$pvalues_random)))]
+        }
+      
+      if(tmp_lcl1 > tmp_ucl1){
+        temp <- tmp_lcl1
+        tmp_lcl1 <- tmp_ucl1
+        tmp_ucl1 <- temp
+      }
+    }
+    ci_text <- paste0(" (",100*x$settings$conf_level, 
+                      if(!x$results$seq_inf$overrun){paste0("% TSA-adjusted CI: ")},
+                      if(x$results$seq_inf$overrun){paste0("% naive CI: ")},
                       format(round(tmp_lcl1,2),nsmall=2),";",
                       format(round(tmp_ucl1,2),nsmall=2))
   }
-
+  
   if(x$settings$type == "analysis"){ results <- paste0(
     "Pooled effect (", x$settings$outcome,") ",
     format(round(tmp_outcome,2),nsmall=2), ci_text,
-    "), naive p-value ",
+    if(!is.null(x$results$seq_inf$median_unbiased) & !x$results$seq_inf$overrun){paste0("), SW p-value ")},
+    if(is.null(x$results$seq_inf$median_unbiased) | (!is.null(x$results$seq_inf$median_unbiased) & x$results$seq_inf$overrun)){paste0("), naive p-value ")},
     format(round(tmp_pvalue,4),nsmall=4))} else {
       results <- paste0(
         "Pooled effect (", x$settings$outcome,") ",
@@ -217,7 +265,7 @@ plot.RTSA = function(x, model = "random", type = "classic", theme = "classic", .
     "alpha ", percent(x$settings$alpha,0.1), ", ",
     "beta ", percent(x$settings$beta), ". ",
     if(sum(class(x) == "RTSA") > 0 & x$settings$fixed == FALSE){paste0("Sample size is adjusted by ", x$settings$random_adj)},
-    if(x$settings$random_adj == "tau2"){paste0(" and assuming ", x$ris$NR_tau$NR_tau$nPax[1, 2], " additional trials")},
+    if(sum(class(x) == "RTSA") > 0 & x$settings$fixed == FALSE){if(x$settings$random_adj == "tau2"){paste0(" and assuming ", x$ris$NR_tau$NR_tau$nPax[1, 2], " additional trials")}},
     ".\n",
     if(sum(class(x) == "RTSA") > 0 & x$settings$type == "design"){paste0("RIS (adjusted for sequential design): ", ceiling(x$results$SMA_HARIS), ".\n")},
     if(sum(class(x) == "RTSA") > 0 & !x$settings$fixed & model == "random"){paste0("Methods: Random-effects, ", x$settings$re_method, "; ")},

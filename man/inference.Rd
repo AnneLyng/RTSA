@@ -43,7 +43,7 @@ A data.frame of cumulative meta-analysis results including stopping boundaries a
 \item{results_df}{A data.frame containing information about: Cumulative test values, cumulative outcomes, timing of trials,
 stopping boundaries (alpha_upper, alpha_lower, beta_upper, beta_lower), naive confidence intervals, TSA-adjusted confidence intervals,
 cumulative p-values and standard deviations.}
-\item{seq_inf}{If the meta-analysis crosses a alpha-spending boundary or a binding beta-spending boundary inference conditional on stopping is provided. A median unbiased estimate, lower and upper confidence interval, and p-value is provided based on stage-wise ordering.}
+\item{seq_inf}{If the meta-analysis crosses an alpha-spending boundary, a binding beta-spending boundary  or reaches the required information size inference conditional on stopping is provided. A median unbiased estimate, lower and upper confidence interval, and p-value is calculated based on stage-wise ordering.}
 }
 \description{
 Calculates point-estimates, p-values and confidence intervals. Computes naive inference and TSA-adjusted confidence intervals. If the meta-analysis crosses a alpha-spending boundary, a binding beta-spending boundary or reached the sequential RIS, stage-wise ordered inference is also calculated. This function is not supposed to be used individually for Trial Sequential Analysis (TSA). RTSA() is recommended for TSA.

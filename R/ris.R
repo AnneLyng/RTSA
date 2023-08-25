@@ -31,7 +31,7 @@
 #' # Note that retrospective sample size calculations are prone to bias
 #' ma <- metaanalysis(outcome = "RR", data = perioOxy)
 #' ris(outcome = "RR", mc = 0.80, ma = ma, type = "retrospective", fixed = FALSE,
-#'  beta = 0.2, alpha = 0.05, side = 2)
+#'  beta = 0.1, alpha = 0.05, side = 2)
 #'
 minTrial = function(outcome,
                     mc,
@@ -462,7 +462,7 @@ print.ris <- function(x, ...) {
       "and a type-II-error of",
       paste0(x$settings$beta, "."), "\nThe minimum clinical relevant value is set to:", x$settings$mc, "for outcome metric", paste0(x$settings$outcome,".\n")
     )
-    cat("Additional parametres for sample size are:\n")
+    cat("Additional parameters for sample size are:\n")
     if(x$settings$outcome %in% c("RR", "OR")){
       cat("Probability of event in the control group:", paste0(round(x$settings$pC,4), "."))
     } else if(x$settings$outcome == "MD"){
@@ -531,7 +531,7 @@ print.ris <- function(x, ...) {
       cat("The number of required participants for a fixed-effect meta-analysis is reached.\n")
     } else {
       cat(paste(x$NF$NF, "participants in total are additionally required. \n"))}
-    if (x$settings$fixed == FALSE) {
+    if (x$settings$fixed == FALSE & (!is.null(x$NR_tau) | !is.null(x$NR_D2) | !is.null(x$NR_I2))) {
       cat("\n")
       cat("Random-effects required information size:\n")
       if (!is.null(x$NR_tau$NR_tau$tau2) & is.null(x$war_het)) {
@@ -555,6 +555,7 @@ print.ris <- function(x, ...) {
           )
         }
       }
+      
       if (!is.null(x$NR_D2$NR_D2) & x$NR_D2$NR_D2 >= 0) {
         cat(paste("Adjusted by diversity (D^2):",
                   ifelse(x$settings$RTSA,x$SMA_D2,x$NR_D2$NR_D2),

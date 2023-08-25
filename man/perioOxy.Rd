@@ -10,9 +10,9 @@ A data frame with 7 rows and 6 variables:
 \describe{
   \item{study}{Name of first author of the trial}
   \item{eI}{Number of events in the intervention group (80\% oxygen)}
-  \item{nI}{Number of pax in the intervention group (80\% oxygen)}
+  \item{nI}{Number of perticipants in the intervention group (80\% oxygen)}
   \item{eC}{Number of events in the control group (30-35\% oxygen)}
-  \item{nC}{Number of pax in the control group (30-35\% oxygen)}
+  \item{nC}{Number of participants in the control group (30-35\% oxygen)}
 }
 }
 \usage{

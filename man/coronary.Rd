@@ -3,23 +3,23 @@
 \docType{data}
 \name{coronary}
 \alias{coronary}
-\title{Dataset of studies investigating the intensity of statin therapy on the risk of myocardial infarction or coronary death}
+\title{Dataset of trials investigating the intensity of statin therapy on the risk of myocardial infarction or coronary death}
 \format{
 A data frame with 4 rows and 5 variables:
 \describe{
   \item{study}{Name of first author of the trial}
   \item{eI}{Number of events in the intervention group}
-  \item{nI}{Number of pax in the intervention group}
+  \item{nI}{Number of participants in the intervention group}
   \item{eC}{Number of events in the control group}
-  \item{nC}{Number of pax in the control group}
+  \item{nC}{Number of participants in the control group}
 }
 }
 \usage{
 coronary
 }
 \description{
-A dataset containing data on myocardial infarction or coronary death among 
+A dataset containing trials investigating myocardial infarction or coronary death among 
 patients with acute coronary syndromes or chronic coronary artery disease 
-of statin therapy intensity. The studies compared low intensities of statin to higher intensities.
+of statin therapy intensity. The trials compared low intensities of statin to higher intensities.
 }
 \keyword{datasets}

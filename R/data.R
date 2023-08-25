@@ -7,31 +7,31 @@
 #' \describe{
 #'   \item{study}{Name of first author of the trial}
 #'   \item{eI}{Number of events in the intervention group (80\% oxygen)}
-#'   \item{nI}{Number of pax in the intervention group (80\% oxygen)}
+#'   \item{nI}{Number of perticipants in the intervention group (80\% oxygen)}
 #'   \item{eC}{Number of events in the control group (30-35\% oxygen)}
-#'   \item{nC}{Number of pax in the control group (30-35\% oxygen)}
+#'   \item{nC}{Number of participants in the control group (30-35\% oxygen)}
 #' }
 "perioOxy"
 
-#' Dataset of studies investigating the intensity of statin therapy on the risk of myocardial infarction or coronary death
+#' Dataset of trials investigating the intensity of statin therapy on the risk of myocardial infarction or coronary death
 #'
-#' A dataset containing data on myocardial infarction or coronary death among 
+#' A dataset containing trials investigating myocardial infarction or coronary death among 
 #' patients with acute coronary syndromes or chronic coronary artery disease 
-#' of statin therapy intensity. The studies compared low intensities of statin to higher intensities.
+#' of statin therapy intensity. The trials compared low intensities of statin to higher intensities.
 #'
 #' @format A data frame with 4 rows and 5 variables:
 #' \describe{
 #'   \item{study}{Name of first author of the trial}
 #'   \item{eI}{Number of events in the intervention group}
-#'   \item{nI}{Number of pax in the intervention group}
+#'   \item{nI}{Number of participants in the intervention group}
 #'   \item{eC}{Number of events in the control group}
-#'   \item{nC}{Number of pax in the control group}
+#'   \item{nC}{Number of participants in the control group}
 #' }
 "coronary"
 
-#' Dataset of studies investigating the effect of carer on early supported discharge services
+#' Dataset of trials investigating the effect of carer on early supported discharge services
 #'
-#' A dataset containing data on the length of hospital stay when receiving early
+#' A dataset containing trials investigating on the length of hospital stay when receiving early
 #' supported discharge (ESD) service versus conventional care. The outcome is
 #' length of initial hospital stay counted in days.
 #'

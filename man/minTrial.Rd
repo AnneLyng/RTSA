@@ -59,6 +59,6 @@ beta = 0.1, side = 2)
 # Note that retrospective sample size calculations are prone to bias
 ma <- metaanalysis(outcome = "RR", data = perioOxy)
 ris(outcome = "RR", mc = 0.80, ma = ma, type = "retrospective", fixed = FALSE,
- beta = 0.2, alpha = 0.05, side = 2)
+ beta = 0.1, alpha = 0.05, side = 2)
 
 }
