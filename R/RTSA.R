@@ -430,7 +430,7 @@ RTSA <-
         )
       }
 
-      if(sy$U[1] == 0 | fixed | !is.null(outris$war_het)){
+      if(sy$U[1] == 0 | fixed | (!is.null(outris$war_het) & random_adj == "tau2")){
         RIS = outris$NF$NF_full
         if(sy$U[1] != 0 & !fixed){
           warning("NB. There is some heterogeneity present in the data, but it was not picked up by the sample size calculating. Consider changing random_adj to D2 or I2.")
@@ -630,7 +630,7 @@ RTSA <-
             type = "design"
           )
          design_R <- bounds$root
-    } 
+      } 
     
     if(type == "analysis"){
       
@@ -734,7 +734,7 @@ RTSA <-
       inf <- inference(
         bounds = bounds,
         timing = timing,
-        ana_times = org_ana_times,
+        ana_times = ana_times,
         org_timing = orgTiming,
         ma = ma,
         fixed = ifelse(!is.null(design), design$settings$fixed, fixed),
@@ -972,7 +972,7 @@ print.RTSA <- function(x, ...) {
       df$naiveCIfixed_lower[max(which(!is.na(df$naiveCIfixed_lower)))]  
     f_tmp_ucl1 <-
       df$naiveCIfixed_upper[max(which(!is.na(df$naiveCIfixed_upper)))]
-  } else {
+  } else if(sum(!is.na(df$TSAadjCIfixed_lower))>0){
     f_tmp_lcl1 <-
       df$TSAadjCIfixed_lower[max(which(!is.na(df$TSAadjCIfixed_lower)))]  
     f_tmp_ucl1 <-
@@ -987,7 +987,7 @@ print.RTSA <- function(x, ...) {
       df$naiveCIrandom_lower[max(which(!is.na(df$naiveCIrandom_lower)))]  
     r_tmp_ucl1 <-
       df$naiveCIrandom_upper[max(which(!is.na(df$naiveCIrandom_upper)))]
-  } else {
+  } else if(sum(!is.na(df$TSAadjCIrandom_lower))>0){
     r_tmp_lcl1 <-
       df$TSAadjCIrandom_lower[max(which(!is.na(df$TSAadjCIrandom_lower)))]  
     r_tmp_ucl1 <-

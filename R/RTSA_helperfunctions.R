@@ -170,7 +170,7 @@ alpha_boundary <- function(inf_frac, side, alpha, beta,
                      es_alpha = NULL,
                      gamma = NULL, rho = NULL, r = 18,
                      type = "design", design_R = NULL){
-  # set delta is missing
+  # set delta if missing
   if(is.null(delta)) delta = abs(qnorm(alpha/side)+qnorm(beta))
 
   nn <- length(inf_frac); lnn <- 5000; h <- 0.05

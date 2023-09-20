@@ -180,9 +180,19 @@ inference <- function(bounds,
   }
   
   # calculate naive p-values and CI
+  TSA <- TRUE
   naiveCI = list(CIfixed = sapply(names(zout), function(x) zout[[x]]$peF[c(2, 3)]),
                    CIrandom = sapply(names(zout), function(x) {
                      if(zout[[x]]$U[1] > 0) zout[[x]]$peR[c(2, 3)] else zout[[x]]$peF[c(2, 3)]}))
+  if(length(ana_times) == 1){
+    if(ana_times == 1 & length(timing) > 2){
+      TSAadjCI <- list()
+      TSAadjCI$CIfixed <- c(NA, NA)
+      TSAadjCI <- list(CIfixed = TSAadjCI$CIfixed,CIrandom = TSAadjCI$CIfixed)
+      TSA <- FALSE
+    }
+  }
+  if(TSA){
     if(ma$settings$outcome %in% c("RR","OR")){
       TSAadjCI = list(
         CIfixed = sapply(ana_times, function(x) {exp(
@@ -213,6 +223,7 @@ inference <- function(bounds,
                 TSAadjCI <- list(CIfixed = TSAadjCI$CIfixed,CIrandom = TSAadjCI$CIfixed)
               }
     }
+  }
   
   stnd_dv_func <- function(x){
     if(zout[[x]]$U[1] == 0){
@@ -240,9 +251,9 @@ inference <- function(bounds,
       if (bounds$side == 2 & stop_direction != "fa") {
         zscore <- stop_sign*zvalues[ifelse(fixed, 1, 2), stop_time]
         zb <- ul[1:stop_time]; za <- ll[1:stop_time]; zd <- bul[1:stop_time]; zc <- bll[1:stop_time]
-        zd <- zd[!is.na(zd)]; zc <- zc[!is.na(zc)]
-        if(length(zd) == 1 & -Inf %in% zd) zd <- NULL
-        if(length(zc) == 1 & -Inf %in% zc) zc <- NULL
+        #zd <- zd[!is.na(zd)]; zc <- zc[!is.na(zc)]
+        if(Inf %in% zd) zd <- NULL
+        if(-Inf %in% zc) zc <- NULL
         if(stop_direction == "ul") zb <- c(zb[-stop_time], zscore)
         if(stop_direction == "ll") za <- c(za[-stop_time], zscore)
         if(stop_direction == "fut") zd <- c(zd[-stop_time], zscore)
@@ -427,7 +438,7 @@ inference <- function(bounds,
   n_out <- ifelse(is.null(dim(zvalues)[2]), 1, dim(zvalues)[2])
   if(length(ana_times) > 0) n_out2 <- max(ana_times)
   n_row <- ifelse((is.null(stop_time) | length(ana_times) < length(timing)), n_out+1, n_out)
-  if(max(org_timing[ana_times]) > max(timing)*1.05){
+  if(max(org_timing) > max(timing)*1.05){
     overrun <- TRUE
   } else {
     overrun <- FALSE
@@ -441,9 +452,7 @@ inference <- function(bounds,
   results[n_out,10:11] <- t(naiveCI$CIfixed)
   results[n_out,12:13] <- t(naiveCI$CIrandom)
   results[,14:15][ana_times,] <- t(TSAadjCI$CIfixed)
-  results[,14:15][!is.na(results[,14]) & is.na(results[,1]),] <- NA 
   results[,16:17][ana_times,] <- t(TSAadjCI$CIrandom)
-  results[,16:17][!is.na(results[,16]) & is.na(results[,2]),] <- NA
   results[n_out,18:19] <- t(p_values)
   results[n_out,20:21] <- t(sd_values)
   

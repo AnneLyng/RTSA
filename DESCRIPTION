@@ -6,7 +6,7 @@ Authors@R: c(
     person(given = "Markus", family = "Harboe Olsen", email = "markus.harboe.olsen@regionh.dk", role = c('aut', 'ctr')),
     person(given ="Theis", family ="Lange", email = "thlan@sund.ku.dk", role = c('ctr')),
     person(given ="Christian", family ="Gluud", email = "christian.gluud@ctu.dk", role = c('ctr')))
-Version: 0.2.0
+Version: 0.2.1
 Description: Frequentist sequential meta-analysis based on 
     'Trial Sequential Analysis' (TSA) in programmed in Java by the Copenhagen 
     Trial Unit (CTU). The primary function is the calculation of group 
