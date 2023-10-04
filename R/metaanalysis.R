@@ -411,7 +411,7 @@ metaPrepare <-
         C <- data$eC
         D <- data$nC - data$eC
         N <- A + B + C + D
-
+        
         if (outcome == "OR") {
           w <- (data$nI - data$eI) * data$eC / N
           T1 <- (A + D) / N
@@ -533,11 +533,14 @@ synthesize <- function(y, re_method, tau_ci_method, conf_level) {
   pe <- y$pe
   df <- length(w) - 1
   ci.tau <- ""
-
+  
   if (y$weights != "MH") w <- 1 / (sig ^ 2) # weight inverse variance
   rw <- w / sum(w) # relative weight
-  vw <- 1 / sum(w) # variance of pooled effect
-
+  if(df != 0){ vw <- 1 / sum(w) 
+  } else {
+    vw <- sig^2
+  } 
+  
   if (y$weights == "MH") {
     rw <- w / sum(w)
     if (y$outcome == "RD") {

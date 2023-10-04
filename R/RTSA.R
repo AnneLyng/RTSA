@@ -12,7 +12,7 @@
 #' @param data A data.frame containing the study results. The data set must containing a specific set of columns. These are respectively `eI` (events in intervention group), `eC` (events in control group), `nC` (participants intervention group) or `nI` (participants control group) for discrete data, or, `mI` (mean intervention group), `mC` (mean control group), `sdI` (standard error intervention group), `sdC` (standard error control group),`nC` (participants intervention group) and `nI` (participants control group)  for continuous outcomes. Preferable also a `study` column as an indicator of study.
 #' @param design RTSA object where type is design.
 #' @param ana_times An optional vector of analysis times. Used if the sequential analysis is not done for all studies included in the meta-analysis.
-#' @param weights Weighting method options include IV (inverse-variance) and MH (Mantel-Haenszel). Defaults to IV.
+#' @param weights Weighting method options include IV (inverse-variance) and MH (Mantel-Haenszel). Defaults to MH.
 #' @param re_method Method for calculating the estimate of heterogeneity, tau^2, and the random-effects meta-analysis variance. Options are "DL" for DerSimonian-Laird and "DL_HKSJ" for the Hartung-Knapp-Sidik-Jonkman adjustment of the DerSimonian-Laird estimator.
 #' @param tau_ci_method Method for calculating confidence intervals for the estimated heterogeneity tau^2. Options are "QP" for Q-profiling and "BJ" for Biggelstaff ....
 #' @param fixed Should only a fixed-effect meta-analysis be computed. Default is FALSE.
@@ -119,7 +119,7 @@ RTSA <-
            RRR = NULL,
            sd_mc = NULL,
            pC = NULL,
-           weights = "IV",
+           weights = "MH",
            re_method = "DL_HKSJ",
            tau_ci_method = "BJ",
            gamma = NULL,
@@ -237,6 +237,11 @@ RTSA <-
     if (!(weights %in% c("MH", "IV"))) {
       stop("`weights` must be either 'MH', or 'IV'")
     }
+    # check | weights
+    if (outcome == "MD" & weights == "MH") {
+      weights = "IV"
+      warning("`weights` was changed to 'IV'")
+    }
     # check | re_method
     if (!(re_method %in% c("DL", "DL_HKSJ"))) {
       stop("`re_method` must be either DL or DL_HKSJ")
@@ -334,13 +339,16 @@ RTSA <-
       mp <- ma$metaPrepare
       sy <- ma$synthesize
       hete_results <- ma$hete_results
-      if(dim(ma$metaPrepare$data)[1] != dim(data)[1]){
-      data <- ma$metaPrepare$data
-      warning("NB. All zero-event studies (no events in both arms) are removed. Consider changing the outcome to risk difference (RD) to keep the studies in the analysis.")
-      }
-
+      
       # Calculate the cumulative number of participants
       subjects <- cumsum(data$nI + data$nC)
+      
+      if(dim(ma$metaPrepare$data)[1] != dim(data)[1]){
+      data <- ma$metaPrepare$data
+      org_data <- ma$metaPrepare$org_data
+      subjects <- cumsum(org_data$nI[!(org_data$eI + org_data$eC == 0)] + org_data$nC[!(org_data$eI + org_data$eC == 0)])
+      warning("NB. All zero-event studies (no events in both arms) are removed. Consider changing the outcome to risk difference (RD) to keep the studies in the analysis.")
+      }
 
       # Calculate the RIS
       if (outcome %in% c("RR", "OR")) {
@@ -392,8 +400,9 @@ RTSA <-
           fixed = fixed,
           pC = pC,
           type = "retrospective",
-          # tau2 = sy$U[1],
-          # D2 = sy$U[4]
+          tau2 = tau2,
+          D2 = D2,
+          I2 = I2,
           ma = ma,
           RTSA = TRUE,
           trials = trials
@@ -408,8 +417,9 @@ RTSA <-
           sd_mc = sd_mc,
           fixed = fixed,
           type = "retrospective",
-          # tau2 = sy$U[1],
-          # D2 = sy$U[4]
+          tau2 = tau2,
+          D2 = D2,
+          I2 = I2,
           ma = ma,
           RTSA = TRUE,
           trials = trials
@@ -429,7 +439,7 @@ RTSA <-
           trials = trials
         )
       }
-
+        
       if(sy$U[1] == 0 | fixed | (!is.null(outris$war_het) & random_adj == "tau2")){
         RIS = outris$NF$NF_full
         if(sy$U[1] != 0 & !fixed){
@@ -703,7 +713,7 @@ RTSA <-
       } else {
         timing <- trials[, 1]
       }
-
+      
       bounds <- boundaries(
           timing = timing,
           alpha = alpha,
@@ -719,7 +729,7 @@ RTSA <-
       if(!is.null(design) & (timing[max(ana_times)] == max(orgTiming) | abs(timing[max(ana_times)] - max(orgTiming)) < 0.05) & is.null(final_analysis)){
         final_analysis <- T
         warning("We have set this to be the final analysis. If you believe that the analysis will continue past this analysis, set final_analysis to FALSE.")
-      } else if(is.null(design) & sum(orgTiming > design_R) > 0 & is.null(final_analysis)){
+      } else if(is.null(design) & sum(orgTiming > design_R) > 0 & is.null(final_analysis) & max(timing)*1.1 >= max(orgTiming)){
         final_analysis <- T
         warning("Note that the required information size for this sequential meta-analysis has been reached, and TSA considers this to be the final analysis. Hence the argument final_analysis is set to TRUE. If you believe that the analysis will continue past this analysis, set final_analysis to FALSE.")
       } else {

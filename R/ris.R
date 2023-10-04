@@ -265,7 +265,7 @@ ris <-
     
     # calculate fixed effect sample size
     NF <- 2 * (qnorm(1 - alpha / side) + qnorm(1 - beta)) ^ 2 * 2 * var_mc / mc_nf ^ 2
-    NF <- ceiling(NF) + ceiling(NF) %% 2
+    NF <- ceiling(NF)
 
     if(!is.null(ma)){
       args[names(args) == "ma"] <- NULL
@@ -371,10 +371,10 @@ ris <-
       NR_tau_ul[names(NR_tau_ul) == "war_het"] <- NULL
       
       # sample size for inconsistency adj. and diversity adj.
-      NR_D2 <- 1 / (1 - ma$synthesize$U[4]) * NF
-      NR_I2 <- 1 / (1 - ma$synthesize$U[3]) * NF
-      NR_D2 <- ceiling(NR_D2) + ceiling(NR_D2) %% 2
-      NR_I2 <- ceiling(NR_I2) + ceiling(NR_I2) %% 2
+      NR_D2 <- ifelse(is.null(D2),1 / (1 - ma$synthesize$U[4]) * NF, 1 / (1 - D2) * NF)
+      NR_I2 <- ifelse(is.null(I2),1 / (1 - ma$synthesize$U[3]) * NF, 1 / (1 - I2) * NF)
+      NR_D2 <- ceiling(NR_D2)
+      NR_I2 <- ceiling(NR_I2)
       
       # set relative to the sample size already achieved
       if(is.null(NR_tau)){
@@ -422,11 +422,11 @@ ris <-
       }
       if(!is.null(I2)){
         NR_I2 <- 1 / (1 - I2) * NF
-        NR_I2 <- ceiling(NR_I2) + ceiling(NR_I2) %% 2
+        NR_I2 <- ceiling(NR_I2)
       }
       if(!is.null(D2)){
         NR_D2 <- 1 / (1 - D2) * NF
-        NR_D2 <- ceiling(NR_D2) + ceiling(NR_D2) %% 2
+        NR_D2 <- ceiling(NR_D2)
       }
 
       outlist <-
