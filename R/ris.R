@@ -62,7 +62,7 @@ minTrial = function(outcome,
       interval = c(0, 1000)
     )$root), TRUE)
     if(inherits(minTrial,"try-error")){
-      war_het <- c("Too low est. heterogeneity to calculate RIS based on tau^2.")
+      war_het <- c("Too low est. heterogeneity or too much information to calculate remaining RIS based on tau^2.")
     }
   } else {
     ntrial = function(mc, trial, alpha, beta, tau2, side) {
@@ -76,6 +76,18 @@ minTrial = function(outcome,
     )$root)
   }
 
+  if(!is.null(var_random) & !is.null(war_het)){
+    ntrial = function(mc, trial, alpha, beta, tau2, side) {
+      trial / ((qnorm(1 - alpha / side) + qnorm(1 - beta)) ^ 2/mc^2) - tau2
+    }
+    
+    minTrial <- ceiling(uniroot(
+      function(trial)
+        ntrial(mc, trial, alpha, beta, tau2, side),
+      interval = c(0, 1000)
+    )$root)
+  }
+  
   if (outcome == "RR") {
     pI <- exp(log(pC) + mc)
     var_mc <- 1 / pC + 1 / pI - 2
@@ -91,14 +103,14 @@ minTrial = function(outcome,
     var_mc <- pC*(1-pC)+p1*(1-p1)
   }
 
-  if(fixed == FALSE & is.null(war_het)){
+  if(fixed == FALSE & (is.null(war_het) | minTrial != 0)){
     out.mat = matrix(NA, ncol = 4, nrow = 3)
     out.mat[1, ] <- c(minTrial, minTrial + 1, minTrial + 2, minTrial + 3)
-    if(is.null(var_random)){
+    if(is.null(var_random) & is.null(war_het)){
       out.mat[2, ] <- ceiling(2 * var_mc / (
         mc ^ 2 * c(minTrial, minTrial + 1, minTrial + 2, minTrial + 3) / ((qnorm(1 -
                                                                                    alpha / side) + qnorm(1 - beta)) ^ 2) - tau2
-      ))} else {
+      ))} else if(!is.null(war_het)){
         out.mat[2, ] <- ceiling(2 * var_mc / (
           c(minTrial, minTrial + 1, minTrial + 2, minTrial + 3) / ((qnorm(1 -alpha / side) + qnorm(1 - beta)) ^ 2/mc ^ 2 -1/var_random) - tau2
         ))
@@ -124,7 +136,8 @@ minTrial = function(outcome,
     }
 
     return(list(minTrial = minTrial, nPax = out.mat, war_het = war_het))
-  } else {
+  }
+  else {
     return(list(war_het = war_het))
   }
 }
@@ -292,11 +305,11 @@ ris <-
                        beta = beta, pC = pC, tau2 = ma$synthesize$U[1],
                        var_random = ma$synthesize$peR[6], trials = trials)
         war_het <- NR_tau$war_het
-        if(is.null(war_het)){ NR_tau <- append(NR_tau, list(tau2 = ma$synthesize$ci.tau$random[1,1])) 
+        if(is.null(war_het) | NR_tau$minTrial != 0){ NR_tau <- append(NR_tau, list(tau2 = ma$synthesize$ci.tau$random[1,1])) 
         } else {
           NR_tau <- NULL
         }
-        if(ma$synthesize$ci.tau$random[1,2] != 0 & is.null(war_het)){
+        if(ma$synthesize$ci.tau$random[1,2] != 0 & (is.null(war_het) | NR_tau$minTrial != 0)){
         NR_tau_ll <- minTrial(outcome = outcome, mc = mc, alpha = alpha,
                           beta = beta, pC = pC, side = side,
                           tau2 = ma$synthesize$ci.tau$random[1,2],
@@ -319,11 +332,11 @@ ris <-
                        beta = beta, pC = pC, p1 = p1, tau2 = ma$synthesize$U[1],
                        var_random = ma$synthesize$peR[6], trials = trials)
         war_het <- NR_tau$war_het
-        if(is.null(war_het)){ NR_tau <- append(NR_tau, list(tau2 = ma$synthesize$ci.tau$random[1,1])) 
+        if(is.null(war_het) | NR_tau$minTrial != 0){ NR_tau <- append(NR_tau, list(tau2 = ma$synthesize$ci.tau$random[1,1])) 
         } else {
           NR_tau <- NULL
         }
-        if(ma$synthesize$ci.tau$random[1,2] != 0 & is.null(war_het)){
+        if(ma$synthesize$ci.tau$random[1,2] != 0 & (is.null(war_het) | NR_tau$minTrial != 0)){
         NR_tau_ll <- minTrial(outcome = outcome, mc = mc, alpha = alpha,
                           beta = beta, pC = pC, p1 = p1, side = side,
                           tau2 = ma$synthesize$ci.tau$random[1,2],
@@ -342,11 +355,11 @@ ris <-
                        beta = beta, var_mc = var_mc, tau2 = ma$synthesize$U[1],
                        var_random = ma$synthesize$peR[6], trials = trials)
         war_het <- NR_tau$war_het
-        if(is.null(war_het)){ NR_tau <- append(NR_tau, list(tau2 = ma$synthesize$ci.tau$random[1,1])) 
+        if(is.null(war_het) | NR_tau$minTrial != 0){ NR_tau <- append(NR_tau, list(tau2 = ma$synthesize$ci.tau$random[1,1])) 
         } else {
           NR_tau <- NULL
         }
-        if(ma$synthesize$ci.tau$random[1,2] != 0 & is.null(war_het)){
+        if(ma$synthesize$ci.tau$random[1,2] != 0 & (is.null(war_het) | NR_tau$minTrial != 0)){
         NR_tau_ll <- minTrial(outcome = outcome, mc = mc, alpha = alpha,
                           beta = beta, var_mc = var_mc,
                           tau2 = ma$synthesize$ci.tau$random[1,2],

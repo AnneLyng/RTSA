@@ -440,7 +440,7 @@ RTSA <-
         )
       }
         
-      if(sy$U[1] == 0 | fixed | (!is.null(outris$war_het) & random_adj == "tau2")){
+      if(sy$U[1] == 0 | fixed | (!is.null(outris$war_het) & random_adj == "tau2" & is.null(outris$NR_tau))){
         RIS = outris$NF$NF_full
         if(sy$U[1] != 0 & !fixed){
           warning("NB. There is some heterogeneity present in the data, but it was not picked up by the sample size calculating. Consider changing random_adj to D2 or I2.")
@@ -454,15 +454,18 @@ RTSA <-
             warning("NB. The required information size is adjusted by Inconsistency (I^2). This might cause an under-powered analysis. Consider changing the argument `random_adj` from `I2` to `tau2`.")
           } else {
             RIS = outris$NR_tau$NR_tau_full
+            #if(is.null(war_het)) RIS = outris$NR_tau$NR_tau_full
+            #if(!is.null(war_het))
           }
       }
       }
       else {
-        RIS = ceiling(design$results$RIS)
+        if(fixed) RIS = ceiling(design$results$RIS)
+        if(!fixed) RIS = ceiling(design$results$SMA_HARIS)
       }
     } 
     else {
-      
+
       # check adjustment for heterogeneity
       if(fixed == FALSE & is.null(tau2) & is.null(I2) & is.null(D2)){
         stop("Argument fixed is set to FALSE, but there is no tau2, I2 (inconsistency) or D2 (diversity) to adjust the sample size calculation by. Set either fixed to TRUE or provide a heterogeneity estimate.")
@@ -547,6 +550,7 @@ RTSA <-
       )
     
       } else if(type == "analysis" & is.null(design) & power_adj == TRUE){
+        
       # calculate timings
       timing <- c(subjects / RIS)
       
@@ -917,7 +921,7 @@ print.RTSA <- function(x, ...) {
   cat("The required information size is")
   if(x$settings$fixed == TRUE){cat(" not adjusted by heterogeneity")}
   if(x$settings$fixed == FALSE){cat(" adjusted by heterogeneity using", x$settings$random_adj)}
-  if(x$settings$fixed == FALSE & x$settings$type == "analysis" & x$settings$random_adj == "tau2"){cat(paste0(" and assuming ", ifelse(is.null(x$settings$trials),x$ris$NR_tau$NR_tau$nPax[1, 2],x$settings$trials), " additional trials"))}
+  if(x$settings$fixed == FALSE & x$settings$type == "analysis" & x$settings$random_adj == "tau2"){cat(paste0(" and assuming ", ifelse(is.null(x$settings$trials),ifelse(x$ris$NR_tau$NR_tau$nPax[2, 1] <= 0,1,x$ris$NR_tau$NR_tau$nPax[1, 1]),x$settings$trials), " additional trials"))}
   cat(". ")
   if(x$settings$power_adj == TRUE){cat("The required information size is further increased with", paste0(100*round(x$bounds$root,2)-100, " percent due to the sequential design. "))}
   if(x$settings$power_adj == FALSE){cat("The required information size is not scaled according to the sequential design - Consider changing power_adj to TRUE. ")}

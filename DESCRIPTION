@@ -41,7 +41,9 @@ Suggests:
     rmarkdown,
     knitr,
     bookdown,
-    gridExtra
+    gridExtra,
+    testthat (>= 3.0.0)
 VignetteBuilder: 
     knitr, 
     bookdown
+Config/testthat/edition: 3
