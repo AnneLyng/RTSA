@@ -528,6 +528,10 @@ boundaries <- function(timing, alpha = 0.05, beta = 0.1, side = 2,
                                    side = 1, alpha_boundaries = ub,
                                    delta = delta,
                                    warp_root = root,es_beta = es_beta)
+        if(length(timing)-1 == sum(lb$za < 0)){
+          stop("It is not possible to compute the design with futility.")
+        }
+        
         upperRoot <- 1.05
         n_itr <- 1
         while(n_itr <= n_max){

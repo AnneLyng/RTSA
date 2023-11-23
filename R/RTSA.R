@@ -61,12 +61,12 @@
 #' # And use Lan and DeMets' version of Pocock stopping boundaries 
 #' RTSA(type = "analysis", data = perioOxy, outcome = "RR", mc = 0.8, side = 2,
 #'  alpha = 0.05, beta = 0.2, es_alpha = "esOF", futility = "binding",
-#'  es_beta = "esPoc")
+#'  es_beta = "esPoc", random_adj = "D2")
 #'
 #' # Set non-binding futility boundaries
 #' RTSA(type = "analysis", data = perioOxy, outcome = "RR", mc = 0.8, side = 2,
 #'  alpha = 0.05, beta = 0.2, es_alpha = "esOF", futility = "non-binding",
-#'  es_beta = "esPoc")
+#'  es_beta = "esOF")
 #'  
 #' ### Design a prospective sequential meta-analysis
 #' # For continuous data without expected heterogeneity
@@ -180,6 +180,7 @@ RTSA <-
       beta <- design$settings$beta
       es_alpha <- design$settings$es_alpha
       es_beta <- design$settings$es_beta
+      weights <- design$settings$weights
       futility <- design$settings$futility
       mc <- design$settings$mc
       if(outcome == "MD"){
@@ -240,7 +241,6 @@ RTSA <-
     # check | weights
     if (outcome == "MD" & weights == "MH") {
       weights = "IV"
-      warning("`weights` was changed to 'IV'")
     }
     # check | re_method
     if (!(re_method %in% c("DL", "DL_HKSJ"))) {
@@ -460,8 +460,8 @@ RTSA <-
       }
       }
       else {
-        if(fixed) RIS = ceiling(design$results$RIS)
-        if(!fixed) RIS = ceiling(design$results$SMA_HARIS)
+        if(fixed | length(design$results) == 3) RIS = ceiling(design$results$SMA_RIS)
+        if(!fixed & length(design$results) > 3) RIS = ceiling(design$results$SMA_HARIS)
       }
     } 
     else {

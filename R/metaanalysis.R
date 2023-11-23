@@ -1027,7 +1027,7 @@ plot.metaanalysis <- function(x, type = "both", xlims = NULL, ...) {
 
   #Lower left text
   heterogen <- paste0(
-    "Heterogeneity: \U1D70F\U0302\U00B2 = ",
+    "Heterogeneity: tau2 = ",
     sprintf(x$synthesize$U[1], fmt = '%#.2f'),
     " (",
     sprintf(x$synthesize$ci.tau$random["tau^2", "ci.lb"], fmt = '%#.2f'),

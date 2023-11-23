@@ -244,9 +244,9 @@ plot.RTSA = function(x, model = "random", type = "classic", theme = "classic", .
   if(x$settings$type == "analysis"){
       results <- paste0(results,
                     "\n",
-                    "\U1D70F\u0302\U00B2 ", format(round(x$results$metaanalysis$hete_results$hete_est$tau2,2),nsmall=2),", ",
-                    "I\u0302\U00B2 " ,percent(x$results$metaanalysis$hete_results$hete_est$I.2,0.1),", ",
-                    "D\u0302\U00B2 " ,percent(x$results$metaanalysis$hete_results$hete_est$D.2,0.1), ", ",
+                    "tau2 ", format(round(x$results$metaanalysis$hete_results$hete_est$tau2,2),nsmall=2),", ",
+                    "I2 " ,percent(x$results$metaanalysis$hete_results$hete_est$I.2,0.1),", ",
+                    "D2 " ,percent(x$results$metaanalysis$hete_results$hete_est$D.2,0.1), ", ",
                     "Heterogeneity p-value ", format(round(x$results$metaanalysis$hete_results$hete_est$Q_pval,4),nsmall=4)
   )
   }

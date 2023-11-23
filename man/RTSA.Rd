@@ -23,7 +23,7 @@ RTSA(
   RRR = NULL,
   sd_mc = NULL,
   pC = NULL,
-  weights = "IV",
+  weights = "MH",
   re_method = "DL_HKSJ",
   tau_ci_method = "BJ",
   gamma = NULL,
@@ -78,7 +78,7 @@ RTSA(
 
 \item{pC}{The expected probability of event in the control group. Used for sample size calculation for binary outcomes.}
 
-\item{weights}{Weighting method options include IV (inverse-variance) and MH (Mantel-Haenszel). Defaults to IV.}
+\item{weights}{Weighting method options include IV (inverse-variance) and MH (Mantel-Haenszel). Defaults to MH.}
 
 \item{re_method}{Method for calculating the estimate of heterogeneity, tau^2, and the random-effects meta-analysis variance. Options are "DL" for DerSimonian-Laird and "DL_HKSJ" for the Hartung-Knapp-Sidik-Jonkman adjustment of the DerSimonian-Laird estimator.}
 
@@ -138,12 +138,12 @@ RTSA(type = "analysis", data = perioOxy, outcome = "RR", mc = 0.8, side = 2,
 # And use Lan and DeMets' version of Pocock stopping boundaries 
 RTSA(type = "analysis", data = perioOxy, outcome = "RR", mc = 0.8, side = 2,
  alpha = 0.05, beta = 0.2, es_alpha = "esOF", futility = "binding",
- es_beta = "esPoc")
+ es_beta = "esPoc", random_adj = "D2")
 
 # Set non-binding futility boundaries
 RTSA(type = "analysis", data = perioOxy, outcome = "RR", mc = 0.8, side = 2,
  alpha = 0.05, beta = 0.2, es_alpha = "esOF", futility = "non-binding",
- es_beta = "esPoc")
+ es_beta = "esOF")
  
 ### Design a prospective sequential meta-analysis
 # For continuous data without expected heterogeneity

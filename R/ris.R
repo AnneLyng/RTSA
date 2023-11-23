@@ -96,7 +96,6 @@ minTrial = function(outcome,
       log(x / (1 - x))
     invlogit <- function(x)
       1 / (1 + exp(-x))
-
     pI <- invlogit(logit(pC) + mc)
     var_mc <- 1 / pI + 1 / pC + 1 / (1 - pI) + 1 / (1 - pC)
   } else if(outcome == "RD"){
@@ -110,7 +109,7 @@ minTrial = function(outcome,
       out.mat[2, ] <- ceiling(2 * var_mc / (
         mc ^ 2 * c(minTrial, minTrial + 1, minTrial + 2, minTrial + 3) / ((qnorm(1 -
                                                                                    alpha / side) + qnorm(1 - beta)) ^ 2) - tau2
-      ))} else if(!is.null(war_het)){
+      ))} else {
         out.mat[2, ] <- ceiling(2 * var_mc / (
           c(minTrial, minTrial + 1, minTrial + 2, minTrial + 3) / ((qnorm(1 -alpha / side) + qnorm(1 - beta)) ^ 2/mc ^ 2 -1/var_random) - tau2
         ))
@@ -363,7 +362,7 @@ ris <-
         NR_tau_ll <- minTrial(outcome = outcome, mc = mc, alpha = alpha,
                           beta = beta, var_mc = var_mc,
                           tau2 = ma$synthesize$ci.tau$random[1,2],
-                          var_random = ma$synthesize$peR[6])
+                          var_random = ma$synthesize$peR[6], side = side)
         NR_tau_ll <- append(NR_tau_ll, list(tau2 = ma$synthesize$ci.tau$random[1,2]))
         } else {
           NR_tau_ll <- NULL

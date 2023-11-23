@@ -4,7 +4,7 @@ output:
   bookdown::html_document2:
     fig_caption: yes
 vignette: >
-  %\VignetteIndexEntry{futility}
+  %\VignetteIndexEntry{Futility boundaries in RTSA}
   %\VignetteEncoding{UTF-8}
   %\VignetteEngine{knitr::rmarkdown}
 ---

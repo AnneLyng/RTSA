@@ -4,7 +4,7 @@ output:
   bookdown::html_document2:
     fig_caption: yes
 vignette: >
-  %\VignetteIndexEntry{required-sample-size}
+  %\VignetteIndexEntry{Calculating required sample size and required number of trials}
   %\VignetteEncoding{UTF-8}
   %\VignetteEngine{knitr::rmarkdown}
 ---
@@ -97,7 +97,7 @@ For more information about the two formulas, see [4].
 An example of calculating RIS using RIS based on Diversity ($D^2$) or Inconsistency ($I^2$) is given below.
 
 ```{r}
-ris(outcome = "RR", mc = 0.9, pC = 0.2, random = TRUE, I2 = 0.2, D2 = 0.3,
+ris(outcome = "RR", mc = 0.9, pC = 0.2, fixed = FALSE, I2 = 0.2, D2 = 0.3,
     side = 2, alpha = 0.05, beta = 0.2)
 ```
 
@@ -259,7 +259,7 @@ We compare the methods originally implemented in the TSA software with the new m
 We set $RR = 0.9$, $p_C = 0.1$ and $\tau^2 = 0.05$. With these values we get the following minimum number of required trials:
 
 ```{r}
-ris(outcome = "RR", mc = 0.9, random = TRUE, tau2 = 0.05, pC = 0.1,
+ris(outcome = "RR", mc = 0.9, fixed = FALSE, tau2 = 0.05, pC = 0.1,
     side = 2, alpha = 0.05, beta = 0.2)
 ```
 
