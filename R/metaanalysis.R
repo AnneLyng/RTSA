@@ -487,7 +487,8 @@ metaPrepare <-
         spooled <-
           sqrt(((data$nI - 1) * data$sdI ^ 2 + (data$nC - 1) * data$sdC ^ 2) / (data$nI +
                                                                                   data$nC - 2))
-        vte <- (data$nI + data$nC) / (data$nI * data$nC) * spooled ^ 2
+        #vte <- (data$nI + data$nC) / (data$nI * data$nC) * spooled ^ 2
+        vte <- (sqrt(1/data$nI + 1/data$nC) * spooled) ^ 2
         sete <- sqrt(vte)
         df <- (data$nI - 1) + (data$nC - 1)
         lower <- te - qt((1-conf_level)/2, df = df, lower.tail = F) * sete

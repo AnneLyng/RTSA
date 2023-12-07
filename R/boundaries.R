@@ -42,7 +42,7 @@
 #'  side = 2, futility = "non-binding", es_alpha = "esOF", es_beta = "esOF")
 #'
 #' @export
-boundaries <- function(timing, alpha = 0.05, beta = 0.1, side = 2,
+boundaries <- function(timing, alpha = 0.05, zninf, beta = 0.1, side = 2,
                        futility = "none", es_alpha = "esOF", es_beta = NULL,
                        type = "design", design_R = NULL, tol = 1e-09){
 
@@ -59,7 +59,8 @@ boundaries <- function(timing, alpha = 0.05, beta = 0.1, side = 2,
   
   # calculate the initial alpha boundaries
   boundout <- alpha_boundary(inf_frac = timing,
-                                    side = side, alpha = alpha, beta = beta,
+                            side = side, alpha = alpha,
+                             zninf = zninf, beta = beta,
                                     es_alpha = es_alpha,
                                     type = type, design_R = design_R)
 
@@ -450,6 +451,8 @@ boundaries <- function(timing, alpha = 0.05, beta = 0.1, side = 2,
                                    delta = boundout$delta,
                                    design_R = design_R,
                                    rm_bs = sum(lb$za < 0))
+        
+        
 
         lb <- beta_boundary(inf_frac = timing,
                                    beta = beta,

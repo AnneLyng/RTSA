@@ -166,7 +166,7 @@ ma_power <- function(zb, za = rep(-20, length(zb)), delta, info, zc = NULL, zd =
 # alpha_boundary ----
 # Calculate boundaries for sequential meta-analysis based on type-1-error spending.
 alpha_boundary <- function(inf_frac, side, alpha, beta,
-                     zninf = -20, tol = 1e-09, delta = NULL, bs = FALSE,
+                     zninf, tol = 1e-09, delta = NULL, bs = FALSE,
                      es_alpha = NULL,
                      gamma = NULL, rho = NULL, r = 18,
                      type = "design", design_R = NULL){

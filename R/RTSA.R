@@ -125,7 +125,7 @@ RTSA <-
            gamma = NULL,
            rho = NULL,
            study = NULL,
-           cont_vartype = "equal",
+           cont_vartype = "non-equal",
            zero_adj = 0.5,
            tau2 = NULL,
            I2 = NULL,
@@ -136,6 +136,8 @@ RTSA <-
            conf_level = 0.95,
            random_adj = "tau2",
            power_adj = TRUE,
+           zninf = -20,
+           inf_first_analysis = 0.05,
            ...) {
     # Check inputs ----
     # check | type
@@ -539,6 +541,7 @@ RTSA <-
           timing = timing,
           alpha = alpha,
           beta = beta,
+          zninf = zninf,
           side = side,
           futility = futility,
           es_alpha = es_alpha,
@@ -636,6 +639,7 @@ RTSA <-
           boundaries(
             timing = timing,
             alpha = alpha,
+            zninf = zninf,
             beta = beta,
             side = side,
             futility = futility,
@@ -687,7 +691,7 @@ RTSA <-
       trials <- cbind(timing, NA, 1:length(timing))
       trials[, 2] <-
         trials[, 1] - c(0, trials[, 1][-length(trials[, 1])])
-
+      
       # if new study adds less than 1% of RIS, the analysis is not performed.
       time_tf = 0.01
       war_tim2 <- NULL
@@ -705,6 +709,12 @@ RTSA <-
         }
       }
       
+      if(inf_first_analysis != 0){
+        if(trials[1,1] < inf_first_analysis){
+          trials <- trials[trials[,1] > inf_first_analysis,]
+        }
+      }
+      
       trials <-
         matrix(trials[trials[, 2] > time_tf, ], ncol = 3, byrow = F)
       if(length(ana_times) > 0) ana_times = trials[, 3]
@@ -718,9 +728,11 @@ RTSA <-
         timing <- trials[, 1]
       }
       
+    
       bounds <- boundaries(
           timing = timing,
           alpha = alpha,
+          zninf = zninf,
           beta = beta,
           side = side,
           futility = futility,
