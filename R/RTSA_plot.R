@@ -19,7 +19,8 @@
 #'  side = 2, alpha = 0.05, beta = 0.2, fixed = FALSE, es_alpha = "esOF", design = NULL)
 #' plot(x = outRTSA)
 #'
-plot.RTSA = function(x, model = "random", type = "classic", theme = "classic", ...){
+plot.RTSA = function(x, model = "random", type = "classic", theme = "classic",
+                     reverse_y_axis = FALSE, ...){
 
   if(sum(class(x) == "boundaries") > 0){
     x$settings$side <- x$side
@@ -321,10 +322,13 @@ plot.RTSA = function(x, model = "random", type = "classic", theme = "classic", .
   p <- ggplot(data = df)
 
   if(type=="classic"){
+    # reverse_y_axis
+    rev_ind <- ifelse(reverse_y_axis, -1, 1)
+    
     #Zoom in
     p <- p +
       coord_cartesian(xlim = c(0,max(df$sma_timing+0.1,1.1, na.rm = T)),
-                      ylim = c(ifelse(x$setting$side == 2, -8, -5),8))
+                      ylim = c(ifelse(x$setting$side == 2, rev_ind*(-8), rev_ind*(-5)),rev_ind*8))
 
     #Convetional alpha boundaires
     p <- p + geom_line(aes(x = sma_timing, y = rep(qnorm(1-tmp_ca), length(sma_timing)),
@@ -338,7 +342,7 @@ plot.RTSA = function(x, model = "random", type = "classic", theme = "classic", .
       }
 
     #Zero line
-    p <- p + geom_segment(x=0,xend=max(df$sma_timing,df$sma_timing*(x$results$AIS/x$results$SMA_HARIS), na.rm = T), y=0, yend = 0,
+    p <- p + geom_segment(x=0,xend=max(df$sma_timing), y=0, yend = 0,
                           linewidth = 0.25, col = "gray", linetype="solid",
                           na.rm=TRUE)
 
@@ -430,7 +434,7 @@ plot.RTSA = function(x, model = "random", type = "classic", theme = "classic", .
     }
     p <- p + geom_segment(x=max(c(df$sma_timing)[!is.na(df$z_fixed)]),
                           xend=max(c(df$sma_timing)[!is.na(df$z_fixed)]),
-                          y=-Inf,yend=na.omit(tmp_z)[length(na.omit(tmp_z))],
+                          y=rev_ind*-Inf,yend=na.omit(tmp_z)[length(na.omit(tmp_z))],
                           linetype="dotted", linewidth = 0.5, col = "gray", na.rm=TRUE) +
       geom_vline(xintercept = max(df$sma_timing[!is.na(df$upper)]), linewidth = 0.25, col = "black") +
       scale_x_continuous(expand = expansion(0,expan_x),
@@ -532,8 +536,8 @@ plot.RTSA = function(x, model = "random", type = "classic", theme = "classic", .
   p <- p + labs(tag=results, caption=settings)
 
   if(!(x$settings$outcome %in% c("RR", "OR") & type == "outcome")){
-    y_val1 <- ifelse(x$settings$side == 2,-8,-5)
-    y_val2 <- 8
+    y_val1 <- ifelse(x$settings$side == 2,rev_ind*(-8),rev_ind*(-5))
+    y_val2 <- rev_ind*8
   } else {
     y_val1 <- y_min[1]
     y_val2 <- y_max[1]
@@ -542,7 +546,7 @@ plot.RTSA = function(x, model = "random", type = "classic", theme = "classic", .
   #THEME
   p <- p +
     {if(!(x$settings$outcome %in% c("RR", "OR") & type == "outcome")){
-      scale_y_continuous(expand = expansion(0), ylabz)}} +
+      scale_y_continuous(expand = expansion(0,0), ylabz)}} +
     {if(x$settings$outcome %in% c("RR", "OR") & type == "outcome"){
     scale_y_continuous(expand = expansion(0), ylabz, trans = "log",
                        labels = function(x) sprintf("%.2f", x))}} +
@@ -567,13 +571,16 @@ plot.RTSA = function(x, model = "random", type = "classic", theme = "classic", .
     geom_segment(aes(x = 0, xend = max(sma_timing, na.rm = T), y = y_val1, yend = y_val1)) +
     geom_segment(aes(x = 0, xend = 0, y = y_val1, yend = y_val2)) +
     guides(colour = guide_legend(override.aes = list(shape = NA, fill = NA)))
-  } else {
+  } 
+  else {
     y_val1 <- 8
     y_val2 <- ifelse(x$settings$side == 2, -8, -5)
     ylabz <- "Cummulative Z-score"
 
     #Labels
     p <- p + labs(caption=settings)
+    
+    browser()
 
     p <- p +
       scale_y_continuous(expand = expansion(0), ylabz) +
@@ -583,7 +590,7 @@ plot.RTSA = function(x, model = "random", type = "classic", theme = "classic", .
       theme(legend.position="bottom",
             plot.caption.position = "plot",
             legend.box.spacing = unit(0, "pt"),
-            plot.margin = margin(0.1,0.1,0.1,0.1, "cm"),
+            plot.margin = margin(0,0.1,0.1,0.1, "cm"),
             plot.caption = element_text(hjust=0,color="black",size=8),
             axis.title.y = element_text(color="black",size=10),
             axis.text.x = element_text(color="black",size=9),
@@ -592,7 +599,7 @@ plot.RTSA = function(x, model = "random", type = "classic", theme = "classic", .
             axis.ticks.x.top = element_blank(),
             axis.title.x = element_text(color="black",size=10),
             panel.background = element_blank(),
-            plot.tag.position = c(0,1), plot.tag = element_text(hjust=0, vjust=-0.5, size=9),
+            plot.tag.position = c(0,1), plot.tag = element_text(hjust=0, vjust=0, size=9),
             legend.key=element_blank()) +
       geom_segment(aes(x = 0, xend = max(sma_timing, na.rm = T), y = y_val2, yend = y_val2)) +
       geom_segment(aes(x = 0, xend = 0, y = y_val1, yend = y_val2)) +

@@ -12,7 +12,7 @@
 #' @param es_beta The error spending function for beta-spending. For options see es_alpha. Defaults to NULL.
 #' @param type Whether the boundaries are used for design or analysis. We recommend only to use the boundaries() function with type equal to design. Defaults to design.
 #' @param design_R If type is analysis, a scalar for achieving the right amount of power is required. It is recommended not to use the boundaires() function with the setting type equal to analysis. Defaults to NULL. 
-#' @param tol Tolerance level for numerical integration. Defaults to 1e-09.
+#' @param tol Tolerance level for numerical integration. Defaults to 1e-08.
 #'
 #' @returns A \code{boundaries} object which includes:
 #' \item{inf_frac}{Timing of interim analyses and final analysis. Potentially modified if \code{type = "analysis"}.}
@@ -43,10 +43,11 @@
 #'
 #' @export
 boundaries <- function(timing, alpha = 0.05, zninf, beta = 0.1, side = 2,
+                       tsa_beta_bound = FALSE,
                        futility = "none", es_alpha = "esOF", es_beta = NULL,
-                       type = "design", design_R = NULL, tol = 1e-09){
+                       type = "design", design_R = NULL, tol = 1e-08){
 
-  n_max <- 15 # finding root for power
+  n_max <- 10 # finding root for power
   nn_max <- 50 # finding root for type-I-error
 
   if(futility == "none"){
@@ -119,7 +120,7 @@ boundaries <- function(timing, alpha = 0.05, zninf, beta = 0.1, side = 2,
 
         root <- uniroot(inf_warp, lower = 0.9, upper = 1.5,
                         alpha_boundaries = boundout,
-                        tol = 1e-09, side = 1, beta = beta, timing = timing,
+                        tol = 1e-08, side = 1, beta = beta, timing = timing,
                         es_beta = es_beta)$root
 
         lb <- beta_boundary(inf_frac = timing, beta = beta,
@@ -196,7 +197,7 @@ boundaries <- function(timing, alpha = 0.05, zninf, beta = 0.1, side = 2,
         n_itr <- 1
         while(n_itr <= nn_max){
         root <- try(uniroot(inf_warp, lower = upperRoot-0.1, upper = upperRoot, alpha_boundaries = ub,
-                        tol = 1e-09, beta = beta, timing = timing,
+                        tol = 1e-08, beta = beta, timing = timing,
                         es_beta= es_beta)$root, TRUE)
         if(inherits(root,"try-error")){
             upperRoot <- upperRoot + 0.1
@@ -231,7 +232,7 @@ boundaries <- function(timing, alpha = 0.05, zninf, beta = 0.1, side = 2,
           n_itr <- 1
           while(n_itr <= n_max){
           root <- try(uniroot(inf_warp, lower = upperRoot - 0.1, upper = upperRoot, alpha_boundaries = ub,
-                          tol = 1e-09, beta = beta, timing = timing,
+                          tol = 1e-08, beta = beta, timing = timing,
                           es_beta = es_beta)$root, TRUE)
           if(inherits(root,"try-error")){
             upperRoot <- upperRoot + 0.1
@@ -371,18 +372,18 @@ boundaries <- function(timing, alpha = 0.05, zninf, beta = 0.1, side = 2,
       if(type == "design"){
         delta <- abs(qnorm(alpha/side)+qnorm(beta))
 
-        lb <- beta_boundary(inf_frac = timing, beta = beta,
+        lb <- beta_boundary(inf_frac = timing, beta = ifelse(tsa_beta_bound, beta/2, beta),
                                    side = 1, alpha_boundaries = boundout,
                                    delta = delta, es_beta = es_beta)
 
         upperRoot <- .95
         n_itr <- 1
         while(n_itr <= nn_max){
-        root <- try(uniroot(inf_warp, lower = upperRoot-0.02, upper = upperRoot, alpha_boundaries = boundout,
-                        tol = 1e-09, side = 1, delta = delta, timing = timing,
+        root <- try(uniroot(inf_warp, lower = upperRoot-0.05, upper = upperRoot, alpha_boundaries = boundout,
+                        tol = 1e-06, side = 1, delta = delta, timing = timing,
                         es_beta = es_beta, beta = beta)$root,TRUE)
         if(inherits(root,"try-error")){
-          upperRoot <- upperRoot + 0.02
+          upperRoot <- upperRoot + 0.05
           n_itr <- n_itr + 1
         } else {
           break
@@ -402,7 +403,7 @@ boundaries <- function(timing, alpha = 0.05, zninf, beta = 0.1, side = 2,
         upperRoot <- 0.95
         while(n_itr <= nn_max){
         root <- try(uniroot(inf_warp, lower = upperRoot-0.05, upper = upperRoot, alpha_boundaries = boundout,
-                        tol = 1e-09, side = 1, rm_bs = sum(lb$za < 0),
+                        tol = 1e-06, side = 1, rm_bs = sum(lb$za < 0),
                         delta = delta, timing = timing, es_beta = es_beta,
                         beta = beta)$root,TRUE)
         if(inherits(root,"try-error")){
@@ -517,7 +518,7 @@ boundaries <- function(timing, alpha = 0.05, zninf, beta = 0.1, side = 2,
         n_itr <- 1
         while(n_itr <= n_max){
         root <- try(uniroot(inf_warp, lower = upperRoot - 0.1, upper = upperRoot, alpha_boundaries = ub,
-                        tol = 1e-09, side = 1, delta = delta, timing = timing,
+                        tol = 1e-08, side = 1, delta = delta, timing = timing,
                         es_beta = es_beta, beta = beta)$root,TRUE)
         if(inherits(root,"try-error")){
           upperRoot <- upperRoot + 0.1
@@ -539,7 +540,7 @@ boundaries <- function(timing, alpha = 0.05, zninf, beta = 0.1, side = 2,
         n_itr <- 1
         while(n_itr <= n_max){
         root <- try(uniroot(inf_warp, lower = upperRoot - 0.1, upper = upperRoot, alpha_boundaries = ub,
-                        tol = 1e-09, rm_bs = sum(lb$za < 0), timing = timing,
+                        tol = 1e-08, rm_bs = sum(lb$za < 0), timing = timing,
                         es_beta = es_beta, beta = beta, side = 1,
                         delta = delta)$root,TRUE)
         if(inherits(root,"try-error")){
@@ -581,7 +582,7 @@ boundaries <- function(timing, alpha = 0.05, zninf, beta = 0.1, side = 2,
           while(n_itr < root_max){
           root <- try(uniroot(inf_warp, lower = upperRoot - 0.1, upper = upperRoot, alpha_boundaries = ub,
                           side = 1,
-                          tol = 1e-09, rm_bs = sum(lb$za < 0),
+                          tol = 1e-08, rm_bs = sum(lb$za < 0),
                           timing = timing, es_beta = es_beta, beta = beta,
                           delta = delta)$root,TRUE)
           if(inherits(root,"try-error")){
@@ -635,7 +636,7 @@ boundaries <- function(timing, alpha = 0.05, zninf, beta = 0.1, side = 2,
               n_itr <- 1
               while(n_itr < root_max){
               root <- try(uniroot(inf_warp, lower = upperRoot - 0.1, upper = upperRoot, alpha_boundaries = ub,
-                              tol = 1e-09, rm_bs = sum(lb$za < 0),
+                              tol = 1e-08, rm_bs = sum(lb$za < 0),
                               timing = timing,es_beta = es_beta, beta = beta,
                               delta = delta)$root,TRUE)
               if(inherits(root,"try-error")){
@@ -753,7 +754,7 @@ boundaries <- function(timing, alpha = 0.05, zninf, beta = 0.1, side = 2,
             lb$za[length(timing)] <- -ub$za[length(timing)]
           }
 
-          root <- uniroot(right_power, lower = 0.9, upper = 1.4, tol = 1e-09,
+          root <- uniroot(right_power, lower = 0.9, upper = 1.4, tol = 1e-08,
                           za = ub$za, zb = -ub$za,
                           zc = c(rep(NA,sum(abs(lb$za) == 20)), -lb$za[abs(lb$za) < 20]),
                           zd = c(rep(NA,sum(abs(lb$za) == 20)), lb$za[abs(lb$za) < 20]),

@@ -138,6 +138,8 @@ RTSA <-
            power_adj = TRUE,
            zninf = -20,
            inf_first_analysis = 0.05,
+           tsa_beta_bound = FALSE,
+           reserve_y_axis = FALSE,
            ...) {
     # Check inputs ----
     # check | type
@@ -640,6 +642,7 @@ RTSA <-
             timing = timing,
             alpha = alpha,
             zninf = zninf,
+            tsa_beta_bound = tsa_beta_bound,
             beta = beta,
             side = side,
             futility = futility,
@@ -734,6 +737,7 @@ RTSA <-
           alpha = alpha,
           zninf = zninf,
           beta = beta,
+          tsa_beta_bound = tsa_beta_bound,
           side = side,
           futility = futility,
           es_alpha = es_alpha,
