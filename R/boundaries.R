@@ -42,10 +42,11 @@
 #'  side = 2, futility = "non-binding", es_alpha = "esOF", es_beta = "esOF")
 #'
 #' @export
-boundaries <- function(timing, alpha = 0.05, zninf, beta = 0.1, side = 2,
-                       tsa_beta_bound = FALSE,
+boundaries <- function(timing, alpha = 0.05, zninf = -20, beta = 0.1, side = 2,
+                       tsa_beta_bound = FALSE, 
                        futility = "none", es_alpha = "esOF", es_beta = NULL,
-                       type = "design", design_R = NULL, tol = 1e-08){
+                       type = "design", design_R = NULL,
+                       over_power = FALSE, tol = 1e-08){
 
   n_max <- 10 # finding root for power
   nn_max <- 50 # finding root for type-I-error
@@ -147,7 +148,6 @@ boundaries <- function(timing, alpha = 0.05, zninf, beta = 0.1, side = 2,
         if(is.null(design_R)){
           stop("Root is needed to calculate analysis")
         }
-
         lb <- beta_boundary(inf_frac = timing,
                                    beta = beta,
                                    side = 1,
@@ -371,13 +371,14 @@ boundaries <- function(timing, alpha = 0.05, zninf, beta = 0.1, side = 2,
     else if(futility == "non-binding"){
       if(type == "design"){
         delta <- abs(qnorm(alpha/side)+qnorm(beta))
-
-        lb <- beta_boundary(inf_frac = timing, beta = ifelse(tsa_beta_bound, beta/2, beta),
+        
+        lb <- beta_boundary(inf_frac = timing, beta = beta,
                                    side = 1, alpha_boundaries = boundout,
                                    delta = delta, es_beta = es_beta)
 
-        upperRoot <- .95
+        upperRoot <- 1
         n_itr <- 1
+        
         while(n_itr <= nn_max){
         root <- try(uniroot(inf_warp, lower = upperRoot-0.05, upper = upperRoot, alpha_boundaries = boundout,
                         tol = 1e-06, side = 1, delta = delta, timing = timing,
@@ -437,6 +438,32 @@ boundaries <- function(timing, alpha = 0.05, zninf, beta = 0.1, side = 2,
 
       } else {
         #if type is analysis
+        
+        if(tsa_beta_bound){
+          if(over_power){
+            fakeIFY <- qnorm(1-alpha/side, lower.tail = T)
+            timing_beta <- timing[timing < 1] 
+          } else {
+            fakeIFY <- boundout$alpha_ubound[length(boundout$alpha_ubound)]
+            timing_beta <- timing 
+          }
+          
+          out_inner <- getInnerWedge(informationFractions = timing_beta, beta = beta, delta = 0, side = 2,
+                        fakeIFY = fakeIFY)
+          
+          if(over_power){
+            out_inner$ret2 <- c(out_inner$ret2,fakeIFY)
+          } else {
+            out_inner$ret2 <- c(out_inner$ret2[-length(out_inner$ret2)],
+                                qnorm(1-alpha/side, lower.tail = T)) 
+          }
+          
+          
+          boundout$beta_ubound <- c(rep(NA,sum(out_inner$ret2 <= 0)), out_inner$ret2[out_inner$ret2 > 0])
+          boundout$beta_lbound <- -boundout$beta_ubound
+          
+          
+        } else {
 
         lb <- beta_boundary(inf_frac = timing,
                                    beta = beta,
@@ -474,7 +501,11 @@ boundaries <- function(timing, alpha = 0.05, zninf, beta = 0.1, side = 2,
           boundout$beta_lbound[length(boundout$alpha_ubound)] =
             boundout$alpha_lbound[length(boundout$alpha_ubound)]
         }
+        
+        boundout$beta_spend <- list(bs_incr = lb$as_incr, bs_cum = lb$as_cum)
 
+        }
+        
         info <- sd_inf(timing)
         pwr <- ma_power(zb = boundout$alpha_ubound,
                                za = boundout$alpha_lbound,
@@ -488,8 +519,6 @@ boundaries <- function(timing, alpha = 0.05, zninf, beta = 0.1, side = 2,
                                zc = boundout$beta_lbound,
                                delta = 0,
                                info = info)
-
-        boundout$beta_spend <- list(bs_incr = lb$as_incr, bs_cum = lb$as_cum)
 
         boundout$root <- design_R
 

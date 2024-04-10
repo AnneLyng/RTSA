@@ -139,12 +139,26 @@ RTSA <-
            zninf = -20,
            inf_first_analysis = 0.05,
            tsa_beta_bound = FALSE,
-           reserve_y_axis = FALSE,
            ...) {
     # Check inputs ----
     # check | type
     if(type == "analysis" & is.null(data)){
       stop("Provide `data` for analysis.")
+    }
+    
+    # check | type and tsa_beta_bound
+    if(type == "design" & tsa_beta_bound){
+      stop("tsa_beta_bound = TRUE is not possible for type = ''design''.")
+    }
+    
+    # check | side and tsa_beta_bound
+    if(side == 1 & tsa_beta_bound){
+      stop("tsa_beta_bound = TRUE is not possible for side = 1.")
+    }
+    
+    # check | futility type and tsa_beta_bound
+    if(futility == "binding" & tsa_beta_bound){
+      stop("tsa_beta_bound = TRUE is not possible for futility = ''binding''.")
     }
 
     # check | design arguments equal to analysis arguments if design is present
@@ -554,7 +568,7 @@ RTSA <-
         "The RTSA function is used for design. Boundaries are computed but sequential inference will not be calculated. Use the metaanalysis() function if interested in meta-analysis results."
       )
     
-      } else if(type == "analysis" & is.null(design) & power_adj == TRUE){
+      } else if(type == "analysis" & is.null(design) & (power_adj | !tsa_beta_bound)){
         
       # calculate timings
       timing <- c(subjects / RIS)
@@ -636,13 +650,12 @@ RTSA <-
         if(length(ana_times) == 1){
           timing <- trials[1] } else {
             timing <- trials[, 1] }
-
+        
         bounds <-
           boundaries(
             timing = timing,
             alpha = alpha,
             zninf = zninf,
-            tsa_beta_bound = tsa_beta_bound,
             beta = beta,
             side = side,
             futility = futility,
@@ -660,7 +673,7 @@ RTSA <-
           design_R <- design$bounds$root
     }
       
-      if(power_adj == FALSE){
+      if(!power_adj | tsa_beta_bound){
         design_R <- 1
       }
       
@@ -732,7 +745,10 @@ RTSA <-
       }
       
     
-      bounds <- boundaries(
+    over_power = FALSE 
+      if(max(orgTiming) > 1) over_power = TRUE 
+      
+    bounds <- boundaries(
           timing = timing,
           alpha = alpha,
           zninf = zninf,
@@ -743,7 +759,8 @@ RTSA <-
           es_alpha = es_alpha,
           es_beta = es_beta,
           type = type,
-          design_R = design_R
+          design_R = design_R,
+          over_power = over_power
         )
       
       if(!is.null(design) & (timing[max(ana_times)] == max(orgTiming) | abs(timing[max(ana_times)] - max(orgTiming)) < 0.05) & is.null(final_analysis)){
@@ -790,6 +807,7 @@ RTSA <-
     # store the bounds 
     RTSAout$bounds = bounds
     
+    if(tsa_beta_bound) RTSAout$bounds$root <- 1
     # update the sample size calculation
     if(!is.null(design)) outris <- design$ris
     outris$SMA_NF <- ifelse(is.null(data) | !is.null(design),
@@ -895,6 +913,7 @@ RTSA <-
       RTSAout$results$seq_inf = inf$seq_inf
       RTSAout$results$metaanalysis <- ma
       RTSAout$results$design_df <- design$results$design_df
+      RTSAout$results$boundaries <- bounds
     }
     class(RTSAout) <- c("RTSA", "list")
     return(RTSAout)

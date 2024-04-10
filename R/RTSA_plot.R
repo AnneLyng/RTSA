@@ -391,16 +391,18 @@ plot.RTSA = function(x, model = "random", type = "classic", theme = "classic",
                   cex = 0.25, na.rm=TRUE) +
         geom_point(aes(x = sma_timing, y = fut_lower, col = "bline"), cex = 1, na.rm=TRUE)
       }
-
+      
       if(x$settings$side == 2){
         p <- p +
-          {if(theme == "modern") geom_ribbon(aes(x=sma_timing, ymin=fut_upper,
-                                  ymax=fut_lower, fill = "bline"), alpha=0.25, na.rm=TRUE)} +
-          geom_line(aes(x = sma_timing, y = fut_lower, col = "bline", linetype = "lt_beta"), linewidth = 0.25,
-                    na.rm=TRUE) +
+          #{if(theme == "modern") geom_ribbon(aes(x=sma_timing, ymin=fut_upper,
+          #                        ymax=fut_lower, fill = "bline"), alpha=0.25, na.rm=TRUE)} +
+          geom_line(data = df[!is.na(df$fut_lower),],aes(x = sma_timing, y = fut_lower, col = "bline",
+                                                         linetype = "lt_beta"), linewidth = 0.25, 
+                    na.rm=T) +
           geom_point(aes(x = sma_timing, y = fut_lower, col = "bline"), cex = 1,
                      na.rm=TRUE) +
-          geom_line(aes(x = sma_timing, y = fut_upper, col = "bline", linetype = "lt_beta"), linewidth = 0.25,
+          geom_line(data = df[!is.na(df$fut_upper),], aes(x = sma_timing, y = fut_upper, col = "bline",
+                                                          linetype = "lt_beta"), linewidth = 0.25,
                     na.rm=TRUE) +
           geom_point(aes(x = sma_timing, y = fut_upper, col = "bline"), cex = 1,
                      na.rm=TRUE)
@@ -415,7 +417,11 @@ plot.RTSA = function(x, model = "random", type = "classic", theme = "classic",
       
 
     # labels and breaks
-    breakz <- c(df$sma_timing)[c(TRUE,diff(c(df$sma_timing[-c(length(df$sma_timing)-1,length(df$sma_timing))]))>max(df$sma_timing,na.rm = T)/20,TRUE,TRUE)]
+    #breakz <- c(df$sma_timing)[c(TRUE,diff(c(df$sma_timing[-c(length(df$sma_timing)-1,length(df$sma_timing))]))>max(df$sma_timing,na.rm = T)/20,TRUE,TRUE)]
+      
+      breakz <- c(df$sma_timing[c(1, length(df$sma_timing))], max(df$sma_timing[!is.na(df$z_fixed)]), max(df$sma_timing[!is.na(df$upper)]))
+      breakz <- sort(unique(breakz))
+    
     if(x$settings$fixed == TRUE){
       labz_x <- c(paste(paste0(round(breakz,2)*100,"%"), ceiling((x$results$RIS*breakz)), sep = "\n"))
     } else {
