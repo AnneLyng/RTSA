@@ -58,7 +58,7 @@ boundaries <- function(timing, alpha = 0.05, zninf = -20, beta = 0.1, side = 2,
   if(max(timing) < 1 & type == "design"){
     timing <- c(timing, 1)
   }
-  
+
   # calculate the initial alpha boundaries
   boundout <- alpha_boundary(inf_frac = timing,
                             side = side, alpha = alpha,

@@ -285,14 +285,24 @@ ris <-
     
     args$var_mc = var_mc
     
+    # calculate random-effects sample size
+    # sample size for inconsistency adj. and diversity adj.
+    if(!is.null(ma)){
+    NR_D2 <- ifelse(is.null(D2),1 / (1 - ma$synthesize$U[4]) * NF, 1 / (1 - D2) * NF)
+    NR_I2 <- ifelse(is.null(I2),1 / (1 - ma$synthesize$U[3]) * NF, 1 / (1 - I2) * NF)
+    NR_D2 <- ceiling(NR_D2)
+    NR_I2 <- ceiling(NR_I2)
+    }
+    
     # create output
     outlist <-
       list(
         NF = NF,
+        NR_D2 = list("NR_D2_full" = NR_D2),
+        NR_I2 = list("NR_I2_full" = NR_I2),
         settings = args
       )
     
-    # calculate random-effects sample size
     # when used inside metaanalysis or metaanalysis object is provided
     if(!is.null(ma) & fixed == FALSE & is.null(ma$synthesize$peR)){
       fixed = TRUE
@@ -318,11 +328,15 @@ ris <-
           NR_tau_ll <- NULL
         }
         if(!is.null(NR_tau)){
-          NR_tau_ul <- minTrial(outcome = outcome, mc = mc, alpha = alpha,
+          NR_tau_ul <- try(minTrial(outcome = outcome, mc = mc, alpha = alpha,
                           beta = beta, pC = pC, side = side,
                           tau2 = ma$synthesize$ci.tau$random[1,3],
-                          var_random = ma$synthesize$peR[6])
-          NR_tau_ul <- append(NR_tau_ul, list(tau2 = ma$synthesize$ci.tau$random[1,3]))
+                          var_random = ma$synthesize$peR[6]), TRUE)
+          if(inherits(NR_tau_ul,"try-error")){
+            NR_tau_ul = "Too much heterogeneity to estimate an upper number of trials."
+          } else {
+            NR_tau_ul <- append(NR_tau_ul, list(tau2 = ma$synthesize$ci.tau$random[1,3]))
+          }
         } else {
           NR_tau_ul <- NULL
         }
@@ -381,12 +395,6 @@ ris <-
       NR_tau[names(NR_tau) == "war_het"] <- NULL
       NR_tau_ll[names(NR_tau_ll) == "war_het"] <- NULL
       NR_tau_ul[names(NR_tau_ul) == "war_het"] <- NULL
-      
-      # sample size for inconsistency adj. and diversity adj.
-      NR_D2 <- ifelse(is.null(D2),1 / (1 - ma$synthesize$U[4]) * NF, 1 / (1 - D2) * NF)
-      NR_I2 <- ifelse(is.null(I2),1 / (1 - ma$synthesize$U[3]) * NF, 1 / (1 - I2) * NF)
-      NR_D2 <- ceiling(NR_D2)
-      NR_I2 <- ceiling(NR_I2)
       
       # set relative to the sample size already achieved
       if(is.null(NR_tau)){

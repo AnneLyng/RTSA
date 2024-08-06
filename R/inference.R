@@ -317,7 +317,12 @@ inference <- function(bounds,
             }
           }
           
-          sw.lower <- stop_sign *  lowci * stnd_dv * info_ana$sd_proc[stop_time]    
+
+          if(inherits(lowci,"try-error")){
+            sw.lower <- NULL
+          } else {
+            sw.lower <- stop_sign *  lowci * stnd_dv * info_ana$sd_proc[stop_time]     
+          }
           
           upperRoot <- 10
           n_max <- 4
@@ -335,7 +340,12 @@ inference <- function(bounds,
               break
             }
           }
-          sw.upper <- stop_sign *  upci * stnd_dv * info_ana$sd_proc[stop_time] 
+          
+          if(inherits(upci,"try-error")){
+            sw.upper <- NULL
+          } else {
+            sw.upper <- stop_sign *  upci * stnd_dv * info_ana$sd_proc[stop_time]     
+          }
         }
         
         } else if(bounds$side == 1 | stop_direction == "fa"){
@@ -396,17 +406,22 @@ inference <- function(bounds,
         }
     }
     
+    if(!inherits(upci,"try-error") & !inherits(lowci,"try-error")){
       median_unbiased_z <-
         uniroot(sw_ciupper, upper = upci, lower = lowci, conf_level = 0,info = info_ana,
                 za = za, zb = zb, zc = zc, zd = zd)$root
       
       median_unbiased <- stop_sign * median_unbiased_z * stnd_dv * info_ana$sd_proc[stop_time]
       
-    
-    if (ma$settings$outcome %in% c("RR", "OR")) {
-      sw.lower <- exp(sw.lower)
-      sw.upper <- exp(sw.upper)
-      median_unbiased <- exp(median_unbiased)
+      if (ma$settings$outcome %in% c("RR", "OR")) {
+        sw.lower <- exp(sw.lower)
+        sw.upper <- exp(sw.upper)
+        median_unbiased <- exp(median_unbiased)
+      }
+      
+    } else {
+      median_unbiased_z <- NULL
+      median_unbiased <- NULL
     }
     
     

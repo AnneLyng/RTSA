@@ -420,12 +420,12 @@ searchfunc <- function(last, zj, i, as, stdv, za, zb, tol, bs, delta){
 # beta_boundary ----
 #' @importFrom stats qnorm
 beta_boundary <- function(inf_frac, beta, side, alpha_boundaries,
-                          zninf = -20, tol = 1e-15,
+                          zninf = -20, tol = 1e-09,
                           rm_bs = 0,
                           es_beta = "esOF", delta = NULL, r = 18,
                           design_R = NULL, warp_root = NULL){
   nn <- length(inf_frac); lnn <- 5000; h <- 0.05
-
+  
   if(is.null(delta)) delta = abs(qnorm(alpha_boundaries$alpha/side)+qnorm(beta)) 
   alpha_bound <- alpha_boundaries$alpha_ubound
 
@@ -494,7 +494,6 @@ beta_boundary <- function(inf_frac, beta, side, alpha_boundaries,
   wj <- zj_wj$wj
 
   for(i in 2:nn){
-
     if(i == 2){
       last <- init_int(wj = wj, zj = zj, delta = delta, stdv = info$sd_incr)
     }

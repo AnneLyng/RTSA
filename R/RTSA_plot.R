@@ -231,6 +231,11 @@ plot.RTSA = function(x, model = NULL, type = "classic", theme = "classic",
     }else{
       tmp_z <- df$z_random
     }
+      
+      if(sum(tmp_z > 8, na.rm = T) > 0 | sum(tmp_z < -8, na.rm = T) > 0){
+        tmp_z[tmp_z > 8] <- 8
+        tmp_z[tmp_z < -8] <- -8
+      }
     }
     ylabz <- "Cummulative Z-score"
   }else if(type == "outcome"){

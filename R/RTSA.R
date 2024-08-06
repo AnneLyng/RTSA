@@ -354,13 +354,13 @@ RTSA <-
     if (!is.null(data)) {
       
       if(outcome == "MD"){
-      ma <- metaanalysis(outcome = outcome, beta = beta, data = data, mc = mc, sd_mc = sd_mc,
+      ma <- metaanalysis(outcome = outcome, beta = beta, data = data,
                    weights = weights, cont_vartype = cont_vartype,
                    alpha = alpha, zero_adj = zero_adj,
                    conf_level = conf_level,
                    re_method = re_method, tau_ci_method = tau_ci_method)
       } else {
-        ma <- metaanalysis(outcome = outcome, data = data, mc = mc, alpha = alpha, beta = beta, 
+        ma <- metaanalysis(outcome = outcome, data = data, alpha = alpha, beta = beta, 
                            weights = weights, cont_vartype = cont_vartype,
                            zero_adj = zero_adj,
                            conf_level = conf_level,
@@ -472,7 +472,7 @@ RTSA <-
         )
       }
         
-      if(sy$U[1] == 0 | fixed | (!is.null(outris$war_het) & random_adj == "tau2" & is.null(outris$NR_tau))){
+      if((sy$U[1] == 0 & (is.null(tau2) & is.null(I2) & is.null(D2))) | fixed | (!is.null(outris$war_het) & random_adj == "tau2" & is.null(outris$NR_tau))){
         RIS = outris$NF$NF_full
         if(sy$U[1] != 0 & !fixed){
           warning("NB. There is some heterogeneity present in the data, but it was not picked up by the sample size calculating. Consider changing random_adj to D2 or I2.")
@@ -481,7 +481,8 @@ RTSA <-
       } else {
         if(random_adj == "D2"){ 
           warning("NB. The required information size adjusted by Diversity (D^2). This might cause an under-powered analysis. Consider changing the argument `random_adj` from `D2` (default) to `tau2`.")
-          RIS = outris$NR_D2$NR_D2_full } else if(random_adj == "I2"){
+          RIS = outris$NR_D2$NR_D2_full 
+          } else if(random_adj == "I2"){
             RIS = outris$NR_I2$NR_I2_full
             warning("NB. The required information size is adjusted by Inconsistency (I^2). This might cause an under-powered analysis. Consider changing the argument `random_adj` from `I2` to `tau2`.")
           } else {
