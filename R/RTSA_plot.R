@@ -1,7 +1,7 @@
 #' Plot RTSA object. Returns the R version of the original TSA plot. 
 #'
 #' @param x RTSA object
-#' @param model Whether a fixed- or random-effects meta-analysis should be used. Defaults to random.
+#' @param model Whether a fixed- or random-effects meta-analysis should be used. 
 #' @param type Should Z-scores (classic) or outcome values (outcome) be plotted.
 #' @param theme Whether the theme is traditional TSA (classic) or modern (modern)
 #' @param ... Other arguments to plot.RTSA
@@ -19,7 +19,7 @@
 #'  side = 2, alpha = 0.05, beta = 0.2, fixed = FALSE, es_alpha = "esOF", design = NULL)
 #' plot(x = outRTSA)
 #'
-plot.RTSA = function(x, model = "random", type = "classic", theme = "classic",
+plot.RTSA = function(x, model = NULL, type = "classic", theme = "classic",
                      reverse_y_axis = FALSE, ...){
 
   if(sum(class(x) == "boundaries") > 0){
@@ -58,14 +58,17 @@ plot.RTSA = function(x, model = "random", type = "classic", theme = "classic",
   } else {
 
     xlabz <- "Information percentage"
+  
+  if((x$settings$fixed | x$settings$fixed_plot) & is.null(model)){
+      model <- "fixed"
+  } else {
+    model <- "random"
+  }  
+    
   if(model == "random" & x$settings$type == "analysis"){
     if(length(which(!is.na(x$results$results_df$naiveCIrandom_upper))) == 0){
       model <- "fixed"
       }
-  }
-
-  if(x$settings$fixed){
-    model <- "fixed"
   }
 
   #CREATE VARIABLES
@@ -586,8 +589,6 @@ plot.RTSA = function(x, model = "random", type = "classic", theme = "classic",
     #Labels
     p <- p + labs(caption=settings)
     
-    browser()
-
     p <- p +
       scale_y_continuous(expand = expansion(0), ylabz) +
       scale_colour_manual(values=colz, labels = labz, name = "") +

@@ -22,7 +22,7 @@
 #' @param pC The expected probability of event in the control group. Used for sample size calculation for binary outcomes.
 #' @param gamma Parameter for the HSDC error spending function.
 #' @param rho Parameter for the rho family error spending function.
-#' @param zero_adj Zero adjustment. Options for now is 0.5.
+#' @param zero_adj Zero adjustment. The only option for now is 0.5. This might be changed in the future.
 #' @param cont_vartype For mean difference outcomes, do we expect the variance in the different groups to be "equal" or "non-equal".
 #' @param study An optional vector of study names and perhaps year of study. Defaults to NULL.
 #' @param tau2 Heterogeneity estimate. Used for sample and trial size calculation. Defaults to NULL.
@@ -144,6 +144,14 @@ RTSA <-
     # check | type
     if(type == "analysis" & is.null(data)){
       stop("Provide `data` for analysis.")
+    }
+    
+    fixed_plot <- FALSE
+    # check | fixed and input
+    if(fixed == TRUE & c( !is.null(I2) | !is.null(tau2) | !is.null(D2) )){
+      warning("fixed has been set to TRUE but an argument for one of the three heterogeneity measures: D2, I2 or tau2, is not NULL. For this reason, we have changed fixed to FALSE which affects the sample size calculation.")
+      fixed <- FALSE
+      fixed_plot <- TRUE
     }
     
     # check | type and tsa_beta_bound
@@ -273,6 +281,11 @@ RTSA <-
     if (is.null(beta) | !is.numeric(beta) | beta > 1) {
       stop("`beta` must be provided, numeric and below 1")
     }
+    
+    # check | zero adj
+    if (zero_adj != 0.5) {
+      stop("`zero_adj` can only be 0.5 for now.")
+    }
 
     # check | confidence interval for tau
     if (!(tau_ci_method %in% c("BJ", "QP"))) {
@@ -364,7 +377,8 @@ RTSA <-
       if(dim(ma$metaPrepare$data)[1] != dim(data)[1]){
       data <- ma$metaPrepare$data
       org_data <- ma$metaPrepare$org_data
-      subjects <- cumsum(org_data$nI[!(org_data$eI + org_data$eC == 0)] + org_data$nC[!(org_data$eI + org_data$eC == 0)])
+      subjects <- cumsum(org_data$nI[!(org_data$eI + org_data$eC == 0)] +
+                           org_data$nC[!(org_data$eI + org_data$eC == 0)])
       warning("NB. All zero-event studies (no events in both arms) are removed. Consider changing the outcome to risk difference (RD) to keep the studies in the analysis.")
       }
 
@@ -793,6 +807,7 @@ RTSA <-
 
     RTSAout <- list()
     RTSAout$settings = argg
+    RTSAout$settings$fixed_plot = fixed_plot
     if(RTSAout$settings$fixed != fixed){
       RTSAout$settings$fixed <- fixed
     }

@@ -81,7 +81,7 @@ metaanalysis <- function(outcome,
   }
   # check | data; mI; mC; sdI; sdC; eI; nI; eC; nC.
   if (is.null(data)) {
-    stop("A data.frame containing either: eI, nI, eC, nC")
+    stop("A data.frame containing either: eI, nI, eC, nC or mI, mC, sdI, sdC, nI, nC")
   } else{
     if (outcome == "MD" &
         !all(c("mI", "mC", "sdI", "sdC", "nI", "nC") %in%
@@ -93,6 +93,7 @@ metaanalysis <- function(outcome,
       stop("`data` must have the following columns:
            'eI','nI,'eC', and 'nC'.")
     }
+    if(dim(data)[1] == 1) weights = "IV"
   }
   # check | study
   if (!any(colnames(data) == "study")) {
@@ -404,6 +405,16 @@ metaPrepare <-
         w <- w / sum(w)
         pe <- sum(te * w)
         w <- w * 100
+        
+        # Calculate confidence limits
+        if (outcome %in% c("RR", "OR")) {
+          lower <- exp(log(te) - qnorm((1-conf_level)/2, lower.tail = FALSE) * sig)
+          upper <- exp(log(te) + qnorm((1-conf_level)/2, lower.tail = FALSE) * sig)
+        } else {
+          lower <- te - qnorm((1-conf_level)/2, lower.tail = FALSE) * sig
+          upper <- te + qnorm((1-conf_level)/2, lower.tail = FALSE) * sig
+        }
+        
       } else if (weights == "MH") {
         # Mantel-Haenszel
         A <- data$eI
@@ -436,16 +447,16 @@ metaPrepare <-
 
         }
         pe <- sum(te * w) / sum(w)
-      }
-
-      # Calculate confidence limits
-      if (outcome %in% c("RR", "OR")) {
-        lower <- exp(log(te) - qnorm((1-conf_level)/2, lower.tail = FALSE) * sig)
-        upper <- exp(log(te) + qnorm((1-conf_level)/2, lower.tail = FALSE) * sig)
-      } else {
-        lower <- te - qnorm((1-conf_level)/2, lower.tail = FALSE) * sig
-        upper <- te + qnorm((1-conf_level)/2, lower.tail = FALSE) * sig
-      }
+        
+        # Calculate confidence limits
+        if (outcome %in% c("RR", "OR")) {
+          lower <- exp(log(te) - qnorm((1-conf_level)/2, lower.tail = FALSE) * svpe)
+          upper <- exp(log(te) + qnorm((1-conf_level)/2, lower.tail = FALSE) * svpe)
+        } else {
+          lower <- te - qnorm((1-conf_level)/2, lower.tail = FALSE) * svpe
+          upper <- te + qnorm((1-conf_level)/2, lower.tail = FALSE) * svpe
+        }
+              }
 
       # Return results
       if (weights == "MH") {
