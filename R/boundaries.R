@@ -54,9 +54,13 @@ boundaries <- function(timing, alpha = 0.05, zninf = -20, beta = 0.1, side = 2,
   if(futility == "none"){
     es_beta <- NULL
   }
-
+  
   if(max(timing) < 1 & type == "design"){
+    if(max(timing) > 0.99){
+    timing <- c(timing[-length(timing)], 1)
+    } else {
     timing <- c(timing, 1)
+    }
   }
 
   # calculate the initial alpha boundaries
@@ -380,11 +384,11 @@ boundaries <- function(timing, alpha = 0.05, zninf = -20, beta = 0.1, side = 2,
         n_itr <- 1
         
         while(n_itr <= nn_max){
-        root <- try(uniroot(inf_warp, lower = upperRoot-0.05, upper = upperRoot, alpha_boundaries = boundout,
-                        tol = 1e-06, side = 1, delta = delta, timing = timing,
+        root <- try(uniroot(inf_warp, lower = upperRoot-0.02, upper = upperRoot, alpha_boundaries = boundout,
+                        tol = 1e-05, side = 1, delta = delta, timing = timing,
                         es_beta = es_beta, beta = beta)$root,TRUE)
         if(inherits(root,"try-error")){
-          upperRoot <- upperRoot + 0.05
+          upperRoot <- upperRoot + 0.02
           n_itr <- n_itr + 1
         } else {
           break
@@ -399,16 +403,16 @@ boundaries <- function(timing, alpha = 0.05, zninf = -20, beta = 0.1, side = 2,
                                    side = 1, alpha_boundaries = boundout,
                                    delta = delta, warp_root = root,
                                    es_beta = es_beta)
-      
+        
         n_itr <- 1
-        upperRoot <- 0.95
+        upperRoot <- root
         while(n_itr <= nn_max){
-        root <- try(uniroot(inf_warp, lower = upperRoot-0.05, upper = upperRoot, alpha_boundaries = boundout,
+        root <- try(uniroot(inf_warp, lower = upperRoot-0.02, upper = upperRoot, alpha_boundaries = boundout,
                         tol = 1e-06, side = 1, rm_bs = sum(lb$za < 0),
                         delta = delta, timing = timing, es_beta = es_beta,
                         beta = beta)$root,TRUE)
         if(inherits(root,"try-error")){
-          upperRoot <- upperRoot + 0.05
+          upperRoot <- upperRoot + 0.02
           n_itr <- n_itr + 1
         } else {
           break

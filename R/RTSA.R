@@ -723,6 +723,16 @@ RTSA <-
       trials[, 2] <-
         trials[, 1] - c(0, trials[, 1][-length(trials[, 1])])
       
+      if(inf_first_analysis != 0){
+        if(trials[1,1] < inf_first_analysis){
+        if(sum(trials[,1] > inf_first_analysis) > 1){
+          trials <- trials[trials[,1] > inf_first_analysis,]
+        } else {
+          stop("Set 'inf_first_analysis' to something smaller or to 0 if any trials should be included in the sequential design.")
+        }
+        }
+      }
+      
       # if new study adds less than 1% of RIS, the analysis is not performed.
       time_tf = 0.01
       war_tim2 <- NULL
@@ -730,19 +740,24 @@ RTSA <-
         war_tim2 <- c(
           "Interim analyses will not be made with less than 1% increase in information.\nThe number of studies and number of interim analysis will not be the same."
         )
-        if(sum(trials[,1] > time_tf) > 0){
+        if(sum(trials[,2] > time_tf) > 0){
           trials <- matrix(trials[trials[, 1] > time_tf, ], ncol = 3, byrow = F)
           trials[, 2] <-
             trials[, 1] - c(0, trials[, 1][-length(trials[, 1])])
+          
+          i <- 1
+          while(i < dim(trials)[1]){
+           if(trials[i,2] < time_tf){
+             trials <- trials[-i,]
+             trials[, 2] <-
+               trials[, 1] - c(0, trials[, 1][-length(trials[, 1])])
+           } else {
+             i <- i + 1
+           }
+          }
           trials <- matrix(trials[trials[, 2] > time_tf, ], ncol = 3, byrow = F)
         } else {
           stop("There is less than 1% information available for the entire Trial Sequential Analysis (TSA). Hence there is not enough information in the data to make the analysis.")
-        }
-      }
-      
-      if(inf_first_analysis != 0){
-        if(trials[1,1] < inf_first_analysis){
-          trials <- trials[trials[,1] > inf_first_analysis,]
         }
       }
       
@@ -759,7 +774,6 @@ RTSA <-
         timing <- trials[, 1]
       }
       
-    
     over_power = FALSE 
       if(max(orgTiming) > 1) over_power = TRUE 
       
